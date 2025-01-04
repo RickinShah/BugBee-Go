@@ -66,18 +66,18 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	go func() {
-		embedData := map[string]interface{}{
-			"activationToken": token.Plaintext,
-			"userID":          user.ID,
-			"url":             fmt.Sprintf("%s://%s:%d", app.config.protocol, app.config.host, app.config.port),
-		}
+	embedData := map[string]interface{}{
+		"activationToken": token.Plaintext,
+		"userID":          user.ID,
+		"url":             fmt.Sprintf("%s://%s:%d", app.config.protocol, app.config.host, app.config.port),
+	}
 
+	app.background(func() {
 		err = app.mailer.Send(user.Email, "user_welcome.tmpl", embedData)
 		if err != nil {
 			app.logger.PrintError(err, nil)
 		}
-	}()
+	})
 
 	err = app.writeJson(w, http.StatusCreated, envelope{"user": user}, nil)
 	if err != nil {

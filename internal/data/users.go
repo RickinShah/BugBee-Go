@@ -60,7 +60,7 @@ func (u *User) MarshalJSON() ([]byte, error) {
 	return json.Marshal(user)
 }
 
-func (u *User) isAnonymous() bool {
+func (u *User) IsAnonymous() bool {
 	return u == AnonymousUser
 }
 

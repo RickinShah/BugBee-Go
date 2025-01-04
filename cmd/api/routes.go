@@ -13,10 +13,10 @@ func (app *application) routes() http.Handler {
 
 	router.HandlerFunc(http.MethodGet, "/v1/healthcheck", app.healthcheckHandler)
 
-	router.HandlerFunc(http.MethodGet, "/v1/posts/:id", app.showPostHandler)
-	router.HandlerFunc(http.MethodPost, "/v1/posts/:id", app.createPostHandler)
-	router.HandlerFunc(http.MethodPut, "/v1/posts/:id", app.updatePostHandler)
-	router.HandlerFunc(http.MethodDelete, "/v1/posts/:id", app.deletePostHandler)
+	router.HandlerFunc(http.MethodGet, "/v1/posts/:id", app.requireActivatedUser(app.showPostHandler))
+	router.HandlerFunc(http.MethodPost, "/v1/posts/:id", app.requireActivatedUser(app.createPostHandler))
+	router.HandlerFunc(http.MethodPut, "/v1/posts/:id", app.requireActivatedUser(app.updatePostHandler))
+	router.HandlerFunc(http.MethodDelete, "/v1/posts/:id", app.requireActivatedUser(app.deletePostHandler))
 
 	router.HandlerFunc(http.MethodPost, "/v1/otp", app.generateOtpHandler)
 	router.HandlerFunc(http.MethodPost, "/v1/otp/validate", app.validateOtpHandler)
