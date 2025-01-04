@@ -1,0 +1,10 @@
+export BUGBEE_DB_DSN=postgres://bugbee:bugbee@localhost/bugbee?sslmode=disable
+export JWT_SECRET=abcdefghijklmnopqrstuvwxyz1234567890abcdefghijklmnopqrstuvwxyz12
+export SMTP_USERNAME=example@gmail.com
+export SMTP_PASSWORD=example@1234
+export SMTP_HOST=smtp.gmail.com
+export SMTP_PORT=587
+export SMTP_SENDER='BugBee <example@gmail.com>'
+export REDIS_ADDRESS=localhost:6379
+export REDIS_PASSWORD=
+export ENCRYPTION_KEY=ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEF

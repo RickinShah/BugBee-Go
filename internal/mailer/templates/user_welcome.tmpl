@@ -1,0 +1,41 @@
+{{define "subject"}}Welcome to BugBee!{{end}}
+
+{{define "plainBody"}}
+Hi,
+
+Thanks for signing up for a BugBee account. We're excited to have you on board!
+
+To activate your BugBee account please click the following line:
+
+{{.url}}/users/activate?token={{.activationToken}}
+
+Please note that this link will expire in 3 days and can only be used once
+
+Thanks,
+
+The BugBee Team
+{{end}}
+
+{{define "htmlBody"}}
+<!doctype html>
+<html>
+
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+</head>
+
+<body>
+    <p>Hi,</p>
+    <p>Thanks for signing up for a BugBee account. We're excited to have you on board!</p>
+    <p>To activate your BugBee account please click the following link:</p>
+    <code><a href="{{.url}}/users/activate?token={{.activationToken}}">
+        Activate Account
+    </a></code>
+    <p>{{.url}}/users/activate?token={{.activationToken}}</p>
+    <p>Thanks,</p>
+    <p>The BugBee Team</p>
+</body>
+
+</html>
+{{end}}
