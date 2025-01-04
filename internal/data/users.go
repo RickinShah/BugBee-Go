@@ -21,18 +21,25 @@ var (
 	ErrDuplicateUsername = errors.New("duplicate username")
 )
 
+var AnonymousUser = &User{}
+
 type User struct {
 	ID        int64     `json:"user_pid,string" db:"user_pid"`
 	CreatedAt time.Time `json:"-" db:"created_at"`
 	Name      string    `json:"name" db:"name"`
 	Username  string    `json:"username" db:"username"`
 	Email     string    `json:"email" db:"email"`
-	Password  password  `json:"-" db:"password"`
+	Password  password  `json:"password" db:"password"`
 	Activated bool      `json:"activated" db:"activated"`
 	Bio       string    `json:"bio" db:"bio"`
 	ShowNsfw  bool      `json:"show_nsfw" db:"show_nsfw"`
 	Version   int32     `json:"-" db:"version"`
 	all       bool
+}
+
+type password struct {
+	plaintext *string
+	Hash      []byte `json:"password_hash" db:"password_hash"`
 }
 
 func (u *User) MarshalJSON() ([]byte, error) {
@@ -53,9 +60,8 @@ func (u *User) MarshalJSON() ([]byte, error) {
 	return json.Marshal(user)
 }
 
-type password struct {
-	plaintext *string
-	Hash      []byte
+func (u *User) isAnonymous() bool {
+	return u == AnonymousUser
 }
 
 func (p *password) Set(plainTextPassword string) error {
@@ -216,7 +222,7 @@ func (m UserModel) Update(user *User) error {
 	query := `
 		UPDATE users
 		SET name = $1, username = $2, email = $3, password_hash = $4, activated = $5, bio = $6, show_nsfw = $7, version = version + 1
-		WHERE user_pid = $9 AND version = $10
+		WHERE user_pid = $8 AND version = $9
 		RETURNING version`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
