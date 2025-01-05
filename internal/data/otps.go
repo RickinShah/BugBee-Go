@@ -14,6 +14,10 @@ import (
 	"github.com/pquerna/otp/totp"
 )
 
+const (
+	otpCacheDuration = 15 * time.Minute
+)
+
 type OTP struct {
 	ID        int64      `json:"user_pid" db:"user_pid"`
 	CreatedAt time.Time  `json:"created_at" db:"created_at"`
@@ -127,7 +131,7 @@ func (m OTPModel) Insert(otp *OTP) error {
 		return fmt.Errorf("expected 1 row, but affected %d rows", rows)
 	}
 
-	go CacheSet(m.Redis, m.generateCacheKey(otp.ID), otp, 15*time.Minute)
+	go CacheSet(m.Redis, m.generateCacheKey(otp.ID), otp, otpCacheDuration)
 
 	return nil
 }

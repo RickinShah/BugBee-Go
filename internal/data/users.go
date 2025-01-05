@@ -21,6 +21,10 @@ var (
 	ErrDuplicateUsername = errors.New("duplicate username")
 )
 
+const (
+	userCacheDuration = 30 * time.Minute
+)
+
 var AnonymousUser = &User{}
 
 type User struct {
@@ -160,7 +164,7 @@ func (m UserModel) Insert(user *User) error {
 	go func() {
 		userCopy := *user
 		userCopy.all = true
-		CacheSet(m.Redis, m.generateCacheKey(user.Username), &userCopy, 15*time.Minute)
+		CacheSet(m.Redis, m.generateCacheKey(userCopy.Username), &userCopy, userCacheDuration)
 	}()
 
 	return nil
@@ -212,7 +216,7 @@ func (m UserModel) GetByEmailOrUsername(email string, username string) (*User, e
 	go func() {
 		userCopy := user
 		userCopy.all = true
-		CacheSet(m.Redis, m.generateCacheKey(user.Username), &userCopy, 15*time.Minute)
+		CacheSet(m.Redis, m.generateCacheKey(userCopy.Username), &userCopy, userCacheDuration)
 	}()
 
 	return &user, nil
@@ -258,7 +262,7 @@ func (m UserModel) Update(user *User) error {
 	go func() {
 		userCopy := *user
 		userCopy.all = true
-		CacheSet(m.Redis, m.generateCacheKey(user.Username), &userCopy, 15*time.Minute)
+		CacheSet(m.Redis, m.generateCacheKey(userCopy.Username), &userCopy, userCacheDuration)
 	}()
 
 	return nil
@@ -267,9 +271,19 @@ func (m UserModel) Update(user *User) error {
 func (m UserModel) GetForToken(tokenScope, tokenPlaintext string) (*User, error) {
 	tokenHash := sha256.Sum256([]byte(tokenPlaintext))
 
+	userJSON, err := CacheGet(m.Redis, m.generateCacheKeyForToken(tokenScope, tokenHash))
+
+	if nil == err {
+		var user User
+		err := json.Unmarshal([]byte(userJSON), &user)
+		if nil == err {
+			return &user, nil
+		}
+	}
+
 	query := `
 		SELECT users.user_pid, users.created_at, users.name, users.username, users.email, users.password_hash,
-			   users.activated, users.version, users.show_nsfw, users.bio
+			   users.activated, users.version, users.show_nsfw, users.bio, tokens.expiry
 		FROM users
 		INNER JOIN tokens
 		ON users.user_pid = tokens.user_id
@@ -281,11 +295,12 @@ func (m UserModel) GetForToken(tokenScope, tokenPlaintext string) (*User, error)
 	args := []interface{}{tokenHash[:], tokenScope, time.Now()}
 
 	var user User
+	var token Token
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	err := m.DB.QueryRowContext(ctx, query, args...).Scan(
+	err = m.DB.QueryRowContext(ctx, query, args...).Scan(
 		&user.ID,
 		&user.CreatedAt,
 		&user.Name,
@@ -296,6 +311,7 @@ func (m UserModel) GetForToken(tokenScope, tokenPlaintext string) (*User, error)
 		&user.Version,
 		&user.ShowNsfw,
 		&user.Bio,
+		&token.Expiry,
 	)
 
 	if err != nil {
@@ -310,7 +326,21 @@ func (m UserModel) GetForToken(tokenScope, tokenPlaintext string) (*User, error)
 	go func() {
 		userCopy := user
 		userCopy.all = true
-		CacheSet(m.Redis, m.generateCacheKey(user.Username), &userCopy, 15*time.Minute)
+
+		remainingTime := time.Until(token.Expiry)
+		maxCacheDuration := 24*time.Hour - 5*time.Minute
+		cacheDuration := remainingTime - 5*time.Minute
+
+		if cacheDuration > maxCacheDuration {
+			cacheDuration = maxCacheDuration
+		}
+
+		if cacheDuration <= 0 {
+			return
+		}
+
+		CacheSet(m.Redis, m.generateCacheKeyForToken(tokenScope, tokenHash), &userCopy, cacheDuration)
+		CacheSet(m.Redis, m.generateCacheKey(userCopy.Username), &userCopy, userCacheDuration)
 	}()
 
 	return &user, nil
@@ -318,4 +348,8 @@ func (m UserModel) GetForToken(tokenScope, tokenPlaintext string) (*User, error)
 
 func (m UserModel) generateCacheKey(username string) string {
 	return fmt.Sprintf("user:%s", username)
+}
+
+func (m UserModel) generateCacheKeyForToken(tokenScope string, tokenHash [32]byte) string {
+	return fmt.Sprintf("token:%s:%s", tokenScope, tokenHash)
 }

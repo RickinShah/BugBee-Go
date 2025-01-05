@@ -7,7 +7,6 @@ import (
 	"database/sql"
 	"encoding/base32"
 	"encoding/json"
-	"fmt"
 	"github.com/go-redis/redis/v8"
 	"time"
 
@@ -112,8 +111,4 @@ func (m TokenModel) DeleteAllForUser(scope string, userID int64) error {
 
 	_, err := m.DB.ExecContext(ctx, query, scope, userID)
 	return err
-}
-
-func (m TokenModel) generateCacheKey(scope string, userID int64) string {
-	return fmt.Sprintf("token:%d:%s", userID, scope)
 }
