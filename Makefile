@@ -28,6 +28,10 @@ build/api:
 # ==================================================================================== #
 
 ## run/api: run the cmd/api application
+.PHONY: run/frontend
+run/frontend:
+	@npm run dev --prefix ./frontend
+
 .PHONY: run/api
 run/api: build/api
 	@./bin/api -db-dsn=${BUGBEE_DB_DSN} -smtp-username=${SMTP_USERNAME} -smtp-password=${SMTP_PASSWORD} -encryption-key=${ENCRYPTION_KEY} -smtp-sender=${SMTP_SENDER}

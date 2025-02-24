@@ -1,8 +1,9 @@
 package main
 
 import (
-	"github.com/julienschmidt/httprouter"
 	"net/http"
+
+	"github.com/julienschmidt/httprouter"
 )
 
 func (app *application) routes() http.Handler {
@@ -14,18 +15,24 @@ func (app *application) routes() http.Handler {
 	router.HandlerFunc(http.MethodGet, "/v1/healthcheck", app.healthcheckHandler)
 
 	router.HandlerFunc(http.MethodGet, "/v1/posts/:id", app.requireActivatedUser(app.showPostHandler))
-	router.HandlerFunc(http.MethodPost, "/v1/posts/:id", app.requireActivatedUser(app.createPostHandler))
+	//router.HandlerFunc(http.MethodPost, "/v1/posts", app.requireActivatedUser(app.createPostHandler))
+	router.HandlerFunc(http.MethodPost, "/v1/posts", app.createPostHandler)
 	router.HandlerFunc(http.MethodPut, "/v1/posts/:id", app.requireActivatedUser(app.updatePostHandler))
 	router.HandlerFunc(http.MethodDelete, "/v1/posts/:id", app.requireActivatedUser(app.deletePostHandler))
 
 	router.HandlerFunc(http.MethodPost, "/v1/otp", app.generateOtpHandler)
 	router.HandlerFunc(http.MethodPost, "/v1/otp/validate", app.validateOtpHandler)
+	router.HandlerFunc(http.MethodPatch, "/v1/users/forgotpassword", app.passwordResetHandler)
 
 	router.HandlerFunc(http.MethodPost, "/v1/users", app.registerUserHandler)
 	router.HandlerFunc(http.MethodPut, "/v1/users/activated", app.activateUserHandler)
+	router.HandlerFunc(http.MethodPut, "/v1/users/email", app.insertEmailHandler)
+	router.HandlerFunc(http.MethodPut, "/v1/users/username", app.insertUsernameHandler)
 
 	router.HandlerFunc(http.MethodPost, "/v1/tokens/authentication", app.createAuthenticationHandler)
 
+	// router.HandlerFunc(http.MethodPost, "/v1/posts/:post_id/comments", app.createCommentHandler)
+
 	//return app.recoverPanic(app.rateLimit(router))
-	return app.recoverPanic(app.authenticate(router))
+	return app.recoverPanic(app.enableCORS(app.authenticate(router)))
 }

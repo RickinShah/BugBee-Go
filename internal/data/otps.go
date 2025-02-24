@@ -19,7 +19,7 @@ const (
 )
 
 type OTP struct {
-	ID        int64      `json:"user_pid" db:"user_pid"`
+	ID        int64      `json:"user_id" db:"user_pid"`
 	CreatedAt time.Time  `json:"created_at" db:"created_at"`
 	OTP       otpDetails `json:"otp" db:"otp"`
 	Expiry    time.Time  `json:"expiry" db:"expiry"`

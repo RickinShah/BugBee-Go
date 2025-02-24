@@ -41,7 +41,7 @@ func (app *application) generateOtpHandler(w http.ResponseWriter, r *http.Reques
 	}
 
 	go func() {
-		args := map[string]interface{}{
+		args := map[string]any{
 			"Code": otp.OTP.Code,
 			"Mail": user.Email,
 			"Name": user.Name,
@@ -52,7 +52,7 @@ func (app *application) generateOtpHandler(w http.ResponseWriter, r *http.Reques
 		}
 	}()
 
-	err = app.writeJson(w, http.StatusCreated, envelope{"otp": "sent successfully"}, nil)
+	err = app.writeJson(w, http.StatusOK, envelope{"username": user.Username}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}
@@ -72,20 +72,20 @@ func (app *application) validateOtpHandler(w http.ResponseWriter, r *http.Reques
 
 	v := validator.New()
 
-	if data.ValidateOTPCode(v, input.Otp); !v.Valid() {
-		app.failedValidationResponse(w, r, v.Errors)
-		return
-	}
-
 	user, err := app.models.Users.GetByEmailOrUsername(input.Username, input.Username)
-
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):
+			v.AddError("username/email", "doesn't exist")
 			app.notFoundResponse(w, r)
 		default:
 			app.serverErrorResponse(w, r, err)
 		}
+		return
+	}
+
+	if data.ValidateOTPCode(v, input.Otp); !v.Valid() {
+		app.failedValidationResponse(w, r, v.Errors)
 		return
 	}
 
@@ -111,6 +111,7 @@ func (app *application) validateOtpHandler(w http.ResponseWriter, r *http.Reques
 	if !valid {
 		v.AddError("otp", "is invalid")
 		app.unauthorizedResponse(w, r, v.Errors)
+		return
 	}
 
 	if err = app.models.OTPs.Delete(user.ID); err != nil {
@@ -118,7 +119,14 @@ func (app *application) validateOtpHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	err = app.writeJson(w, http.StatusOK, envelope{"otp": "verified successfully"}, nil)
+	token, err := app.models.Tokens.New(user.ID, 1*time.Hour, data.ScopePasswordReset)
+
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	err = app.writeJson(w, http.StatusOK, envelope{"password_reset_token": token}, nil)
 
 	if err != nil {
 		app.serverErrorResponse(w, r, err)

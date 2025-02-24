@@ -1,3 +1,4 @@
 .envrc
 bin/
 .idea
+frontend/node_modules

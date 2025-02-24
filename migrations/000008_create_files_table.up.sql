@@ -4,8 +4,8 @@ CREATE TABLE IF NOT EXISTS files (
     path TEXT NOT NULL,
     type TEXT NOT NULL,
     size bigint NOT NULL CHECK (size <= 104857600),
-    nsfw_flag bool NOT NULL DEFAULT false,
+    is_nsfw bool NOT NULL DEFAULT false,
     created_at timestamp(0) with time zone NOT NULL DEFAULT now()
 );
 
-CREATE INDEX idx_files_post_id ON files (post_id);
+CREATE INDEX IF NOT EXISTS idx_files_post_id ON files (post_id);

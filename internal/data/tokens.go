@@ -7,8 +7,9 @@ import (
 	"database/sql"
 	"encoding/base32"
 	"encoding/json"
-	"github.com/go-redis/redis/v8"
 	"time"
+
+	"github.com/go-redis/redis/v8"
 
 	"github.com/RickinShah/BugBee/internal/validator"
 )
@@ -16,24 +17,26 @@ import (
 const (
 	ScopeActivation     = "activation"
 	ScopeAuthentication = "authentication"
+	ScopePasswordReset  = "password_reset"
+	ScopePendingUser    = "pending_user"
 )
 
 type Token struct {
 	Plaintext string    `json:"token"`
-	Hash      []byte    `json:"-"`
-	UserID    int64     `json:"-"`
+	Hash      []byte    `json:"hash"`
+	UserID    int64     `json:"user_id"`
 	Expiry    time.Time `json:"expiry"`
-	Scope     string    `json:"-"`
+	Scope     string    `json:"scope"`
 	all       bool
 }
 
 func (t *Token) MarshalJSON() ([]byte, error) {
-	token := make(map[string]interface{}, 5)
+	token := make(map[string]any, 5)
 	token["token"] = t.Plaintext
 	token["expiry"] = t.Expiry
 	if t.all {
 		delete(token, "token")
-		token["Hash"] = t.Hash
+		token["hash"] = t.Hash
 		token["user_id"] = t.UserID
 		token["scope"] = t.Scope
 	}
@@ -87,7 +90,7 @@ func (m TokenModel) Insert(token *Token) error {
 		INSERT INTO tokens (Hash, user_id, expiry, scope)
 		VALUES ($1, $2, $3, $4)`
 
-	args := []interface{}{token.Hash, token.UserID, token.Expiry, token.Scope}
+	args := []any{token.Hash, token.UserID, token.Expiry, token.Scope}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()

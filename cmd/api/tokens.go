@@ -2,10 +2,11 @@ package main
 
 import (
 	"errors"
-	"github.com/RickinShah/BugBee/internal/data"
-	"github.com/RickinShah/BugBee/internal/validator"
 	"net/http"
 	"time"
+
+	"github.com/RickinShah/BugBee/internal/data"
+	"github.com/RickinShah/BugBee/internal/validator"
 )
 
 func (app *application) createAuthenticationHandler(w http.ResponseWriter, r *http.Request) {
@@ -22,9 +23,12 @@ func (app *application) createAuthenticationHandler(w http.ResponseWriter, r *ht
 
 	v := validator.New()
 
-	data.ValidatePasswordPlainText(v, input.Password)
+	if data.ValidateUsernameOrEmail(v, input.Username); !v.Valid() {
+		app.failedValidationResponse(w, r, v.Errors)
+		return
+	}
 
-	if !v.Valid() {
+	if data.ValidatePasswordPlainText(v, input.Password); !v.Valid() {
 		app.failedValidationResponse(w, r, v.Errors)
 		return
 	}

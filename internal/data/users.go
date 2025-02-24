@@ -28,17 +28,18 @@ const (
 var AnonymousUser = &User{}
 
 type User struct {
-	ID        int64     `json:"user_pid,string" db:"user_pid"`
-	CreatedAt time.Time `json:"-" db:"created_at"`
-	Name      string    `json:"name" db:"name"`
-	Username  string    `json:"username" db:"username"`
-	Email     string    `json:"email" db:"email"`
-	Password  password  `json:"password" db:"password"`
-	Activated bool      `json:"activated" db:"activated"`
-	Bio       string    `json:"bio" db:"bio"`
-	ShowNsfw  bool      `json:"show_nsfw" db:"show_nsfw"`
-	Version   int32     `json:"-" db:"version"`
-	all       bool
+	ID         int64     `json:"user_id,string" db:"user_pid"`
+	CreatedAt  time.Time `json:"created_at" db:"created_at"`
+	Name       string    `json:"name" db:"name"`
+	Username   string    `json:"username" db:"username"`
+	Email      string    `json:"email" db:"email"`
+	Password   password  `json:"password" db:"password"`
+	Activated  bool      `json:"activated" db:"activated"`
+	Bio        string    `json:"bio" db:"bio"`
+	ProfilePic string    `json:"profile_pic" db:"profile_pic"`
+	ShowNsfw   bool      `json:"show_nsfw" db:"show_nsfw"`
+	Version    int32     `json:"version" db:"version"`
+	all        bool
 }
 
 type password struct {
@@ -47,21 +48,25 @@ type password struct {
 }
 
 func (u *User) MarshalJSON() ([]byte, error) {
-	user := make(map[string]interface{}, 11)
-	user["user_pid"] = strconv.FormatInt(u.ID, 10)
+	user := make(map[string]any, 11)
+	user["user_id"] = strconv.FormatInt(u.ID, 10)
 	user["name"] = u.Name
 	user["email"] = u.Email
 	user["username"] = u.Username
-	user["activated"] = u.Activated
 	user["bio"] = u.Bio
 	user["show_nsfw"] = u.ShowNsfw
 	if u.all {
+		user["activated"] = u.Activated
 		user["created_at"] = u.CreatedAt
 		user["version"] = u.Version
 		user["password"] = u.Password
 	}
 
 	return json.Marshal(user)
+}
+
+func (u *User) SetIncludeAll(include bool) {
+	u.all = include
 }
 
 func (u *User) IsAnonymous() bool {
@@ -100,6 +105,12 @@ func ValidateEmail(v *validator.Validator, email string) {
 	v.Check(validator.Matches(email, validator.EmailRX), "email", "must be a valid email address")
 }
 
+func ValidateConfirmPassword(v *validator.Validator, password string, confirmPassword string) {
+	v.Check(password != "", "password", "must be provided")
+	v.Check(confirmPassword != "", "confirm password", "must be provided")
+	v.Check(password == confirmPassword, "password", "doesn't match")
+}
+
 func ValidatePasswordPlainText(v *validator.Validator, password string) {
 	v.Check(password != "", "password", "must be provided")
 	v.Check(len(password) >= 8, "password", "must not be less than 8 characters")
@@ -113,12 +124,21 @@ func ValidateBio(v *validator.Validator, bio string) {
 func ValidateUsername(v *validator.Validator, username string) {
 	v.Check(username != "", "username", "must be provided")
 	v.Check(len(username) <= 30, "username", "must not be more than 30 characters")
+	v.Check(validator.Matches(username, validator.UsernameRX), "username", "should only contain alphanumeric characters and underscore")
+}
+
+func ValidateUsernameOrEmail(v *validator.Validator, username string) {
+	v.Check(username != "", "username/email", "must be provided")
+	v.Check(validator.Matches(username, validator.UsernameEmailRX), "username/email", "is not valid")
+}
+
+func ValidateName(v *validator.Validator, name string) {
+	// v.Check(name != "", "name", "must be provided")
+	v.Check(len(name) <= 50, "name", "must not be more than 500 characters")
 }
 
 func ValidateUser(v *validator.Validator, user *User) {
-	v.Check(user.Name != "", "name", "must be provided")
-	v.Check(len(user.Name) <= 50, "name", "must not be more than 500 characters")
-
+	ValidateName(v, user.Name)
 	ValidateEmail(v, user.Email)
 	ValidateUsername(v, user.Username)
 	ValidateBio(v, user.Bio)
@@ -143,7 +163,7 @@ func (m UserModel) Insert(user *User) error {
 		VALUES ($1, $2, $3, $4, $5, $6)
 		RETURNING user_pid, created_at, version`
 
-	args := []interface{}{user.Name, user.Username, user.Email, user.Password.Hash, user.Activated, user.Bio}
+	args := []any{user.Name, user.Username, user.Email, user.Password.Hash, user.Activated, user.Bio}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -163,7 +183,7 @@ func (m UserModel) Insert(user *User) error {
 
 	go func() {
 		userCopy := *user
-		userCopy.all = true
+		userCopy.SetIncludeAll(true)
 		CacheSet(m.Redis, m.generateCacheKey(userCopy.Username), &userCopy, userCacheDuration)
 	}()
 
@@ -190,7 +210,7 @@ func (m UserModel) GetByEmailOrUsername(email string, username string) (*User, e
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	args := []interface{}{email, username}
+	args := []any{email, username}
 	err = m.DB.QueryRowContext(ctx, query, args...).Scan(
 		&user.ID,
 		&user.CreatedAt,
@@ -215,7 +235,7 @@ func (m UserModel) GetByEmailOrUsername(email string, username string) (*User, e
 
 	go func() {
 		userCopy := user
-		userCopy.all = true
+		userCopy.SetIncludeAll(true)
 		CacheSet(m.Redis, m.generateCacheKey(userCopy.Username), &userCopy, userCacheDuration)
 	}()
 
@@ -232,7 +252,7 @@ func (m UserModel) Update(user *User) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	args := []interface{}{
+	args := []any{
 		user.Name,
 		user.Username,
 		user.Email,
@@ -261,7 +281,7 @@ func (m UserModel) Update(user *User) error {
 
 	go func() {
 		userCopy := *user
-		userCopy.all = true
+		userCopy.SetIncludeAll(true)
 		CacheSet(m.Redis, m.generateCacheKey(userCopy.Username), &userCopy, userCacheDuration)
 	}()
 
@@ -292,10 +312,10 @@ func (m UserModel) GetForToken(tokenScope, tokenPlaintext string) (*User, error)
 		AND tokens.expiry > $3
 	`
 
-	args := []interface{}{tokenHash[:], tokenScope, time.Now()}
+	args := []any{tokenHash[:], tokenScope, time.Now()}
 
-	var user User
-	var token Token
+	user := User{}
+	token := Token{}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -325,15 +345,13 @@ func (m UserModel) GetForToken(tokenScope, tokenPlaintext string) (*User, error)
 
 	go func() {
 		userCopy := user
-		userCopy.all = true
+		userCopy.SetIncludeAll(true)
 
 		remainingTime := time.Until(token.Expiry)
 		maxCacheDuration := 24*time.Hour - 5*time.Minute
 		cacheDuration := remainingTime - 5*time.Minute
 
-		if cacheDuration > maxCacheDuration {
-			cacheDuration = maxCacheDuration
-		}
+		cacheDuration = min(cacheDuration, maxCacheDuration)
 
 		if cacheDuration <= 0 {
 			return
