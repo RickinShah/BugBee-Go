@@ -13,21 +13,21 @@ var (
 )
 
 type Models struct {
-	Posts  PostModel
-	Users  UserModel
-	Tokens TokenModel
-	OTPs   OTPModel
-	// Comments     CommentModel
+	Posts        PostModel
+	Users        UserModel
+	Tokens       TokenModel
+	OTPs         OTPModel
+	Comments     CommentModel
 	PendingUsers PendingUserModel
 }
 
 func NewModels(db *sql.DB, redis *redis.Client) Models {
 	return Models{
-		Posts:  PostModel{DB: db, Redis: redis},
-		Users:  UserModel{DB: db, Redis: redis},
-		Tokens: TokenModel{DB: db, Redis: redis},
-		OTPs:   OTPModel{DB: db, Redis: redis},
-		// Comments:     CommentModel{DB: db, Redis: redis},
+		Posts:        PostModel{DB: db, Redis: redis},
+		Users:        UserModel{DB: db, Redis: redis},
+		Tokens:       TokenModel{DB: db, Redis: redis},
+		OTPs:         OTPModel{DB: db, Redis: redis},
+		Comments:     CommentModel{DB: db, Redis: redis},
 		PendingUsers: PendingUserModel{DB: db, Redis: redis},
 	}
 }

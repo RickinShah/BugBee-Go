@@ -1,11 +1,15 @@
 package main
 
 import (
-	"database/sql"
 	"errors"
 	"fmt"
+	"image/jpeg"
+	"io"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/RickinShah/BugBee/internal/data"
@@ -34,11 +38,20 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 
 	pendingUser, err := app.models.PendingUsers.Get(input.RegID)
 
+	if pendingUser.Username == nil {
+		v.AddError("username", "must be provided")
+		app.failedValidationResponse(w, r, v.Errors)
+		return
+	}
+
 	user := &data.User{
 		Email:     pendingUser.Email,
-		Username:  pendingUser.Username.String,
-		Name:      pendingUser.Name.String,
+		Username:  *pendingUser.Username,
 		Activated: false,
+	}
+
+	if pendingUser.Name != nil {
+		user.Name = pendingUser.Name
 	}
 
 	err = user.Password.Set(input.Password)
@@ -84,7 +97,7 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		embedData := map[string]any{
 			"activationToken": token.Plaintext,
 			"userID":          user.ID,
-			"url":             fmt.Sprintf("%s://%s:%d", app.config.protocol, app.config.host, app.config.port),
+			"url":             fmt.Sprintf("%s://%s:%d", app.config.protocol, app.config.host, app.config.clientPort),
 		}
 		err = app.mailer.Send(user.Email, "user_welcome.tmpl", embedData)
 		if err != nil {
@@ -130,7 +143,7 @@ func (app *application) activateUserHandler(w http.ResponseWriter, r *http.Reque
 
 	user.Activated = true
 
-	err = app.models.Users.Update(user)
+	err = app.models.Users.Update(user, data.ScopeActivation, input.TokenPlainText)
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrEditConflict):
@@ -155,11 +168,9 @@ func (app *application) activateUserHandler(w http.ResponseWriter, r *http.Reque
 
 func (app *application) updateUserHandler(w http.ResponseWriter, r *http.Request) {
 	var input struct {
-		Email           string  `json:"email"`
-		Name            *string `json:"name"`
-		Username        *string `json:"username"`
-		Password        *string `json:"password"`
-		ConfirmPassword *string `json:"confirm_password"`
+		Email    string  `json:"email"`
+		Name     *string `json:"name"`
+		Username *string `json:"username"`
 	}
 
 	err := app.readJson(w, r, &input)
@@ -180,24 +191,11 @@ func (app *application) updateUserHandler(w http.ResponseWriter, r *http.Request
 	}
 
 	if input.Name != nil {
-		user.Name = *input.Name
+		user.Name = input.Name
 	}
 
 	if input.Username != nil {
 		user.Username = *input.Username
-	}
-
-	if input.Password != nil {
-
-		if input.ConfirmPassword == nil {
-			app.invalidCredentialsResponse(w, r)
-			return
-		}
-		err = user.Password.Set(*input.Password)
-		if err != nil {
-			app.serverErrorResponse(w, r, err)
-			return
-		}
 	}
 
 	v := validator.New()
@@ -227,7 +225,7 @@ func (app *application) updateUserHandler(w http.ResponseWriter, r *http.Request
 
 func (app *application) passwordResetHandler(w http.ResponseWriter, r *http.Request) {
 	var input struct {
-		TokenPlainText  string `json:"token"`
+		TokenPlainText  string `json:"reset_token"`
 		Password        string `json:"password"`
 		ConfirmPassword string `json:"confirm_password"`
 	}
@@ -297,7 +295,7 @@ func (app *application) passwordResetHandler(w http.ResponseWriter, r *http.Requ
 
 }
 
-func (app *application) insertEmailHandler(w http.ResponseWriter, r *http.Request) {
+func (app *application) registerEmailHandler(w http.ResponseWriter, r *http.Request) {
 	var input struct {
 		Email string `json:"email"`
 	}
@@ -341,13 +339,7 @@ func (app *application) insertEmailHandler(w http.ResponseWriter, r *http.Reques
 
 	err = app.models.PendingUsers.InsertEmail(user)
 	if err != nil {
-		switch {
-		case errors.Is(err, data.ErrDuplicateEmail):
-			v.AddError("email", "a user with this email address already exists")
-			app.failedValidationResponse(w, r, v.Errors)
-		default:
-			app.serverErrorResponse(w, r, err)
-		}
+		app.serverErrorResponse(w, r, err)
 		return
 	}
 
@@ -358,11 +350,11 @@ func (app *application) insertEmailHandler(w http.ResponseWriter, r *http.Reques
 
 }
 
-func (app *application) insertUsernameHandler(w http.ResponseWriter, r *http.Request) {
+func (app *application) registerUsernameHandler(w http.ResponseWriter, r *http.Request) {
 	var input struct {
-		RegID    int64  `json:"reg_id,string"`
-		Username string `json:"username"`
-		Name     string `json:"name"`
+		RegID    int64   `json:"reg_id,string"`
+		Username string  `json:"username"`
+		Name     *string `json:"name"`
 	}
 
 	err := app.readJson(w, r, &input)
@@ -399,8 +391,10 @@ func (app *application) insertUsernameHandler(w http.ResponseWriter, r *http.Req
 	}
 
 	user, err := app.models.PendingUsers.Get(input.RegID)
-	user.Username = sql.NullString{String: input.Username, Valid: true}
-	user.Name = sql.NullString{String: input.Name, Valid: true}
+	user.Username = &input.Username
+	if input.Name != nil {
+		user.Name = input.Name
+	}
 
 	err = app.models.PendingUsers.InsertUsername(user)
 	if err != nil {
@@ -419,4 +413,116 @@ func (app *application) insertUsernameHandler(w http.ResponseWriter, r *http.Req
 		app.serverErrorResponse(w, r, err)
 	}
 
+}
+
+func (app *application) updateProfileHandler(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseMultipartForm(10 << 20)
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	file, header, err := r.FormFile("profile_pic")
+	noFileFound := false
+	if err != nil {
+		switch {
+		case errors.Is(err, http.ErrMissingFile):
+			noFileFound = true
+		default:
+			app.badRequestResponse(w, r, err)
+			return
+		}
+	}
+
+	user := app.contextGetUser(r)
+
+	if !noFileFound {
+		defer file.Close()
+		img, err := jpeg.Decode(file)
+		if err != nil {
+			app.badRequestResponse(w, r, fmt.Errorf("invalid image: %v", err))
+			return
+		}
+
+		width := img.Bounds().Dx()
+		height := img.Bounds().Dy()
+
+		if width != height {
+			app.badRequestResponse(w, r, fmt.Errorf("image must be square"))
+			return
+		}
+
+		path := filepath.Join(app.config.storagePath, "profiles")
+		err = os.MkdirAll(path, os.ModePerm)
+		if err != nil {
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+
+		fileExtension := filepath.Ext(header.Filename)
+		filePath := filepath.Join(path, fmt.Sprintf("%s%s", user.Username, fileExtension))
+		dst, err := os.Create(filePath)
+		if err != nil {
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+		defer dst.Close()
+
+		file.Seek(0, io.SeekStart)
+		_, err = io.Copy(dst, file)
+		if err != nil {
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+
+	}
+
+	name := strings.TrimSpace(r.FormValue("name"))
+
+	bio := strings.TrimSpace(r.FormValue("bio"))
+
+	v := validator.New()
+
+	if data.ValidateName(v, name); !v.Valid() {
+		app.failedValidationResponse(w, r, v.Errors)
+		return
+	}
+
+	if data.ValidateBio(v, bio); !v.Valid() {
+		app.failedValidationResponse(w, r, v.Errors)
+		return
+	}
+
+	if bio != "" {
+		user.Bio = &bio
+	}
+
+	if name != "" {
+		user.Name = &name
+	}
+
+	user.ProfilePic = !noFileFound
+
+	authorizationCookie, err := r.Cookie("auth_token")
+	if err != nil {
+		switch {
+		case errors.Is(err, http.ErrNoCookie):
+			break
+		default:
+			app.badRequestResponse(w, r, err)
+			return
+		}
+	}
+	err = app.models.Users.Update(user, data.ScopeAuthentication, authorizationCookie.Value)
+	app.contextSetUser(r, user)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	err = app.writeJson(w, http.StatusOK, envelope{"profile": "updated successfully"}, nil)
+
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
 }

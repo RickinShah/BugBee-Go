@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"strconv"
 	"time"
 
@@ -22,7 +23,8 @@ var (
 )
 
 const (
-	userCacheDuration = 30 * time.Minute
+	userCacheDuration  = 30 * time.Minute
+	tokenCacheDuration = 30 * time.Minute
 )
 
 var AnonymousUser = &User{}
@@ -30,13 +32,13 @@ var AnonymousUser = &User{}
 type User struct {
 	ID         int64     `json:"user_id,string" db:"user_pid"`
 	CreatedAt  time.Time `json:"created_at" db:"created_at"`
-	Name       string    `json:"name" db:"name"`
+	Name       *string   `json:"name" db:"name"`
 	Username   string    `json:"username" db:"username"`
 	Email      string    `json:"email" db:"email"`
 	Password   password  `json:"password" db:"password"`
 	Activated  bool      `json:"activated" db:"activated"`
-	Bio        string    `json:"bio" db:"bio"`
-	ProfilePic string    `json:"profile_pic" db:"profile_pic"`
+	Bio        *string   `json:"bio" db:"bio"`
+	ProfilePic bool      `json:"profile_pic" db:"profile_pic"`
 	ShowNsfw   bool      `json:"show_nsfw" db:"show_nsfw"`
 	Version    int32     `json:"version" db:"version"`
 	all        bool
@@ -55,6 +57,7 @@ func (u *User) MarshalJSON() ([]byte, error) {
 	user["username"] = u.Username
 	user["bio"] = u.Bio
 	user["show_nsfw"] = u.ShowNsfw
+	user["profile_pic"] = u.ProfilePic
 	if u.all {
 		user["activated"] = u.Activated
 		user["created_at"] = u.CreatedAt
@@ -133,15 +136,18 @@ func ValidateUsernameOrEmail(v *validator.Validator, username string) {
 }
 
 func ValidateName(v *validator.Validator, name string) {
-	// v.Check(name != "", "name", "must be provided")
 	v.Check(len(name) <= 50, "name", "must not be more than 500 characters")
 }
 
 func ValidateUser(v *validator.Validator, user *User) {
-	ValidateName(v, user.Name)
+	if user.Name != nil {
+		ValidateName(v, *user.Name)
+	}
 	ValidateEmail(v, user.Email)
 	ValidateUsername(v, user.Username)
-	ValidateBio(v, user.Bio)
+	if user.Bio != nil {
+		ValidateBio(v, *user.Bio)
+	}
 
 	if user.Password.plaintext != nil {
 		ValidatePasswordPlainText(v, *user.Password.plaintext)
@@ -201,7 +207,7 @@ func (m UserModel) GetByEmailOrUsername(email string, username string) (*User, e
 	}
 
 	query := `
-		SELECT user_pid, created_at, name, username, email, password_hash, activated, bio, show_nsfw, version
+		SELECT user_pid, created_at, name, username, email, password_hash, activated, bio, show_nsfw, profile_pic, version
 		FROM users
 		WHERE email = $1 OR username = $2`
 
@@ -221,6 +227,7 @@ func (m UserModel) GetByEmailOrUsername(email string, username string) (*User, e
 		&user.Activated,
 		&user.Bio,
 		&user.ShowNsfw,
+		&user.ProfilePic,
 		&user.Version,
 	)
 
@@ -242,11 +249,11 @@ func (m UserModel) GetByEmailOrUsername(email string, username string) (*User, e
 	return &user, nil
 }
 
-func (m UserModel) Update(user *User) error {
+func (m UserModel) Update(user *User, token ...string) error {
 	query := `
 		UPDATE users
-		SET name = $1, username = $2, email = $3, password_hash = $4, activated = $5, bio = $6, show_nsfw = $7, version = version + 1
-		WHERE user_pid = $8 AND version = $9
+		SET name = $1, username = $2, email = $3, password_hash = $4, activated = $5, bio = $6, show_nsfw = $7, profile_pic = $8, version = version + 1
+		WHERE user_pid = $9 AND version = $10
 		RETURNING version`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
@@ -260,6 +267,7 @@ func (m UserModel) Update(user *User) error {
 		user.Activated,
 		user.Bio,
 		user.ShowNsfw,
+		user.ProfilePic,
 		user.ID,
 		user.Version,
 	}
@@ -282,7 +290,11 @@ func (m UserModel) Update(user *User) error {
 	go func() {
 		userCopy := *user
 		userCopy.SetIncludeAll(true)
-		CacheSet(m.Redis, m.generateCacheKey(userCopy.Username), &userCopy, userCacheDuration)
+		if len(token) >= 2 && token[0] != "" && token[1] != "" {
+			tokenHash := sha256.Sum256([]byte(token[1]))
+			CacheDel(m.Redis, m.generateCacheKeyForToken(token[0], tokenHash))
+		}
+		CacheDel(m.Redis, m.generateCacheKey(userCopy.Username))
 	}()
 
 	return nil
@@ -297,13 +309,14 @@ func (m UserModel) GetForToken(tokenScope, tokenPlaintext string) (*User, error)
 		var user User
 		err := json.Unmarshal([]byte(userJSON), &user)
 		if nil == err {
+			log.Printf("Cache: %x", string(tokenHash[:]))
 			return &user, nil
 		}
 	}
 
 	query := `
 		SELECT users.user_pid, users.created_at, users.name, users.username, users.email, users.password_hash,
-			   users.activated, users.version, users.show_nsfw, users.bio, tokens.expiry
+			   users.activated, users.version, users.show_nsfw, users.profile_pic, users.bio, tokens.expiry
 		FROM users
 		INNER JOIN tokens
 		ON users.user_pid = tokens.user_id
@@ -330,6 +343,7 @@ func (m UserModel) GetForToken(tokenScope, tokenPlaintext string) (*User, error)
 		&user.Activated,
 		&user.Version,
 		&user.ShowNsfw,
+		&user.ProfilePic,
 		&user.Bio,
 		&token.Expiry,
 	)
@@ -348,17 +362,16 @@ func (m UserModel) GetForToken(tokenScope, tokenPlaintext string) (*User, error)
 		userCopy.SetIncludeAll(true)
 
 		remainingTime := time.Until(token.Expiry)
-		maxCacheDuration := 24*time.Hour - 5*time.Minute
-		cacheDuration := remainingTime - 5*time.Minute
+		maxCacheDuration := tokenCacheDuration
 
-		cacheDuration = min(cacheDuration, maxCacheDuration)
+		cacheDuration := min(remainingTime, maxCacheDuration)
 
 		if cacheDuration <= 0 {
 			return
 		}
 
-		CacheSet(m.Redis, m.generateCacheKeyForToken(tokenScope, tokenHash), &userCopy, cacheDuration)
 		CacheSet(m.Redis, m.generateCacheKey(userCopy.Username), &userCopy, userCacheDuration)
+		CacheSet(m.Redis, m.generateCacheKeyForToken(tokenScope, tokenHash), &userCopy, 30*time.Minute)
 	}()
 
 	return &user, nil
@@ -369,5 +382,5 @@ func (m UserModel) generateCacheKey(username string) string {
 }
 
 func (m UserModel) generateCacheKeyForToken(tokenScope string, tokenHash [32]byte) string {
-	return fmt.Sprintf("token:%s:%s", tokenScope, tokenHash)
+	return fmt.Sprintf("token:%s:%x", tokenScope, tokenHash)
 }

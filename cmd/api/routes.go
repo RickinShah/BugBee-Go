@@ -22,14 +22,16 @@ func (app *application) routes() http.Handler {
 
 	router.HandlerFunc(http.MethodPost, "/v1/otp", app.generateOtpHandler)
 	router.HandlerFunc(http.MethodPost, "/v1/otp/validate", app.validateOtpHandler)
-	router.HandlerFunc(http.MethodPatch, "/v1/users/forgotpassword", app.passwordResetHandler)
+	router.HandlerFunc(http.MethodPatch, "/v1/users/reset-password", app.passwordResetHandler)
 
 	router.HandlerFunc(http.MethodPost, "/v1/users", app.registerUserHandler)
 	router.HandlerFunc(http.MethodPut, "/v1/users/activated", app.activateUserHandler)
-	router.HandlerFunc(http.MethodPut, "/v1/users/email", app.insertEmailHandler)
-	router.HandlerFunc(http.MethodPut, "/v1/users/username", app.insertUsernameHandler)
+	router.HandlerFunc(http.MethodPatch, "/v1/register/email", app.registerEmailHandler)
+	router.HandlerFunc(http.MethodPatch, "/v1/register/username", app.registerUsernameHandler)
+	router.HandlerFunc(http.MethodPost, "/v1/profile/update", app.requireActivatedUser(app.updateProfileHandler))
 
 	router.HandlerFunc(http.MethodPost, "/v1/tokens/authentication", app.createAuthenticationHandler)
+	// router.HandlerFunc(http.MethodPost, "/v1/temp", app.tempHandler)
 
 	// router.HandlerFunc(http.MethodPost, "/v1/posts/:post_id/comments", app.createCommentHandler)
 

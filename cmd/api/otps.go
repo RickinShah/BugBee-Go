@@ -126,7 +126,7 @@ func (app *application) validateOtpHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	err = app.writeJson(w, http.StatusOK, envelope{"password_reset_token": token}, nil)
+	err = app.writeJson(w, http.StatusOK, envelope{"reset_token": token}, nil)
 
 	if err != nil {
 		app.serverErrorResponse(w, r, err)

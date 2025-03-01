@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash bytea NOT NULL,
     activated bool NOT NULL DEFAULT false,
     bio text CHECK (LENGTH(TRIM(bio)) <= 150),
-    profile_pic text,
+    profile_pic bool NOT NULL DEFAULT false,
     show_nsfw bool NOT NULL DEFAULT false,
     updated_at timestamp(0) with time zone NOT NULL DEFAULT NOW(),
     version int NOT NULL DEFAULT 1

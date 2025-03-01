@@ -3,11 +3,11 @@ package main
 import (
 	"errors"
 	"fmt"
+	"net/http"
+
 	"github.com/RickinShah/BugBee/internal/data"
 	"github.com/RickinShah/BugBee/internal/validator"
 	"golang.org/x/time/rate"
-	"net/http"
-	"strings"
 )
 
 func (app *application) recoverPanic(next http.Handler) http.Handler {
@@ -39,23 +39,39 @@ func (app *application) rateLimit(next http.Handler) http.Handler {
 func (app *application) authenticate(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		w.Header().Add("Vary", "Authorization")
+		// w.Header().Add("Vary", "Authorization")
 
-		authorizationHeader := r.Header.Get("Authorization")
+		// authorizationHeader := r.Header.Get("Authorization")
 
-		if authorizationHeader == "" {
-			r = app.contextSetUser(r, data.AnonymousUser)
-			next.ServeHTTP(w, r)
-			return
+		// if authorizationHeader == "" {
+		// 	r = app.contextSetUser(r, data.AnonymousUser)
+		// 	next.ServeHTTP(w, r)
+		// 	return
+		// }
+
+		// headerParts := strings.Split(authorizationHeader, " ")
+		// if len(headerParts) != 2 || headerParts[0] != "Bearer" {
+		// 	app.invalidCredentialsResponse(w, r)
+		// 	return
+		// }
+
+		// token := headerParts[1]
+
+		authorizationCookie, err := r.Cookie("auth_token")
+		if err != nil {
+			switch {
+			case errors.Is(err, http.ErrNoCookie):
+				app.contextSetUser(r, data.AnonymousUser)
+				next.ServeHTTP(w, r)
+				return
+			default:
+				app.badRequestResponse(w, r, err)
+				return
+
+			}
 		}
 
-		headerParts := strings.Split(authorizationHeader, " ")
-		if len(headerParts) != 2 || headerParts[0] != "Bearer" {
-			app.invalidCredentialsResponse(w, r)
-			return
-		}
-
-		token := headerParts[1]
+		token := authorizationCookie.Value
 
 		v := validator.New()
 

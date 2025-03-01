@@ -12,13 +12,13 @@ import (
 )
 
 type PendingUser struct {
-	ID        int64          `json:"user_id,string" db:"user_pid"`
-	Username  sql.NullString `json:"username" db:"username"`
-	Name      sql.NullString `json:"name" db:"name"`
-	Email     string         `json:"email" db:"email"`
-	CreatedAt time.Time      `json:"created_at" db:"created_at"`
-	Expiry    time.Time      `json:"expiry" db:"expiry"`
-	Version   int            `json:"version" db:"version"`
+	ID        int64     `json:"user_id,string" db:"user_pid"`
+	Username  *string   `json:"username" db:"username"`
+	Name      *string   `json:"name" db:"name"`
+	Email     string    `json:"email" db:"email"`
+	CreatedAt time.Time `json:"created_at" db:"created_at"`
+	Expiry    time.Time `json:"expiry" db:"expiry"`
+	Version   int       `json:"version" db:"version"`
 }
 
 type PendingUserModel struct {
@@ -90,7 +90,10 @@ func (m PendingUserModel) Delete(userID int64) error {
 
 func (m PendingUserModel) InsertEmail(user *PendingUser) error {
 	query := `
-	INSERT INTO pending_users (email) VALUES ($1) RETURNING user_pid
+		INSERT INTO pending_users (email) VALUES ($1)
+		ON CONFLICT (email) DO UPDATE
+		SET email = EXCLUDED.email
+		RETURNING user_pid
 	`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
