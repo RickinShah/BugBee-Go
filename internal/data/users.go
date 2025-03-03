@@ -40,6 +40,7 @@ type User struct {
 	Bio        *string   `json:"bio" db:"bio"`
 	ProfilePic bool      `json:"profile_pic" db:"profile_pic"`
 	ShowNsfw   bool      `json:"show_nsfw" db:"show_nsfw"`
+	UpdatedAt  time.Time `json:"updated_at" db:"updated_at"`
 	Version    int32     `json:"version" db:"version"`
 	all        bool
 }
@@ -63,6 +64,7 @@ func (u *User) MarshalJSON() ([]byte, error) {
 		user["created_at"] = u.CreatedAt
 		user["version"] = u.Version
 		user["password"] = u.Password
+		user["updated_at"] = u.UpdatedAt
 	}
 
 	return json.Marshal(user)
@@ -187,13 +189,65 @@ func (m UserModel) Insert(user *User) error {
 		}
 	}
 
-	go func() {
-		userCopy := *user
-		userCopy.SetIncludeAll(true)
-		CacheSet(m.Redis, m.generateCacheKey(userCopy.Username), &userCopy, userCacheDuration)
-	}()
+	go func(user User) {
+		user.SetIncludeAll(true)
+		CacheSet(m.Redis, m.generateCacheKey(user.Username), &user, userCacheDuration)
+	}(*user)
 
 	return nil
+}
+
+func (m UserModel) GetByUsername(username string) (*User, error) {
+	dataJSON, err := CacheGet(m.Redis, m.generateCacheKey(username))
+	if nil == err {
+		var user User
+		err := json.Unmarshal([]byte(dataJSON), &user)
+		if nil == err {
+			return &user, nil
+		}
+	}
+
+	query := `
+		SELECT user_pid, created_at, name, username, email, password_hash, activated, bio, show_nsfw, profile_pic, updated_at, version
+		FROM users
+		WHERE username = $1`
+
+	user := User{}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	args := []any{username}
+	err = m.DB.QueryRowContext(ctx, query, args...).Scan(
+		&user.ID,
+		&user.CreatedAt,
+		&user.Name,
+		&user.Username,
+		&user.Email,
+		&user.Password.Hash,
+		&user.Activated,
+		&user.Bio,
+		&user.ShowNsfw,
+		&user.ProfilePic,
+		&user.UpdatedAt,
+		&user.Version,
+	)
+
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, ErrRecordNotFound
+		default:
+			return nil, err
+		}
+	}
+
+	go func(user User) {
+		user.SetIncludeAll(true)
+		CacheSet(m.Redis, m.generateCacheKey(user.Username), &user, userCacheDuration)
+	}(user)
+
+	return &user, nil
 }
 
 func (m UserModel) GetByEmailOrUsername(email string, username string) (*User, error) {
@@ -207,7 +261,7 @@ func (m UserModel) GetByEmailOrUsername(email string, username string) (*User, e
 	}
 
 	query := `
-		SELECT user_pid, created_at, name, username, email, password_hash, activated, bio, show_nsfw, profile_pic, version
+		SELECT user_pid, created_at, name, username, email, password_hash, activated, bio, show_nsfw, profile_pic, updated_at, version
 		FROM users
 		WHERE email = $1 OR username = $2`
 
@@ -228,6 +282,7 @@ func (m UserModel) GetByEmailOrUsername(email string, username string) (*User, e
 		&user.Bio,
 		&user.ShowNsfw,
 		&user.ProfilePic,
+		&user.UpdatedAt,
 		&user.Version,
 	)
 
@@ -240,11 +295,10 @@ func (m UserModel) GetByEmailOrUsername(email string, username string) (*User, e
 		}
 	}
 
-	go func() {
-		userCopy := user
-		userCopy.SetIncludeAll(true)
-		CacheSet(m.Redis, m.generateCacheKey(userCopy.Username), &userCopy, userCacheDuration)
-	}()
+	go func(user User) {
+		user.SetIncludeAll(true)
+		CacheSet(m.Redis, m.generateCacheKey(user.Username), &user, userCacheDuration)
+	}(user)
 
 	return &user, nil
 }
@@ -252,7 +306,8 @@ func (m UserModel) GetByEmailOrUsername(email string, username string) (*User, e
 func (m UserModel) Update(user *User, token ...string) error {
 	query := `
 		UPDATE users
-		SET name = $1, username = $2, email = $3, password_hash = $4, activated = $5, bio = $6, show_nsfw = $7, profile_pic = $8, version = version + 1
+		SET name = $1, username = $2, email = $3, password_hash = $4, activated = $5, bio = $6, show_nsfw = $7,
+			profile_pic = $8, updated_at = now(), version = version + 1
 		WHERE user_pid = $9 AND version = $10
 		RETURNING version`
 
@@ -287,15 +342,14 @@ func (m UserModel) Update(user *User, token ...string) error {
 		}
 	}
 
-	go func() {
-		userCopy := *user
-		userCopy.SetIncludeAll(true)
+	go func(user User) {
+		user.SetIncludeAll(true)
 		if len(token) >= 2 && token[0] != "" && token[1] != "" {
 			tokenHash := sha256.Sum256([]byte(token[1]))
 			CacheDel(m.Redis, m.generateCacheKeyForToken(token[0], tokenHash))
 		}
-		CacheDel(m.Redis, m.generateCacheKey(userCopy.Username))
-	}()
+		CacheDel(m.Redis, m.generateCacheKey(user.Username))
+	}(*user)
 
 	return nil
 }
@@ -316,7 +370,7 @@ func (m UserModel) GetForToken(tokenScope, tokenPlaintext string) (*User, error)
 
 	query := `
 		SELECT users.user_pid, users.created_at, users.name, users.username, users.email, users.password_hash,
-			   users.activated, users.version, users.show_nsfw, users.profile_pic, users.bio, tokens.expiry
+			   users.activated, users.version, users.show_nsfw, users.profile_pic, users.updated_at, users.bio, tokens.expiry
 		FROM users
 		INNER JOIN tokens
 		ON users.user_pid = tokens.user_id
@@ -344,6 +398,7 @@ func (m UserModel) GetForToken(tokenScope, tokenPlaintext string) (*User, error)
 		&user.Version,
 		&user.ShowNsfw,
 		&user.ProfilePic,
+		&user.UpdatedAt,
 		&user.Bio,
 		&token.Expiry,
 	)
@@ -357,22 +412,20 @@ func (m UserModel) GetForToken(tokenScope, tokenPlaintext string) (*User, error)
 		}
 	}
 
-	go func() {
-		userCopy := user
-		userCopy.SetIncludeAll(true)
+	go func(user User) {
+		user.SetIncludeAll(true)
+		CacheSet(m.Redis, m.generateCacheKey(user.Username), &user, userCacheDuration)
 
 		remainingTime := time.Until(token.Expiry)
 		maxCacheDuration := tokenCacheDuration
+		cacheDurationForToken := min(remainingTime, maxCacheDuration)
 
-		cacheDuration := min(remainingTime, maxCacheDuration)
-
-		if cacheDuration <= 0 {
+		if cacheDurationForToken <= 0 {
 			return
 		}
 
-		CacheSet(m.Redis, m.generateCacheKey(userCopy.Username), &userCopy, userCacheDuration)
-		CacheSet(m.Redis, m.generateCacheKeyForToken(tokenScope, tokenHash), &userCopy, 30*time.Minute)
-	}()
+		CacheSet(m.Redis, m.generateCacheKeyForToken(tokenScope, tokenHash), &user, cacheDurationForToken)
+	}(user)
 
 	return &user, nil
 }

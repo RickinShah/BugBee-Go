@@ -14,8 +14,8 @@ import (
 	"github.com/RickinShah/BugBee/internal/validator"
 )
 
-func (app *application) readIDParam(r *http.Request) (int64, error) {
-	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+func (app *application) readIDParam(name string, r *http.Request) (int64, error) {
+	id, err := strconv.ParseInt(r.PathValue(name), 10, 64)
 
 	if err != nil || id < 1 {
 		return 0, errors.New("invalid id parameter")
@@ -24,7 +24,16 @@ func (app *application) readIDParam(r *http.Request) (int64, error) {
 	return id, nil
 }
 
-type envelope map[string]interface{}
+func (app *application) readUsernameParam(r *http.Request) (string, error) {
+	username := r.PathValue("username")
+
+	if username == "" {
+		return "", errors.New("invalid username parameter")
+	}
+	return username, nil
+}
+
+type envelope map[string]any
 
 func (app *application) writeJson(w http.ResponseWriter, status int, data envelope, headers http.Header) error {
 	js, err := json.MarshalIndent(data, "", "\t")
@@ -35,9 +44,6 @@ func (app *application) writeJson(w http.ResponseWriter, status int, data envelo
 
 	js = append(js, '\n')
 
-	// for key, value := range headers {
-	// 	w.Header()[key] = value
-	// }
 	maps.Copy(w.Header(), headers)
 
 	w.Header().Set("Content-Type", "application/json")
@@ -46,7 +52,7 @@ func (app *application) writeJson(w http.ResponseWriter, status int, data envelo
 	return nil
 }
 
-func (app *application) readJson(w http.ResponseWriter, r *http.Request, dst interface{}) error {
+func (app *application) readJson(w http.ResponseWriter, r *http.Request, dst any) error {
 	maxBytes := 1_048_576
 	r.Body = http.MaxBytesReader(w, r.Body, int64(maxBytes))
 

@@ -2,38 +2,74 @@ package main
 
 import (
 	"net/http"
-
-	"github.com/julienschmidt/httprouter"
 )
 
 func (app *application) routes() http.Handler {
-	router := httprouter.New()
+	router := http.NewServeMux()
 
-	router.NotFound = http.HandlerFunc(app.notFoundResponse)
-	router.MethodNotAllowed = http.HandlerFunc(app.methodNotAllowedResponse)
+	// router.NotFound = http.HandlerFunc(app.notFoundResponse)
+	// router.MethodNotAllowed = http.HandlerFunc(app.methodNotAllowedResponse)
 
-	router.HandlerFunc(http.MethodGet, "/v1/healthcheck", app.healthcheckHandler)
+	router.HandleFunc("GET /v1/healthcheck", app.healthcheckHandler)
 
-	router.HandlerFunc(http.MethodGet, "/v1/posts/:id", app.requireActivatedUser(app.showPostHandler))
-	//router.HandlerFunc(http.MethodPost, "/v1/posts", app.requireActivatedUser(app.createPostHandler))
-	router.HandlerFunc(http.MethodPost, "/v1/posts", app.createPostHandler)
-	router.HandlerFunc(http.MethodPut, "/v1/posts/:id", app.requireActivatedUser(app.updatePostHandler))
-	router.HandlerFunc(http.MethodDelete, "/v1/posts/:id", app.requireActivatedUser(app.deletePostHandler))
+	// User Sign Up and Settings
+	router.HandleFunc("POST /v1/users", app.registerUserHandler)
+	router.HandleFunc("PUT /v1/users/activated", app.activateUserHandler)
+	router.HandleFunc("PATCH /v1/register/email", app.registerEmailHandler)
+	router.HandleFunc("PATCH /v1/register/username", app.registerUsernameHandler)
+	router.HandleFunc("POST /v1/profile", app.requireActivatedUser(app.updateProfileHandler))
+	router.HandleFunc("GET /v1/users/{username}", app.getUserHandler)
+	// router.HandleFunc("DELETE /v1/users", app.requireAuthenticatedUser(app.deleteUserHandler))
 
-	router.HandlerFunc(http.MethodPost, "/v1/otp", app.generateOtpHandler)
-	router.HandlerFunc(http.MethodPost, "/v1/otp/validate", app.validateOtpHandler)
-	router.HandlerFunc(http.MethodPatch, "/v1/users/reset-password", app.passwordResetHandler)
+	// Token Generation and Login
+	router.HandleFunc("POST /v1/tokens/authentication", app.createAuthenticationHandler)
 
-	router.HandlerFunc(http.MethodPost, "/v1/users", app.registerUserHandler)
-	router.HandlerFunc(http.MethodPut, "/v1/users/activated", app.activateUserHandler)
-	router.HandlerFunc(http.MethodPatch, "/v1/register/email", app.registerEmailHandler)
-	router.HandlerFunc(http.MethodPatch, "/v1/register/username", app.registerUsernameHandler)
-	router.HandlerFunc(http.MethodPost, "/v1/profile/update", app.requireActivatedUser(app.updateProfileHandler))
+	// OTP and Forgot Password
+	router.HandleFunc("POST /v1/otp", app.generateOtpHandler)
+	router.HandleFunc("POST /v1/otp/validate", app.validateOtpHandler)
+	router.HandleFunc("PATCH /v1/users/reset-password", app.passwordResetHandler)
 
-	router.HandlerFunc(http.MethodPost, "/v1/tokens/authentication", app.createAuthenticationHandler)
-	// router.HandlerFunc(http.MethodPost, "/v1/temp", app.tempHandler)
+	// Communities
+	// router.HandleFunc("POST /v1/communities", app.createCommunityHandler)
+	// router.HandleFunc("POST /v1/communities/{id}", app.uploadPostHandler)
+	// router.HandleFunc("PATCH /v1/communities/{id}", app.updateCommunityHandler)
+	// router.HandleFunc("POST /v1/communities/{id}/roles", app.setRoleHandler)
+	// router.HandleFunc("POST /v1/communities/{id}/users/{username}/roles", app.assignUserRoleHandler)
+	// router.HandleFunc("POST /v1/communities/{id}/join", app.joinCommunityHandler)
+	// router.HandleFunc("GET /v1/communities/{id}/users", app.getAllUsersCommunityHandler)
+	// router.HandleFunc("DELETE /v1/communities/{id}/users/{username}", app.removeUserCommunityHandler)
+	// router.HandleFunc("DELETE /v1/communities/{id}", app.deleteCommunityHandler)
 
-	// router.HandlerFunc(http.MethodPost, "/v1/posts/:post_id/comments", app.createCommentHandler)
+	// Permissions
+	// router.HandleFunc("POST /v1/permissions", app.insertPermissionHandler)
+	// router.HandleFunc("DELETE /v1/permissions/{id}", app.deletePermissionHandler)
+
+	// Post
+	// router.HandleFunc("POST /v1/posts", app.createPostHandler)
+	// router.HandleFunc("GET /v1/posts/{id}", app.getPostHandler)
+	// router.HandleFunc("GET /v1/posts", app.getNextPostsHandler)
+	// router.HandleFunc("POST /v1/posts/{id}/upvotes", app.upvotePostHandler)
+	// router.HandleFunc("POST /v1/posts/{id}/downvotes", app.downvotePostHandler)
+	// router.HandleFunc("DELETE /v1/posts/{id}", app.deletePostHandler)
+	// router.HandleFunc("PATCH /v1/posts/{id}", app.updatePostHandler)
+
+	// Search
+	// router.HandleFunc("GET /v1/search/users", app.searchUsersHandler)
+	// router.HandleFunc("GET /v1/search/posts", app.searchPostsHandler)
+
+	// Comments & Replies
+	// router.HandleFunc("POST /v1/posts/{id}/comments", app.insertCommentHandler)
+	// router.HandleFunc("PATCH /v1/posts/{post_id}/comments/{comment_id}", app.updateCommentHandler)
+	// router.HandleFunc("DELETE /v1/posts/{post_id}/comments/{comment_id}", app.deleteCommentHandler)
+	// router.HandleFunc("POST /v1/posts/{post_id}/comments/{comment_id}/upvote", app.upvoteCommentHandler)
+	// router.HandleFunc("POST /v1/posts/{post_id}/comments/{comment_id}/downvote", app.downvoteCommentHandler)
+	// router.HandleFunc("POST /v1/posts/{post_id}/comments/{comment_id}/reply", app.replyCommentHandler)
+
+	// Follower & Following
+	// router.HandleFunc("POST /v1/users/{username}/follow", app.followUserHandler)
+	// router.HandleFunc("DELETE /v1/users/{username}/follow", app.unfollowUserHandler)
+	// router.HandleFunc("GET /v1/users/{username}/followers", app.getAllFollowersHandler)
+	// router.HandleFunc("GET /v1/users/{username}/following", app.getAllFollowingHandler)
 
 	//return app.recoverPanic(app.rateLimit(router))
 	return app.recoverPanic(app.enableCORS(app.authenticate(router)))

@@ -105,7 +105,7 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		}
 	})
 
-	err = app.writeJson(w, http.StatusCreated, envelope{"user": user}, nil)
+	err = app.writeJson(w, http.StatusCreated, envelope{"account": "created successfully!"}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}
@@ -370,7 +370,7 @@ func (app *application) registerUsernameHandler(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	_, err = app.models.Users.GetByEmailOrUsername(input.Username, input.Username)
+	_, err = app.models.Users.GetByUsername(input.Username)
 	usernameAlreadyExists := true
 	if err != nil {
 		switch {
@@ -525,4 +525,36 @@ func (app *application) updateProfileHandler(w http.ResponseWriter, r *http.Requ
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}
+}
+
+func (app *application) getUserHandler(w http.ResponseWriter, r *http.Request) {
+	username, err := app.readUsernameParam(r)
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	v := validator.New()
+
+	if data.ValidateUsername(v, username); !v.Valid() {
+		app.failedValidationResponse(w, r, v.Errors)
+		return
+	}
+
+	user, err := app.models.Users.GetByUsername(username)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			app.notFoundResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	err = app.writeJson(w, http.StatusOK, envelope{"user": user}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+
 }
