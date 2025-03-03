@@ -1,0 +1,14 @@
+@layer utilities {
+    .text-stroke {
+      -webkit-text-stroke: 1px;
+    }
+    .text-stroke-white {
+      -webkit-text-stroke-color: rgba(255, 255, 255, 0.434);
+    }
+    .text-stroke-black {
+      -webkit-text-stroke-color: rgba(0, 0, 0, 0.434);
+    }
+  }
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
