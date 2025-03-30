@@ -1,21 +1,73 @@
 const config = {
+    // host: "192.168.29.150",
     host: "localhost",
     protocol: "http",
-    port: "4000",
+    port: "80",
 };
 
-const onErrorDefault = (error) => {
+const showErrorNotification = (message) => {
+    // Remove existing notification if any
+
+    if (existingNotification) {
+        existingNotification.remove();
+    }
+
+    // Create a new notification
+    const notification = document.createElement("div");
+    notification.id = "error-notification";
+    notification.className =
+        "fixed top-5 right-5 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg animate-slide-in flex items-center";
+
+    // Error text
+    const messageText = document.createElement("span");
+    messageText.innerText = message;
+
+    // Close button
+    const closeButton = document.createElement("button");
+    closeButton.innerText = "✖";
+    closeButton.className = "ml-4 font-bold cursor-pointer";
+    closeButton.onclick = () => notification.remove();
+
+    // Append elements
+    notification.appendChild(messageText);
+    notification.appendChild(closeButton);
+    document.body.appendChild(notification);
+
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+        if (notification) notification.remove();
+    }, 5000);
+};
+
+export const onErrorDefault = (error) => {
+    let message = "";
     for (let key in error) {
         if (typeof error[key] === "object" && error[key] !== null) {
-            // console.log("${key}:", error[key]);
             for (let subKey in error[key]) {
-                alert(`${subKey}: ${error[key][subKey]}`);
+                // showErrorNotification(error[key][subKey]);
+                message += `${subKey}: ${error[key][subKey]}\n`;
             }
         } else {
-            alert(`${key}: ${error[key]}`);
+            // showErrorNotification(error[key]);
+            message += `${key}: ${error[key]}\n`;
         }
     }
+    console.log(message);
+    showErrorNotification(message);
 };
+
+// export const onErrorDefault = (error) => {
+//     for (let key in error) {
+//         if (typeof error[key] === "object" && error[key] !== null) {
+//             // console.log("${key}:", error[key]);
+//             for (let subKey in error[key]) {
+//                 alert(`${subKey}: ${error[key][subKey]}`);
+//             }
+//         } else {
+//             alert(`${key}: ${error[key]}`);
+//         }
+//     }
+// };
 
 export const getValueFromURL = (name) => {
     const queryString = window.location.search;
@@ -31,9 +83,9 @@ export const apiCall = async (
     credentials = null,
     isMultipart,
     onSuccess,
-    onError = onErrorDefault,
+    onError = null,
 ) => {
-    const baseUrl = `${config.protocol}://${config.host}:${config.port}`;
+    const baseUrl = `${config.protocol}://${config.host}:${config.port}/api`;
 
     try {
         const fetchOptions = {
@@ -56,13 +108,18 @@ export const apiCall = async (
 
         if (response.ok) {
             onSuccess(responseData);
-        } else if (response.status == 401) {
-            window.location.href = `${baseUrl}/`;
         } else {
-            onErrorDefault(responseData);
+            const errorHandler = onError || onErrorDefault;
+            errorHandler(responseData);
         }
     } catch (error) {
         // console.error("API Error: ", error);
-        onError(error);
+
+        const errorHandler = onError || onErrorDefault;
+        errorHandler(error);
     }
+};
+
+export const getMediaPath = (dirPath) => {
+    return `${config.protocol}://${config.host}:${config.port}/media${dirPath}`;
 };

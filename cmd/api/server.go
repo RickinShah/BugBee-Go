@@ -31,6 +31,12 @@ func (app *application) serve() error {
 
 		s := <-quit
 
+		// app.logger.PrintInfo("shutting down asynq worker", nil)
+		// app.asynqServer.Shutdown()
+
+		// app.logger.PrintInfo("waiting for background tasks", nil)
+		// app.wg.Wait()
+
 		app.logger.PrintInfo("shutting down server", map[string]string{
 			"signal": s.String(),
 		})

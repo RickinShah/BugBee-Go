@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS files (
-    file_pid bigint PRIMARY KEY,
+    file_pid bigint PRIMARY KEY DEFAULT next_id(),
     post_id bigint REFERENCES posts ON DELETE CASCADE,
     path TEXT NOT NULL,
     type TEXT NOT NULL,

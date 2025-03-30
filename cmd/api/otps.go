@@ -110,7 +110,7 @@ func (app *application) validateOtpHandler(w http.ResponseWriter, r *http.Reques
 
 	if !valid {
 		v.AddError("otp", "is invalid")
-		app.unauthorizedResponse(w, r, v.Errors)
+		app.failedValidationResponse(w, r, v.Errors)
 		return
 	}
 

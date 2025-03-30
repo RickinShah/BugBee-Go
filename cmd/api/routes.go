@@ -19,7 +19,9 @@ func (app *application) routes() http.Handler {
 	router.HandleFunc("PATCH /v1/register/username", app.registerUsernameHandler)
 	router.HandleFunc("POST /v1/profile", app.requireActivatedUser(app.updateProfileHandler))
 	router.HandleFunc("GET /v1/users/{username}", app.getUserHandler)
-	// router.HandleFunc("DELETE /v1/users", app.requireAuthenticatedUser(app.deleteUserHandler))
+	router.HandleFunc("GET /v1/users", app.searchUserHandler)
+	router.HandleFunc("DELETE /v1/users", app.requireAuthenticatedUser(app.deleteUserHandler))
+	router.HandleFunc("POST /v1/users/logout", app.logoutHandler)
 
 	// Token Generation and Login
 	router.HandleFunc("POST /v1/tokens/authentication", app.createAuthenticationHandler)
@@ -30,12 +32,16 @@ func (app *application) routes() http.Handler {
 	router.HandleFunc("PATCH /v1/users/reset-password", app.passwordResetHandler)
 
 	// Communities
-	// router.HandleFunc("POST /v1/communities", app.createCommunityHandler)
-	// router.HandleFunc("POST /v1/communities/{id}", app.uploadPostHandler)
+	router.HandleFunc("POST /v1/communities", app.createCommunityHandler)
+	router.HandleFunc("POST /v1/community/{handle}/roles", app.addCommunityRoleHandler)
+	router.HandleFunc("POST /v1/community/{handle}", app.joinCommunityHandler)
+	router.HandleFunc("POST /v1/community/{handle}/roles/user", app.addUserRoleHandler)
+	router.HandleFunc("GET /v1/community/{handle}/roles", app.getCommunityRolesHandler)
+	router.HandleFunc("GET /v1/community/{handle}/users", app.getCommunityMembersHandler)
+	router.HandleFunc("POST /v1/community/{handle}/channels", app.createChannel)
 	// router.HandleFunc("PATCH /v1/communities/{id}", app.updateCommunityHandler)
 	// router.HandleFunc("POST /v1/communities/{id}/roles", app.setRoleHandler)
 	// router.HandleFunc("POST /v1/communities/{id}/users/{username}/roles", app.assignUserRoleHandler)
-	// router.HandleFunc("POST /v1/communities/{id}/join", app.joinCommunityHandler)
 	// router.HandleFunc("GET /v1/communities/{id}/users", app.getAllUsersCommunityHandler)
 	// router.HandleFunc("DELETE /v1/communities/{id}/users/{username}", app.removeUserCommunityHandler)
 	// router.HandleFunc("DELETE /v1/communities/{id}", app.deleteCommunityHandler)
@@ -45,24 +51,22 @@ func (app *application) routes() http.Handler {
 	// router.HandleFunc("DELETE /v1/permissions/{id}", app.deletePermissionHandler)
 
 	// Post
-	// router.HandleFunc("POST /v1/posts", app.createPostHandler)
-	// router.HandleFunc("GET /v1/posts/{id}", app.getPostHandler)
-	// router.HandleFunc("GET /v1/posts", app.getNextPostsHandler)
-	// router.HandleFunc("POST /v1/posts/{id}/upvotes", app.upvotePostHandler)
-	// router.HandleFunc("POST /v1/posts/{id}/downvotes", app.downvotePostHandler)
-	// router.HandleFunc("DELETE /v1/posts/{id}", app.deletePostHandler)
-	// router.HandleFunc("PATCH /v1/posts/{id}", app.updatePostHandler)
+	router.HandleFunc("POST /v1/posts", app.createPostHandler)
+	router.HandleFunc("GET /v1/posts/{post_id}", app.getPostHandler)
+	router.HandleFunc("GET /v1/posts", app.getAllPostHandler)
+	router.HandleFunc("POST /v1/posts/{post_id}/votes", app.createPostVoteHandler)
+	router.HandleFunc("DELETE /v1/posts/{post_id}", app.deletePostHandler)
+	router.HandleFunc("PATCH /v1/posts/{post_id}", app.updatePostHandler)
 
 	// Search
-	// router.HandleFunc("GET /v1/search/users", app.searchUsersHandler)
 	// router.HandleFunc("GET /v1/search/posts", app.searchPostsHandler)
 
 	// Comments & Replies
-	// router.HandleFunc("POST /v1/posts/{id}/comments", app.insertCommentHandler)
-	// router.HandleFunc("PATCH /v1/posts/{post_id}/comments/{comment_id}", app.updateCommentHandler)
-	// router.HandleFunc("DELETE /v1/posts/{post_id}/comments/{comment_id}", app.deleteCommentHandler)
-	// router.HandleFunc("POST /v1/posts/{post_id}/comments/{comment_id}/upvote", app.upvoteCommentHandler)
-	// router.HandleFunc("POST /v1/posts/{post_id}/comments/{comment_id}/downvote", app.downvoteCommentHandler)
+	router.HandleFunc("POST /v1/posts/{post_id}/comments", app.requireAuthenticatedUser(app.createCommentHandler))
+	router.HandleFunc("PATCH /v1/posts/{post_id}/comments/{comment_id}", app.updateCommentHandler)
+	router.HandleFunc("DELETE /v1/posts/{post_id}/comments/{comment_id}", app.deleteCommentHandler)
+	router.HandleFunc("POST /v1/posts/{post_id}/comments/{comment_id}/vote", app.createCommentVoteHandler)
+	router.HandleFunc("GET /v1/posts/{post_id}/comments", app.getComments)
 	// router.HandleFunc("POST /v1/posts/{post_id}/comments/{comment_id}/reply", app.replyCommentHandler)
 
 	// Follower & Following
@@ -70,6 +74,8 @@ func (app *application) routes() http.Handler {
 	// router.HandleFunc("DELETE /v1/users/{username}/follow", app.unfollowUserHandler)
 	// router.HandleFunc("GET /v1/users/{username}/followers", app.getAllFollowersHandler)
 	// router.HandleFunc("GET /v1/users/{username}/following", app.getAllFollowingHandler)
+	//
+	router.HandleFunc("POST /v1/permissions", app.addPermissionHandler)
 
 	//return app.recoverPanic(app.rateLimit(router))
 	return app.recoverPanic(app.enableCORS(app.authenticate(router)))

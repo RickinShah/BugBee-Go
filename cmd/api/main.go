@@ -5,10 +5,12 @@ import (
 	"database/sql"
 	"flag"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/RickinShah/BugBee/internal/jsonlog"
 	"github.com/go-redis/redis/v8"
+	"github.com/hibiken/asynq"
 
 	"github.com/RickinShah/BugBee/internal/data"
 	"github.com/RickinShah/BugBee/internal/mailer"
@@ -18,13 +20,16 @@ import (
 const version = "1.0.0"
 
 type config struct {
-	port        int
-	clientPort  int
-	env         string
-	host        string
-	protocol    string
-	storagePath string
-	db          struct {
+	port       int
+	clientPort int
+	env        string
+	host       string
+	protocol   string
+	storage    struct {
+		postBasePath    string
+		profileBasePath string
+	}
+	db struct {
 		dsn          string
 		maxOpenConns int
 		maxIdleConns int
@@ -42,7 +47,7 @@ type config struct {
 		burst   int
 		enabled bool
 	}
-	cache struct {
+	redis struct {
 		address  string
 		password string
 		db       int
@@ -50,19 +55,23 @@ type config struct {
 }
 
 type application struct {
-	config config
-	logger *jsonlog.Logger
-	models data.Models
-	mailer mailer.Mailer
+	config      config
+	logger      *jsonlog.Logger
+	models      data.Models
+	mailer      mailer.Mailer
+	asynqServer *asynq.Server
+	asynqClient *asynq.Client
+	wg          sync.WaitGroup
 }
 
 func main() {
 	var cfg config
 
 	flag.IntVar(&cfg.port, "port", 4000, "API server port")
-	flag.IntVar(&cfg.clientPort, "client-port", 5173, "Frontend client port")
+	flag.IntVar(&cfg.clientPort, "client-port", 80, "Frontend client port")
 	flag.StringVar(&cfg.env, "env", "development", "Environment (development|staging|production)")
-	flag.StringVar(&cfg.storagePath, "storage-path", "/bugbee", "Storage root directory")
+	flag.StringVar(&cfg.storage.postBasePath, "post-directory", "/bugbee/posts", "Post base directory")
+	flag.StringVar(&cfg.storage.profileBasePath, "profile-directory", "/bugbee/profiles", "Profiles directory")
 
 	flag.StringVar(&cfg.db.dsn, "db-dsn", "postgres://bugbee:bugbee@localhost/bugbee?sslmode=disable", "PostgreSQL DSN")
 	flag.IntVar(&cfg.db.maxOpenConns, "db-max-open-conns", 25, "PostgreSQL max open connections")
@@ -79,9 +88,9 @@ func main() {
 	flag.StringVar(&cfg.smtp.password, "smtp-password", "", "SMTP password")
 	flag.StringVar(&cfg.smtp.sender, "smtp-sender", "BugBee <no-reply@gmail.com>", "SMTP sender")
 
-	flag.StringVar(&cfg.cache.address, "redis-address", "localhost:6379", "Cache server address")
-	flag.StringVar(&cfg.cache.password, "redis-password", "", "Cache server password")
-	flag.IntVar(&cfg.cache.db, "cache-db", 0, "Cache server db")
+	flag.StringVar(&cfg.redis.address, "redis-address", "localhost:6379", "Cache server address")
+	flag.StringVar(&cfg.redis.password, "redis-password", "", "Cache server password")
+	flag.IntVar(&cfg.redis.db, "cache-db", 0, "Cache server db")
 	flag.StringVar(&cfg.host, "host", "localhost", "API server host")
 	flag.StringVar(&cfg.protocol, "protocol", "http", "API server http protocol")
 
@@ -117,6 +126,11 @@ func main() {
 		models: data.NewModels(db, Redis),
 		mailer: mailer.New(cfg.smtp.host, cfg.smtp.port, cfg.smtp.username, cfg.smtp.password, cfg.smtp.sender),
 	}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	app.NewAsynqClient()
+	app.NewAsynqWorker(ctx)
 
 	err = app.serve()
 	if err != nil {
@@ -155,9 +169,9 @@ func openDb(cfg config) (*sql.DB, error) {
 
 func openRedis(cfg config) (*redis.Client, error) {
 	client := redis.NewClient(&redis.Options{
-		Addr:     cfg.cache.address,
-		Password: cfg.cache.password,
-		DB:       cfg.cache.db,
+		Addr:     cfg.redis.address,
+		Password: cfg.redis.password,
+		DB:       cfg.redis.db,
 	})
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

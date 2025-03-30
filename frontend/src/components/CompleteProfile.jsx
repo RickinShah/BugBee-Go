@@ -2,7 +2,7 @@ import * as yup from "yup";
 import { useState, useRef, useEffect } from "react";
 import Cropper from "react-cropper";
 import "cropperjs/dist/cropper.css";
-import { apiCall } from "../utils/api";
+import { apiCall, getMediaPath } from "../utils/api";
 import { handleFormChange, setToLocalStorage } from "../utils/form";
 import { validateBio, validateName } from "../validators/user";
 import { validationError } from "../utils/errors";
@@ -98,15 +98,20 @@ const CompleteProfile = () => {
                 });
             formDataObj.append("profile_pic", file);
             await apiCall(
-                "/v1/profile/update",
+                "/v1/profile",
                 "POST",
                 formDataObj,
                 {},
                 "include",
                 true,
-                () => {
-                    setToLocalStorage("name", submissionData.name);
-                    goTo("userPage");
+                (response) => {
+                    setToLocalStorage("name", response.user.name);
+                    setToLocalStorage("bio", submissionData.bio);
+                    setToLocalStorage(
+                        "profile_path",
+                        getMediaPath(response.user.profile_path),
+                    );
+                    goTo("feed");
                 },
             );
         } catch (error) {

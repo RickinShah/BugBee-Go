@@ -9,6 +9,7 @@ export const validateUsernameOrEmail = yup
 
 export const validateUsername = yup
     .string()
+    .min(3, "Username should have at least 3 characters")
     .matches(
         "^[a-zA-Z0-9_]+$",
         "Username should only contain alphabets, numbers and underscore",

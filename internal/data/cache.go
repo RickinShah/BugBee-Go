@@ -32,14 +32,16 @@ func CacheSet[T any](r *redis.Client, key string, item *T, ttl time.Duration) {
 	}
 }
 
-func CacheDel(r *redis.Client, key string) {
+func CacheDel(r *redis.Client, key string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
 	err := r.Del(ctx, key).Err()
 	if err != nil {
 		log.Println("CacheDel Redis DEL error: ", err)
+		return err
 	}
+	return nil
 }
 
 func CacheGet(r *redis.Client, key string) (string, error) {

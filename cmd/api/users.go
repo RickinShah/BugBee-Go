@@ -3,10 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
-	"image/jpeg"
-	"io"
 	"net/http"
-	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -422,7 +419,7 @@ func (app *application) updateProfileHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	file, header, err := r.FormFile("profile_pic")
+	file, fileHeader, err := r.FormFile("profile_pic")
 	noFileFound := false
 	if err != nil {
 		switch {
@@ -436,49 +433,7 @@ func (app *application) updateProfileHandler(w http.ResponseWriter, r *http.Requ
 
 	user := app.contextGetUser(r)
 
-	if !noFileFound {
-		defer file.Close()
-		img, err := jpeg.Decode(file)
-		if err != nil {
-			app.badRequestResponse(w, r, fmt.Errorf("invalid image: %v", err))
-			return
-		}
-
-		width := img.Bounds().Dx()
-		height := img.Bounds().Dy()
-
-		if width != height {
-			app.badRequestResponse(w, r, fmt.Errorf("image must be square"))
-			return
-		}
-
-		path := filepath.Join(app.config.storagePath, "profiles")
-		err = os.MkdirAll(path, os.ModePerm)
-		if err != nil {
-			app.serverErrorResponse(w, r, err)
-			return
-		}
-
-		fileExtension := filepath.Ext(header.Filename)
-		filePath := filepath.Join(path, fmt.Sprintf("%s%s", user.Username, fileExtension))
-		dst, err := os.Create(filePath)
-		if err != nil {
-			app.serverErrorResponse(w, r, err)
-			return
-		}
-		defer dst.Close()
-
-		file.Seek(0, io.SeekStart)
-		_, err = io.Copy(dst, file)
-		if err != nil {
-			app.serverErrorResponse(w, r, err)
-			return
-		}
-
-	}
-
 	name := strings.TrimSpace(r.FormValue("name"))
-
 	bio := strings.TrimSpace(r.FormValue("bio"))
 
 	v := validator.New()
@@ -487,8 +442,7 @@ func (app *application) updateProfileHandler(w http.ResponseWriter, r *http.Requ
 		app.failedValidationResponse(w, r, v.Errors)
 		return
 	}
-
-	if data.ValidateBio(v, bio); !v.Valid() {
+	if data.ValidateBioOrDescription(v, bio); !v.Valid() {
 		app.failedValidationResponse(w, r, v.Errors)
 		return
 	}
@@ -496,12 +450,33 @@ func (app *application) updateProfileHandler(w http.ResponseWriter, r *http.Requ
 	if bio != "" {
 		user.Bio = &bio
 	}
-
 	if name != "" {
 		user.Name = &name
 	}
 
-	user.ProfilePic = !noFileFound
+	if !noFileFound {
+		defer file.Close()
+
+		if data.ValidateProfilePic(v, file); !v.Valid() {
+			app.failedValidationResponse(w, r, v.Errors)
+			return
+		}
+
+		fileExtension := filepath.Ext(fileHeader.Filename)
+
+		path, err := data.GetFilePath(app.config.storage.profileBasePath, user.ID, fileExtension)
+		if err != nil {
+			app.serverErrorResponse(w, r, err)
+		}
+
+		user.ProfilePath = &path
+
+		err = data.SaveFile(file, path)
+		if err != nil {
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+	}
 
 	authorizationCookie, err := r.Cookie("auth_token")
 	if err != nil {
@@ -520,7 +495,9 @@ func (app *application) updateProfileHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	err = app.writeJson(w, http.StatusOK, envelope{"profile": "updated successfully"}, nil)
+	user.SetMarshalType(3)
+
+	err = app.writeJson(w, http.StatusOK, envelope{"user": user}, nil)
 
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
@@ -528,7 +505,7 @@ func (app *application) updateProfileHandler(w http.ResponseWriter, r *http.Requ
 }
 
 func (app *application) getUserHandler(w http.ResponseWriter, r *http.Request) {
-	username, err := app.readUsernameParam(r)
+	username, err := app.readStringPath("username", r)
 	if err != nil {
 		app.badRequestResponse(w, r, err)
 		return
@@ -552,9 +529,86 @@ func (app *application) getUserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	user.SetMarshalType(2)
 	err = app.writeJson(w, http.StatusOK, envelope{"user": user}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}
 
+}
+
+func (app *application) searchUserHandler(w http.ResponseWriter, r *http.Request) {
+	query, err := app.readStringParam("query", r)
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+	size, err := app.readIntParam("size", r)
+	if err != nil {
+		size = 10
+	}
+
+	users, err := app.models.Users.GetUsersByUsernameOrName(query, size)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			app.notFoundResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	err = app.writeJson(w, http.StatusOK, envelope{"users": users}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+}
+
+func (app *application) deleteUserHandler(w http.ResponseWriter, r *http.Request) {
+	user := app.contextGetUser(r)
+	err := app.models.Users.Delete(user.ID)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrEditConflict):
+			app.notFoundResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	err = app.models.Tokens.DeleteAllForUser(data.ScopeAuthentication, user.ID)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	cookie := http.Cookie{
+		Name:     "auth_token",
+		Value:    "",
+		MaxAge:   -1,
+		Path:     "/",
+		HttpOnly: true,
+	}
+	http.SetCookie(w, &cookie)
+	err = app.writeJson(w, http.StatusOK, nil, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+}
+
+func (app *application) logoutHandler(w http.ResponseWriter, r *http.Request) {
+	cookie := http.Cookie{
+		Name:     "auth_token",
+		Value:    "",
+		MaxAge:   -1,
+		Path:     "/",
+		HttpOnly: true,
+	}
+	http.SetCookie(w, &cookie)
+	err := app.writeJson(w, http.StatusOK, nil, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
 }

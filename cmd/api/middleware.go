@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
+	"time"
 
 	"github.com/RickinShah/BugBee/internal/data"
 	"github.com/RickinShah/BugBee/internal/validator"
@@ -38,40 +40,65 @@ func (app *application) rateLimit(next http.Handler) http.Handler {
 
 func (app *application) authenticate(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var token string
 
-		// w.Header().Add("Vary", "Authorization")
+		w.Header().Add("Vary", "Authorization")
 
-		// authorizationHeader := r.Header.Get("Authorization")
+		authorizationHeader := r.Header.Get("Authorization")
 
-		// if authorizationHeader == "" {
-		// 	r = app.contextSetUser(r, data.AnonymousUser)
-		// 	next.ServeHTTP(w, r)
-		// 	return
-		// }
-
-		// headerParts := strings.Split(authorizationHeader, " ")
-		// if len(headerParts) != 2 || headerParts[0] != "Bearer" {
-		// 	app.invalidCredentialsResponse(w, r)
-		// 	return
-		// }
-
-		// token := headerParts[1]
-
-		authorizationCookie, err := r.Cookie("auth_token")
-		if err != nil {
-			switch {
-			case errors.Is(err, http.ErrNoCookie):
-				app.contextSetUser(r, data.AnonymousUser)
-				next.ServeHTTP(w, r)
-				return
-			default:
-				app.badRequestResponse(w, r, err)
-				return
-
+		if authorizationHeader == "" {
+			// r = app.contextSetUser(r, data.AnonymousUser)
+			// next.ServeHTTP(w, r)
+			// return
+			authorizationCookie, err := r.Cookie("auth_token")
+			if err != nil {
+				switch {
+				case errors.Is(err, http.ErrNoCookie):
+					app.contextSetUser(r, data.AnonymousUser)
+					next.ServeHTTP(w, r)
+					return
+				default:
+					app.badRequestResponse(w, r, err)
+					return
+				}
 			}
+			token = authorizationCookie.Value
+		} else {
+			headerParts := strings.Split(authorizationHeader, " ")
+			if len(headerParts) != 2 || headerParts[0] != "Bearer" {
+				app.invalidCredentialsResponse(w, r)
+				return
+			}
+
+			token = headerParts[1]
 		}
 
-		token := authorizationCookie.Value
+		// authorizationCookie, err := r.Cookie("auth_token")
+		// if err != nil {
+		// 	switch {
+		// 	case errors.Is(err, http.ErrNoCookie):
+		// 		app.contextSetUser(r, data.AnonymousUser)
+		// 		next.ServeHTTP(w, r)
+		// 		return
+		// 	default:
+		// 		app.badRequestResponse(w, r, err)
+		// 		return
+		// 	}
+		// }
+
+		if token == "" {
+			cookie := http.Cookie{
+				Name:     "auth_token",
+				Value:    "",
+				Path:     "/",
+				MaxAge:   -1,
+				HttpOnly: true,
+			}
+			http.SetCookie(w, &cookie)
+			app.contextSetUser(r, data.AnonymousUser)
+			next.ServeHTTP(w, r)
+			return
+		}
 
 		v := validator.New()
 
@@ -84,6 +111,14 @@ func (app *application) authenticate(next http.Handler) http.Handler {
 		if err != nil {
 			switch {
 			case errors.Is(err, data.ErrRecordNotFound):
+				cookie := http.Cookie{
+					Name:     "auth_token",
+					Value:    "",
+					Path:     "/",
+					Expires:  time.Unix(0, 0),
+					HttpOnly: true,
+				}
+				http.SetCookie(w, &cookie)
 				app.invalidAuthenticationTokenResponse(w, r)
 			default:
 				app.serverErrorResponse(w, r, err)
@@ -124,6 +159,14 @@ func (app *application) requireActivatedUser(next http.HandlerFunc) http.Handler
 
 	return app.requireAuthenticatedUser(fn)
 }
+
+// func (app *application) requirePermission(code string, next http.HandlerFunc) http.HandlerFunc {
+// 	fn := func(w http.ResponseWriter, r *http.Request) {
+// 		user := app.contextGetUser(r)
+
+// 		permissions, err := app.models.Permissions.
+// 	}
+// }
 
 func (app *application) enableCORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

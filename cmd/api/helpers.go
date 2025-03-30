@@ -14,7 +14,7 @@ import (
 	"github.com/RickinShah/BugBee/internal/validator"
 )
 
-func (app *application) readIDParam(name string, r *http.Request) (int64, error) {
+func (app *application) readIDPath(name string, r *http.Request) (int64, error) {
 	id, err := strconv.ParseInt(r.PathValue(name), 10, 64)
 
 	if err != nil || id < 1 {
@@ -24,13 +24,41 @@ func (app *application) readIDParam(name string, r *http.Request) (int64, error)
 	return id, nil
 }
 
-func (app *application) readUsernameParam(r *http.Request) (string, error) {
-	username := r.PathValue("username")
-
-	if username == "" {
-		return "", errors.New("invalid username parameter")
+func (app *application) readStringPath(name string, r *http.Request) (string, error) {
+	value := r.PathValue(name)
+	if value == "" {
+		return "", errors.New("invalid " + name + " parameter")
 	}
-	return username, nil
+
+	return value, nil
+}
+
+func (app *application) readStringParam(name string, r *http.Request) (string, error) {
+	value := r.URL.Query().Get(name)
+
+	if value == "" {
+		return "", errors.New("invalid " + name + " parameter")
+
+	}
+	return value, nil
+}
+
+func (app *application) readIDParam(name string, r *http.Request) (int64, error) {
+	value, err := strconv.ParseInt(r.URL.Query().Get(name), 10, 64)
+	if err != nil {
+		return 0, errors.New("invalid " + name + " parameter")
+	}
+
+	return value, nil
+}
+
+func (app *application) readIntParam(name string, r *http.Request) (int, error) {
+	value, err := strconv.Atoi(r.URL.Query().Get(name))
+	if err != nil {
+		return 0, errors.New("invalid " + name + " parameter")
+	}
+
+	return value, nil
 }
 
 type envelope map[string]any
@@ -149,5 +177,4 @@ func (app *application) background(fn func()) {
 		}()
 		fn()
 	}()
-
 }

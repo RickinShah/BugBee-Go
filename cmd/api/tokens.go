@@ -38,6 +38,7 @@ func (app *application) createAuthenticationHandler(w http.ResponseWriter, r *ht
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):
+			// app.badRequestResponse(w, r, errors.New("Invalid Credentials"))
 			app.invalidCredentialsResponse(w, r)
 		default:
 			app.serverErrorResponse(w, r, err)
@@ -79,6 +80,7 @@ func (app *application) createAuthenticationHandler(w http.ResponseWriter, r *ht
 		"Access-Control-Allow-Credentials": []string{"true"},
 	}
 
+	user.SetMarshalType(data.Frontend)
 	err = app.writeJson(w, http.StatusCreated, envelope{"user": user}, headers)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)

@@ -9,10 +9,13 @@ const useNavigation = () => {
         registerUsername: "/register/username",
         registerPassword: "/register/password",
         accountActivation: "/account/activate",
-        userPage: "/userpage",
         otp: "/otp",
         resetPassword: "/otp/reset-password",
         completeProfile: "/users/profile",
+        feed: "/feed",
+        postUpload: "/post/upload",
+        communityCreate: "/community/create",
+        communities: "/communities",
     };
 
     const goTo = (path, params = {}) => {

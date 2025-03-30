@@ -10,10 +10,3 @@ CREATE TABLE IF NOT EXISTS pending_users (
 
 CREATE INDEX IF NOT EXISTS idx_pending_reg_email ON pending_users(email);
 CREATE INDEX IF NOT EXISTS idx_pending_reg_expiry ON pending_users(expiry);
-
-CREATE OR REPLACE FUNCTION cleanup_pending_registrations()
-RETURNS void AS $$
-BEGIN
-    DELETE FROM pending_users WHERE expiry < NOW();
-END;
-$$ LANGUAGE plpgsql;

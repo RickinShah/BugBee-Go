@@ -1,5 +1,5 @@
-import UserPage from "./components/UserPage";
-import NewPost from "./components/NewPost";
+import Feed from "./components/Feed";
+import PostUpload from "./components/PostUpload";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import CompleteProfile from "./components/CompleteProfile";
 import LoginPage from "./components/LoginPage";
@@ -10,6 +10,9 @@ import AccountActivation from "./components/AccountActivation";
 import ForgotPassword from "./components/ForgotPassword";
 import ResetPassword from "./components/ResetPassword";
 import SubmitOtp from "./components/SubmitOtp";
+import CreateCommunity from "./components/Communities/CreateCommunity";
+import Communities from "./components/Communities/Communities";
+import CommunitySetting from "./components/Communities/CommunitySetting";
 
 const App = () => {
     return (
@@ -26,7 +29,7 @@ const App = () => {
                         path="/register/password"
                         element={<RegisterPassword />}
                     />
-                    <Route path="/userpage" element={<UserPage />} />
+                    <Route path="/feed" element={<Feed />} />
                     <Route
                         path="/users/profile"
                         element={<CompleteProfile />}
@@ -45,7 +48,18 @@ const App = () => {
                         element={<ResetPassword />}
                     />
 
-                    <Route path="/newpost" element={<NewPost />} />
+                    <Route path="/post/upload" element={<PostUpload />} />
+                    <Route
+                        path="/profile/update"
+                        element={<CompleteProfile />}
+                    />
+                    <Route
+                        path="/community/create"
+                        element={<CreateCommunity />}
+                    />
+                    <Route path="/communities" element={<Communities />} />
+
+                    <Route path="/cs" element={<CommunitySetting />} />
                 </Routes>
             </Router>
         </>

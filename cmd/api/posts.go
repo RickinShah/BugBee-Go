@@ -1,103 +1,139 @@
 package main
 
 import (
+	"context"
 	"errors"
-	"fmt"
 	"net/http"
+	"path/filepath"
+	"strings"
+	"time"
 
 	"github.com/RickinShah/BugBee/internal/data"
 	"github.com/RickinShah/BugBee/internal/validator"
 )
 
-func (app *application) showPostHandler(w http.ResponseWriter, r *http.Request) {
-	id, err := app.readIDParam(r)
-	if err != nil {
-		http.NotFound(w, r)
-		return
-	}
-
-	post, err := app.models.Posts.Get(id)
-
-	if err != nil {
-		switch {
-		case errors.Is(err, data.ErrRecordNotFound):
-			app.notFoundResponse(w, r)
-		default:
-			app.serverErrorResponse(w, r, err)
-		}
-		return
-	}
-
-	err = app.writeJson(w, http.StatusOK, envelope{"post": post}, nil)
-	if err != nil {
-		app.serverErrorResponse(w, r, err)
-	}
-
-}
-
 func (app *application) createPostHandler(w http.ResponseWriter, r *http.Request) {
-	var input struct {
-		Title    string `json:"title"`
-		Content  string `json:"content"`
-		PostType string `json:"post_type"`
-	}
-
-	err := app.readJson(w, r, &input)
+	err := r.ParseMultipartForm(1000 << 20)
 	if err != nil {
 		app.badRequestResponse(w, r, err)
 		return
 	}
 
+	files := r.MultipartForm.File["files"]
+	content := strings.TrimSpace(r.FormValue("content"))
+
 	v := validator.New()
 
-	post := &data.Post{
-		Title:    input.Title,
-		Content:  input.Content,
-		PostType: input.PostType,
-	}
-
-	if data.ValidatePost(v, post); !v.Valid() {
+	if data.ValidateContent(v, content); !v.Valid() {
 		app.failedValidationResponse(w, r, v.Errors)
 		return
 	}
 
-	err = app.models.Posts.Insert(post)
+	post := data.Post{
+		Content: &content,
+		User:    app.contextGetUser(r),
+	}
+
+	post.HasFiles = len(files) > 0
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	tx, err := app.models.Posts.DB.BeginTx(ctx, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
 	}
 
-	headers := make(http.Header)
-	headers.Set("Location", fmt.Sprintf("/v1/posts/%d", post.ID))
+	defer func() {
+		if err != nil {
+			tx.Rollback()
+		}
+	}()
 
-	err = app.writeJson(w, http.StatusCreated, envelope{"post": post}, headers)
+	err = app.models.Posts.Insert(tx, &post)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	if post.HasFiles {
+		for _, fileHeader := range files {
+			multipartFile, err := fileHeader.Open()
+			if err != nil {
+				app.serverErrorResponse(w, r, err)
+				return
+			}
+
+			mimeType, err := data.GetFileContentType(multipartFile)
+			if err != nil {
+				multipartFile.Close()
+				app.serverErrorResponse(w, r, err)
+				return
+			}
+			if data.ValidateFile(v, *fileHeader, mimeType); !v.Valid() {
+				multipartFile.Close()
+				app.failedValidationResponse(w, r, v.Errors)
+				return
+			}
+
+			file := data.File{
+				PostID: post.ID,
+				Path:   app.config.storage.postBasePath,
+				Size:   fileHeader.Size,
+				Type:   mimeType,
+			}
+
+			path := file.Path
+			err = app.models.Files.Insert(tx, &file)
+			if err != nil {
+				multipartFile.Close()
+				app.serverErrorResponse(w, r, err)
+				return
+			}
+
+			fileExtension := filepath.Ext(fileHeader.Filename)
+			file.Path, err = data.GetFilePath(path, file.ID, fileExtension)
+			if err != nil {
+				multipartFile.Close()
+				app.serverErrorResponse(w, r, err)
+				return
+			}
+			err = data.SaveFile(multipartFile, file.Path)
+			multipartFile.Close()
+			if err != nil {
+				app.serverErrorResponse(w, r, err)
+				return
+			}
+			err = app.models.Files.UpdatePath(tx, file)
+			if err != nil {
+				app.serverErrorResponse(w, r, err)
+				return
+			}
+		}
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	err = app.writeJson(w, http.StatusOK, envelope{"post": "created successfully"}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}
 }
 
 func (app *application) updatePostHandler(w http.ResponseWriter, r *http.Request) {
-	id, err := app.readIDParam(r)
+	postID, err := app.readIDPath("post_id", r)
 	if err != nil {
 		app.notFoundResponse(w, r)
 		return
 	}
 
-	movie, err := app.models.Posts.Get(id)
-	if err != nil {
-		switch {
-		case errors.Is(err, data.ErrRecordNotFound):
-			app.notFoundResponse(w, r)
-		default:
-			app.serverErrorResponse(w, r, err)
-		}
-		return
-	}
-
 	var input struct {
-		Title    *string `json:"title"`
-		Content  *string `json:"content"`
-		PostType *string `json:"post_type"`
+		Content string `json:"content"`
 	}
 
 	err = app.readJson(w, r, &input)
@@ -106,50 +142,45 @@ func (app *application) updatePostHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	if input.Title != nil {
-		movie.Title = *input.Title
-	}
-
-	if input.Content != nil {
-		movie.Content = *input.Content
-	}
-
-	if input.PostType != nil {
-		movie.PostType = *input.PostType
-	}
-
 	v := validator.New()
 
-	if data.ValidatePost(v, movie); !v.Valid() {
+	if data.ValidateContent(v, input.Content); !v.Valid() {
 		app.failedValidationResponse(w, r, v.Errors)
 		return
 	}
-	err = app.models.Posts.Update(movie)
 
+	post, err := app.models.Posts.Get(postID)
 	if err != nil {
 		switch {
-		case errors.Is(err, data.ErrEditConflict):
-			app.editConflictResponse(w, r)
+		case errors.Is(err, data.ErrRecordNotFound):
+			app.notFoundResponse(w, r)
 		default:
 			app.serverErrorResponse(w, r, err)
 		}
 		return
 	}
 
-	err = app.writeJson(w, http.StatusOK, envelope{"movie": movie}, nil)
+	post.Content = &input.Content
+	err = app.models.Posts.Update(post)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	err = app.writeJson(w, http.StatusOK, envelope{"content": "updated successfully"}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}
 }
 
 func (app *application) deletePostHandler(w http.ResponseWriter, r *http.Request) {
-	id, err := app.readIDParam(r)
+	id, err := app.readIDPath("post_id", r)
 	if err != nil {
 		app.notFoundResponse(w, r)
 		return
 	}
 
-	err = app.models.Posts.Delete(id)
+	err = app.models.Posts.Delete(id, id)
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):
@@ -166,9 +197,177 @@ func (app *application) deletePostHandler(w http.ResponseWriter, r *http.Request
 	}
 }
 
-// func (app *application) listPostsHandler(w http.ResponseWriter, r *http.Request) {
-// 	var input struct {
-// 		Title string
+func (app *application) getPostHandler(w http.ResponseWriter, r *http.Request) {
+	postID, err := app.readIDPath("post_id", r)
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
 
-// 	}
-// }
+	post, err := app.models.Posts.Get(postID)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			app.notFoundResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	postStats, err := app.models.PostStats.Get(post.ID)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			app.notFoundResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+	post.Stats = postStats
+
+	if post.HasFiles {
+		files, err := app.models.Files.Get(post.ID)
+		if err != nil {
+			switch {
+			case errors.Is(err, data.ErrRecordNotFound):
+				app.notFoundResponse(w, r)
+			default:
+				app.serverErrorResponse(w, r, err)
+			}
+			return
+		}
+		post.Files = files
+	}
+
+	err = app.writeJson(w, http.StatusOK, envelope{"post": post}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+}
+
+func (app *application) getAllPostHandler(w http.ResponseWriter, r *http.Request) {
+	lastID, err := app.readIDParam("last_id", r)
+	if err != nil {
+		lastID = 999999999999999999
+	}
+	size, err := app.readIntParam("size", r)
+	if err != nil {
+		size = 10
+	}
+
+	filters := data.Filters{
+		PageSize: size,
+		LastID:   lastID,
+	}
+	posts, err := app.models.Posts.GetAll(filters)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			app.notFoundResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	for i := range posts {
+		post := posts[i]
+		postStats, err := app.models.PostStats.Get(post.ID)
+		if err != nil {
+			switch {
+			case errors.Is(err, data.ErrRecordNotFound):
+				app.notFoundResponse(w, r)
+			default:
+				app.serverErrorResponse(w, r, err)
+			}
+			return
+		}
+		post.Stats = postStats
+
+		if post.HasFiles {
+			files, err := app.models.Files.Get(post.ID)
+			if err != nil {
+				switch {
+				case errors.Is(err, data.ErrRecordNotFound):
+					app.notFoundResponse(w, r)
+				default:
+					app.serverErrorResponse(w, r, err)
+				}
+				return
+			}
+			post.Files = files
+		}
+	}
+
+	err = app.writeJson(w, http.StatusOK, envelope{"posts": posts}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+}
+
+// TODO: Get All Posts of User
+func (app *application) getUserPostsHandler(w http.ResponseWriter, r *http.Request) {
+	lastID, err := app.readIDParam("last_id", r)
+	if err != nil {
+		lastID = 999999999999999999
+	}
+	// username, err := app.readIDPath("username", r)
+	// if err != nil {
+	// 	app.badRequestResponse(w, r, err)
+	// }
+	size, err := app.readIntParam("size", r)
+	if err != nil {
+		size = 10
+	}
+
+	filters := data.Filters{
+		PageSize: size,
+		LastID:   lastID,
+	}
+	posts, err := app.models.Posts.GetAll(filters)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			app.notFoundResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	for i := range posts {
+		post := posts[i]
+		postStats, err := app.models.PostStats.Get(post.ID)
+		if err != nil {
+			switch {
+			case errors.Is(err, data.ErrRecordNotFound):
+				app.notFoundResponse(w, r)
+			default:
+				app.serverErrorResponse(w, r, err)
+			}
+			return
+		}
+		post.Stats = postStats
+
+		if post.HasFiles {
+			files, err := app.models.Files.Get(post.ID)
+			if err != nil {
+				switch {
+				case errors.Is(err, data.ErrRecordNotFound):
+					app.notFoundResponse(w, r)
+				default:
+					app.serverErrorResponse(w, r, err)
+				}
+				return
+			}
+			post.Files = files
+		}
+	}
+
+	err = app.writeJson(w, http.StatusOK, envelope{"posts": posts}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+}

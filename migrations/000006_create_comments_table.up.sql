@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS comments (
     parent_comment_id bigint REFERENCES comments ON DELETE CASCADE,
     user_id bigint REFERENCES users ON DELETE SET NULL,
     content TEXT NOT NULL CHECK (LENGTH(TRIM(content)) BETWEEN 1 AND 500),
+    edited bool NOT NULL DEFAULT false,
     created_at timestamp(0) with time zone NOT NULL DEFAULT NOW(),
     updated_at timestamp(0) with time zone NOT NULL DEFAULT NOW(),
     version int NOT NULL DEFAULT 1

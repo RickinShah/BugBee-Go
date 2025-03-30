@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { handleFormChange, setToLocalStorage } from "../utils/form";
-import { apiCall } from "../utils/api";
+import { apiCall, getMediaPath } from "../utils/api";
 import { validatePassword, validateUsernameOrEmail } from "../validators/user";
 import * as yup from "yup";
 import { validationError } from "../utils/errors";
@@ -17,9 +17,12 @@ const LoginPage = () => {
     const onSuccess = (response) => {
         setToLocalStorage("name", response.user.name);
         setToLocalStorage("username", response.user.username);
-        setToLocalStorage("profile_pic", response.user.profile_pic);
+        setToLocalStorage(
+            "profile_path",
+            getMediaPath(response.user.profile_path),
+        );
         setToLocalStorage("show_nsfw", response.user.show_nsfw);
-        goTo("completeProfile");
+        goTo("feed");
     };
 
     const handleChange = (e) => handleFormChange(e, setFormData);
@@ -32,14 +35,13 @@ const LoginPage = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        let submissionData = { ...formData };
         try {
-            await validateLogin.validate(submissionData, { abortEarly: true });
+            await validateLogin.validate(formData, { abortEarly: true });
 
             await apiCall(
                 "/v1/tokens/authentication",
                 "POST",
-                submissionData,
+                formData,
                 {},
                 "include",
                 false,
@@ -48,28 +50,23 @@ const LoginPage = () => {
             );
         } catch (err) {
             validationError(err.errors);
+            return;
         }
     };
 
     return (
-        <div
-            className="w-full h-screen bg-gradient-to-br from-[#242380] via-blue-950 bg-purple-800
-    flex flex-col justify-center items-center"
-        >
-            <div className="flex flex-col justify-center items-center">
-                <div className="text-5xl text-gray-400 font-medium">
-                    Enter Credentials
-                </div>
+        <div className="w-full h-screen flex flex-col justify-center items-center bg-gradient-to-br from-[#242380] via-blue-950 to-purple-800 px-5">
+            <div className="text-4xl md:text-5xl text-gray-400 font-medium text-center mb-6">
+                Enter Credentials
             </div>
-
-            <div className="flex flex-col my-10">
+            <div className="w-full max-w-md bg-white bg-opacity-10 p-6 rounded-xl shadow-lg">
                 <input
                     type="text"
                     name="username"
                     value={formData.username}
                     onChange={handleChange}
                     placeholder="Username or Email"
-                    className="text-white px-5 w-96 h-10 bg-[#ffffff49] rounded-xl"
+                    className="w-full text-white px-4 py-2 bg-[#ffffff49] rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500"
                 />
                 <input
                     type="password"
@@ -77,31 +74,30 @@ const LoginPage = () => {
                     value={formData.password}
                     onChange={handleChange}
                     placeholder="Password"
-                    className="text-white my-5 px-5 w-96 h-10 bg-[#ffffff49] rounded-xl"
+                    className="w-full text-white px-4 py-2 bg-[#ffffff49] rounded-lg mt-4 focus:outline-none focus:ring-2 focus:ring-pink-500"
                 />
-                <a
-                    href=""
-                    className="font-bold text-pink-500 hover:text-pink-200 duration-700"
-                    onClick={() => goTo("forgotPassword")}
-                >
-                    Forgot Password?{" "}
-                </a>
+                <div className="text-right mt-2">
+                    <button
+                        className="text-pink-400 hover:text-pink-200 duration-700 text-sm"
+                        onClick={() => goTo("forgotPassword")}
+                    >
+                        Forgot Password?
+                    </button>
+                </div>
                 <button
                     onClick={handleSubmit}
-                    className="w-96 h-10 rounded-xl my-5 bg-[#ff24d046] text-gray-500 hover:bg-[#ff24cf] hover:text-gray-300 text-lg font-bold duration-700"
+                    className="w-full py-2 mt-5 rounded-lg bg-[#ff24d046] text-gray-500 hover:bg-[#ff24cf] hover:text-gray-300 text-lg font-bold duration-700"
                 >
-                    {" "}
-                    Login{" "}
+                    Login
                 </button>
-                <div className="text-xl text-gray-300 my-0">
-                    Create an account?{" "}
-                    <a
-                        href=""
-                        className="font-bold text-pink-500 hover:text-pink-200 duration-700"
+                <div className="text-center text-gray-300 mt-4">
+                    Don't have an account?{" "}
+                    <button
+                        className="text-pink-400 font-bold hover:text-pink-200 duration-700"
                         onClick={() => goTo("register")}
                     >
                         Sign up
-                    </a>
+                    </button>
                 </div>
             </div>
         </div>
