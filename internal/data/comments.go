@@ -16,6 +16,7 @@ import (
 const commentCacheDuration = 30 * time.Minute
 const CommentInsertQueueKey = "comment:insert:queue"
 const CommentDeleteQueueKey = "comment:delete:queue"
+const CommentUpdateQueueKey = "comment:update:queue"
 
 type Comment struct {
 	ID              int64        `json:"comment_id,string" db:"comment_pid"`
@@ -81,6 +82,36 @@ func (m CommentModel) BatchInsertTx(tx *sql.Tx, comments *[]*Comment) (failedCom
 	for _, comment := range *comments {
 		args := []any{comment.PostID, comment.ParentCommentID, comment.User.ID, comment.Content}
 		if err = stmt.QueryRowContext(ctx, args...).Scan(&comment.ID, &comment.CreatedAt); err != nil {
+			failedComments = append(failedComments, comment)
+			continue
+		}
+		(*comments)[successIdx] = comment
+		successIdx++
+	}
+	*comments = (*comments)[:successIdx]
+	return failedComments, nil
+}
+
+func (m CommentModel) BatchUpdate(comments *[]*Comment) (failedComments []*Comment, err error) {
+	query := `
+		UPDATE comments SET content = $1, updated_at = now(), version = version + 1
+		WHERE comment_pid = $2
+		RETURNING version
+	`
+
+	stmt, err := m.DB.Prepare(query)
+	if err != nil {
+		return nil, err
+	}
+	defer stmt.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	successIdx := 0
+	for _, comment := range *comments {
+		args := []any{comment.Content, comment.ID}
+		if err = stmt.QueryRowContext(ctx, args...).Scan(&comment.Version); err != nil {
 			failedComments = append(failedComments, comment)
 			continue
 		}

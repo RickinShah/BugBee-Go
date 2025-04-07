@@ -10,7 +10,6 @@ import (
 
 	"github.com/RickinShah/BugBee/internal/jsonlog"
 	"github.com/go-redis/redis/v8"
-	"github.com/hibiken/asynq"
 
 	"github.com/RickinShah/BugBee/internal/data"
 	"github.com/RickinShah/BugBee/internal/mailer"
@@ -55,13 +54,11 @@ type config struct {
 }
 
 type application struct {
-	config      config
-	logger      *jsonlog.Logger
-	models      data.Models
-	mailer      mailer.Mailer
-	asynqServer *asynq.Server
-	asynqClient *asynq.Client
-	wg          sync.WaitGroup
+	config config
+	logger *jsonlog.Logger
+	models data.Models
+	mailer mailer.Mailer
+	wg     sync.WaitGroup
 }
 
 func main() {
@@ -126,11 +123,8 @@ func main() {
 		models: data.NewModels(db, Redis),
 		mailer: mailer.New(cfg.smtp.host, cfg.smtp.port, cfg.smtp.username, cfg.smtp.password, cfg.smtp.sender),
 	}
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	app.NewAsynqClient()
-	app.NewAsynqWorker(ctx)
+	// ctx, cancel := context.WithCancel(context.Background())
+	// defer cancel()
 
 	err = app.serve()
 	if err != nil {

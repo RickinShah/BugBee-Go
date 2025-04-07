@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/RickinShah/BugBee/internal/data"
-	"github.com/RickinShah/BugBee/internal/tasks"
 	"github.com/RickinShah/BugBee/internal/validator"
 )
 
@@ -106,16 +105,6 @@ func (app *application) updateCommentHandler(w http.ResponseWriter, r *http.Requ
 		Content: input.Content,
 	}
 	comment.User.SetMarshalType(1)
-	task, err := tasks.NewTask(tasks.TypeCommentUpdate, comment)
-	if err != nil {
-		app.serverErrorResponse(w, r, err)
-		return
-	}
-	_, err = app.asynqClient.Enqueue(task, nil)
-	if err != nil {
-		app.serverErrorResponse(w, r, err)
-		return
-	}
 	err = app.writeJson(w, http.StatusOK, envelope{"comment": "updated successfully"}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)

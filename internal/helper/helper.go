@@ -6,3 +6,10 @@ func DereferString(name *string) string {
 	}
 	return ""
 }
+
+func ToStringPointer(name string) *string {
+	if name == "" {
+		return nil
+	}
+	return &name
+}

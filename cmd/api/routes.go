@@ -33,18 +33,20 @@ func (app *application) routes() http.Handler {
 
 	// Communities
 	router.HandleFunc("POST /v1/communities", app.createCommunityHandler)
+	router.HandleFunc("GET /v1/communities/{handle}", app.getCommunityHandler)
 	router.HandleFunc("POST /v1/community/{handle}/roles", app.addCommunityRoleHandler)
 	router.HandleFunc("POST /v1/community/{handle}", app.joinCommunityHandler)
 	router.HandleFunc("POST /v1/community/{handle}/roles/user", app.addUserRoleHandler)
 	router.HandleFunc("GET /v1/community/{handle}/roles", app.getCommunityRolesHandler)
-	router.HandleFunc("GET /v1/community/{handle}/users", app.getCommunityMembersHandler)
+	router.HandleFunc("GET /v1/community/{handle}/members", app.getCommunityMembersHandler)
 	router.HandleFunc("POST /v1/community/{handle}/channels", app.createChannel)
-	// router.HandleFunc("PATCH /v1/communities/{id}", app.updateCommunityHandler)
-	// router.HandleFunc("POST /v1/communities/{id}/roles", app.setRoleHandler)
-	// router.HandleFunc("POST /v1/communities/{id}/users/{username}/roles", app.assignUserRoleHandler)
-	// router.HandleFunc("GET /v1/communities/{id}/users", app.getAllUsersCommunityHandler)
-	// router.HandleFunc("DELETE /v1/communities/{id}/users/{username}", app.removeUserCommunityHandler)
-	// router.HandleFunc("DELETE /v1/communities/{id}", app.deleteCommunityHandler)
+	router.HandleFunc("GET /v1/communities", app.getCommunitiesHandler)
+	router.HandleFunc("GET /v1/communities/joined", app.getJoinedCommunitiesHandler)
+	router.HandleFunc("DELETE /v1/communities/{handle}", app.deleteCommunityHandler)
+	router.HandleFunc("PATCH /v1/communities/{handle}", app.updateCommunityHandler)
+	router.HandleFunc("DELETE /v1/community/{handle}", app.deleteCommunityHandler)
+	router.HandleFunc("GET /v1/community/{handle}/channels", app.getChannels)
+	router.HandleFunc("GET /v1/communities/search", app.searchCommunityHandler)
 
 	// Permissions
 	// router.HandleFunc("POST /v1/permissions", app.insertPermissionHandler)
@@ -67,7 +69,6 @@ func (app *application) routes() http.Handler {
 	router.HandleFunc("DELETE /v1/posts/{post_id}/comments/{comment_id}", app.deleteCommentHandler)
 	router.HandleFunc("POST /v1/posts/{post_id}/comments/{comment_id}/vote", app.createCommentVoteHandler)
 	router.HandleFunc("GET /v1/posts/{post_id}/comments", app.getComments)
-	// router.HandleFunc("POST /v1/posts/{post_id}/comments/{comment_id}/reply", app.replyCommentHandler)
 
 	// Follower & Following
 	// router.HandleFunc("POST /v1/users/{username}/follow", app.followUserHandler)

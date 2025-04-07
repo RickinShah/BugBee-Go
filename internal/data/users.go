@@ -563,22 +563,22 @@ func (m UserModel) GetCache(key string) (*User, error) {
 	activated, _ := strconv.ParseBool(userData["activated"])
 	showNsfw, _ := strconv.ParseBool(userData["show_nsfw"])
 	version, _ := strconv.ParseInt(userData["version"], 10, 32)
-	name := userData["name"]
-	bio := userData["bio"]
-	profilePath := userData["profile_path"]
+	name := helper.ToStringPointer(userData["name"])
+	bio := helper.ToStringPointer(userData["bio"])
+	profilePath := helper.ToStringPointer(userData["profile_path"])
 
 	user := User{
 		ID:        userID,
 		Username:  userData["username"],
-		Name:      &name,
+		Name:      name,
 		Email:     userData["email"],
 		CreatedAt: createdAt,
 		Password: password{
 			Hash: []byte(userData["password_hash"]),
 		},
 		Activated:   activated,
-		Bio:         &bio,
-		ProfilePath: &profilePath,
+		Bio:         bio,
+		ProfilePath: profilePath,
 		ShowNsfw:    showNsfw,
 		UpdatedAt:   updatedAt,
 		Version:     int32(version),

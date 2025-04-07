@@ -20,6 +20,7 @@ func StartCommentWorker(ctx context.Context, m data.Models, workerID int) {
 	go func() {
 		insertQueue := fmt.Sprintf("comment:insert:queue:%d", workerID)
 		deleteQueue := fmt.Sprintf("comment:delete:queue:%d", workerID)
+		updateQueue := fmt.Sprintf("comment:update:queue:%d", workerID)
 
 		const batchSize = 100
 		workerTicker := time.NewTicker(5 * time.Second)
@@ -38,6 +39,9 @@ func StartCommentWorker(ctx context.Context, m data.Models, workerID int) {
 				if err := deleteComments(ctx, deleteQueue, m); nil == err {
 					time.Sleep(100 * time.Millisecond)
 				}
+				if err := updateComments(ctx, deleteQueue, m); nil == err {
+					time.Sleep(100 * time.Millisecond)
+				}
 			case <-batchTicker.C:
 				for range batchSize {
 					err := m.Comments.Redis.RPopLPush(ctx, data.CommentInsertQueueKey, insertQueue).Err()
@@ -53,6 +57,18 @@ func StartCommentWorker(ctx context.Context, m data.Models, workerID int) {
 				}
 				for range batchSize {
 					err := m.Comments.Redis.RPopLPush(ctx, data.CommentDeleteQueueKey, deleteQueue).Err()
+					if err != nil {
+						switch {
+						case err == redis.Nil:
+							break
+						default:
+							logger.PrintError(err, nil)
+							break
+						}
+					}
+				}
+				for range batchSize {
+					err := m.Comments.Redis.RPopLPush(ctx, data.CommentUpdateQueueKey, updateQueue).Err()
 					if err != nil {
 						switch {
 						case err == redis.Nil:
@@ -159,6 +175,42 @@ func deleteComments(ctx context.Context, key string, m data.Models) error {
 		logger.PrintError(errors.New("failed some comments"), map[string]string{"failed comments:": strconv.Itoa(len(failedIDs))})
 	}
 	logger.PrintInfo("processed delete comments", map[string]string{"count": strconv.Itoa(len(batch) - len(failedIDs)), "worker": key})
+
+	if err = m.Comments.Redis.Del(ctx, key).Err(); err != nil {
+		logger.PrintError(err, nil)
+		return err
+	}
+	return nil
+}
+
+func updateComments(ctx context.Context, key string, m data.Models) error {
+	comments, err := m.Comments.Redis.LRange(ctx, key, 0, -1).Result()
+	if err != nil {
+		logger.PrintError(err, nil)
+		return err
+	}
+
+	if len(comments) == 0 {
+		return nil
+	}
+
+	logger.PrintInfo("processing update comments", map[string]string{"count": strconv.Itoa(len(comments))})
+
+	batch := make([]*data.Comment, 0, len(comments))
+	for _, c := range comments {
+		var comment data.Comment
+		err := json.Unmarshal([]byte(c), &comment)
+		if err != nil {
+			return err
+		}
+		batch = append(batch, &comment)
+	}
+
+	failedIDs, err := m.Comments.BatchUpdate(&batch)
+	if err != nil {
+		logger.PrintError(errors.New("failed update comments"), map[string]string{"failed comments:": strconv.Itoa(len(failedIDs))})
+	}
+	logger.PrintInfo("processed update comments", map[string]string{"count": strconv.Itoa(len(batch) - len(failedIDs)), "worker": key})
 
 	if err = m.Comments.Redis.Del(ctx, key).Err(); err != nil {
 		logger.PrintError(err, nil)

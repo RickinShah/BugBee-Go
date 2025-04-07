@@ -51,9 +51,47 @@ func (app *application) createChannel(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = app.writeJson(w, http.StatusOK, envelope{"channel": "created successfully"}, nil)
+	err = app.writeJson(w, http.StatusOK, envelope{"channel": channel}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}
 
+}
+
+func (app *application) getChannels(w http.ResponseWriter, r *http.Request) {
+	var input struct {
+		Handle string `json:"handle"`
+	}
+
+	var err error
+	input.Handle, err = app.readStringPath("handle", r)
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+	}
+
+	community, err := app.models.Communities.GetByHandle(input.Handle)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			app.notFoundResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	channels, err := app.models.Channels.GetAll(community.ID)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			app.notFoundResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	if err := app.writeJson(w, http.StatusOK, envelope{"channels": channels}, nil); err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
 }

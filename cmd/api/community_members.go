@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"net/http"
 
@@ -31,14 +32,18 @@ func (app *application) getCommunityMembersHandler(w http.ResponseWriter, r *htt
 		return
 	}
 
-	err = app.writeJson(w, http.StatusOK, envelope{"users": users}, nil)
+	err = app.writeJson(w, http.StatusOK, envelope{"members": users}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}
 }
 
 func (app *application) joinCommunityHandler(w http.ResponseWriter, r *http.Request) {
-	handle, err := app.readStringPath("handle", r)
+	var input struct {
+		Handle string
+	}
+	var err error
+	input.Handle, err = app.readStringPath("handle", r)
 	if err != nil {
 		app.badRequestResponse(w, r, err)
 		return
@@ -46,7 +51,7 @@ func (app *application) joinCommunityHandler(w http.ResponseWriter, r *http.Requ
 
 	user := app.contextGetUser(r)
 
-	community, err := app.models.Communities.GetByHandle(handle)
+	community, err := app.models.Communities.GetByHandle(input.Handle)
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):
@@ -62,13 +67,34 @@ func (app *application) joinCommunityHandler(w http.ResponseWriter, r *http.Requ
 		CommunityID: community.ID,
 	}
 
-	err = app.models.CommunityMembers.Insert(&communityMember)
+	tx, err := app.models.Communities.DB.BeginTx(context.Background(), nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+	defer func() {
+		if err != nil {
+			tx.Rollback()
+		}
+	}()
+
+	err = app.models.CommunityMembers.InsertTx(tx, &communityMember)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
 	}
 
-	err = app.writeJson(w, http.StatusOK, envelope{handle: "joined successfully!"}, nil)
+	if err = app.models.Communities.UpdateMemberCountTx(tx, community, 1); err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	if err := tx.Commit(); err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	err = app.writeJson(w, http.StatusOK, envelope{input.Handle: "joined successfully!"}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}

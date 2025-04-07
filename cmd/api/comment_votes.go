@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/RickinShah/BugBee/internal/data"
-	"github.com/RickinShah/BugBee/internal/tasks"
 	"github.com/RickinShah/BugBee/internal/validator"
 )
 
@@ -38,19 +37,7 @@ func (app *application) createCommentVoteHandler(w http.ResponseWriter, r *http.
 		VoteType:  data.VoteType(input.VoteType),
 	}
 
-	task, err := tasks.NewTask(tasks.TypeCommentVote, commentVote)
-	if err != nil {
-		app.serverErrorResponse(w, r, err)
-		return
-	}
-
-	_, err = app.asynqClient.Enqueue(task, nil)
-	if err != nil {
-		app.serverErrorResponse(w, r, err)
-		return
-	}
-
-	err = app.writeJson(w, http.StatusCreated, envelope{"vote": "added successfully!"}, nil)
+	err = app.writeJson(w, http.StatusCreated, envelope{"vote": commentVote}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}

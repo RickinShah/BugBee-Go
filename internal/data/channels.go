@@ -3,6 +3,7 @@ package data
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"strings"
 	"time"
 
@@ -42,6 +43,46 @@ func (m ChannelModel) Insert(channel *Channel) error {
 
 	args := []any{channel.CommunityID, channel.Name}
 	return m.DB.QueryRowContext(ctx, query, args...).Scan(&channel.ID)
+}
+
+func (m ChannelModel) GetAll(communityID int64) ([]*Channel, error) {
+	query := `
+		SELECT channel_pid, community_id, name
+		FROM channels
+		WHERE community_id = $1
+	`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	args := []any{communityID}
+
+	rows, err := m.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, ErrRecordNotFound
+		default:
+			return nil, err
+		}
+	}
+
+	var channels []*Channel
+
+	for rows.Next() {
+		var channel Channel
+		if err := rows.Scan(&channel.ID, &channel.CommunityID, &channel.Name); err != nil {
+			return nil, err
+		}
+
+		channels = append(channels, &channel)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return channels, nil
 }
 
 func (m ChannelModel) InsertRoles(channelID int64, roleIDs []int64) error {
