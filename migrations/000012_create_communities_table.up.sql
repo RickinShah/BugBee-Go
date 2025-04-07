@@ -14,14 +14,6 @@ CREATE TABLE IF NOT EXISTS communities (
 CREATE INDEX IF NOT EXISTS gin_idx_communities_handle ON communities USING gin (handle gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS gin_idx_communities_name ON communities USING gin (name gin_trgm_ops);
 
-CREATE TABLE IF NOT EXISTS community_stats (
-    community_pid bigint PRIMARY KEY REFERENCES communities ON DELETE CASCADE,
-    member_count int NOT NULL DEFAULT 0,
-    post_count int NOT NULL DEFAULT 0,
-    last_post_at timestamp(0) with time zone,
-    updated_at timestamp(0) with time zone NOT NULL DEFAULT NOW()
-);
-
 CREATE TABLE IF NOT EXISTS community_members (
     user_id bigint REFERENCES users ON DELETE CASCADE,
     community_id bigint REFERENCES communities ON DELETE CASCADE,
