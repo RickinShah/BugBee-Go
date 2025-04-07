@@ -16,6 +16,9 @@ const useNavigation = () => {
         postUpload: "/post/upload",
         communityCreate: "/community/create",
         communities: "/communities",
+        settings: "/settings",
+        profile: "/profile",
+        changePassword: "/settings/password",
     };
 
     const goTo = (path, params = {}) => {

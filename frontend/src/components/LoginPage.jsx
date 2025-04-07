@@ -78,7 +78,7 @@ const LoginPage = () => {
                 />
                 <div className="text-right mt-2">
                     <button
-                        className="text-pink-400 hover:text-pink-200 duration-700 text-sm"
+                        className="text-pink-400 font-semibold hover:text-pink-200 duration-700 text-sm"
                         onClick={() => goTo("forgotPassword")}
                     >
                         Forgot Password?
@@ -91,7 +91,7 @@ const LoginPage = () => {
                     Login
                 </button>
                 <div className="text-center text-gray-300 mt-4">
-                    Don't have an account?{" "}
+                    Don&apos;t have an account?{" "}
                     <button
                         className="text-pink-400 font-bold hover:text-pink-200 duration-700"
                         onClick={() => goTo("register")}

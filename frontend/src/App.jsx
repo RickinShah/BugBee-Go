@@ -13,6 +13,9 @@ import SubmitOtp from "./components/SubmitOtp";
 import CreateCommunity from "./components/Communities/CreateCommunity";
 import Communities from "./components/Communities/Communities";
 import CommunitySetting from "./components/Communities/CommunitySetting";
+import UserProfile from "./components/UserProfile";
+import Settings from "./components/Settings";
+import ChangePassword from "./components/ChangePassword";
 
 const App = () => {
     return (
@@ -58,8 +61,17 @@ const App = () => {
                         element={<CreateCommunity />}
                     />
                     <Route path="/communities" element={<Communities />} />
+                    <Route path="/profile" element={<UserProfile />} />
+                    <Route path="/settings" element={<Settings />} />
+                    <Route
+                        path="/settings/password"
+                        element={<ChangePassword />}
+                    />
 
-                    <Route path="/cs" element={<CommunitySetting />} />
+                    <Route
+                        path="/community/:handle/settings"
+                        element={<CommunitySetting />}
+                    />
                 </Routes>
             </Router>
         </>

@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { apiCall } from "../utils/api";
 import useNavigation from "../utils/navigate";
+import { ArrowLeft } from "lucide-react";
 
 const PostUpload = () => {
     const [selectedFiles, setSelectedFiles] = useState([]);
@@ -171,7 +172,13 @@ const PostUpload = () => {
     }, [selectedFiles, currentIndex]);
 
     return (
-        <div className="bg-gradient-to-br from-indigo-900 via-purple-900 to-blue-800 w-full min-h-screen flex justify-center items-center p-4 sm:p-6">
+        <div className="bg-gradient-to-br from-indigo-900 via-purple-900 to-blue-800 w-full min-h-screen flex justify-center items-center px-4 sm:px-6 py-20 sm:py-20">
+            <button
+                onClick={() => goTo("feed")}
+                className="absolute top-4 left-4 sm:top-6 sm:left-6 p-2 rounded-full bg-white/10 hover:bg-white/20 text-gray-300 hover:text-white transition duration-300 shadow-md backdrop-blur z-10"
+            >
+                <ArrowLeft size={24} />
+            </button>
             <div className="w-full max-w-md sm:max-w-lg md:max-w-2xl lg:max-w-3xl bg-white bg-opacity-10 backdrop-blur-lg rounded-2xl p-6 sm:p-8 md:p-10 flex flex-col items-center shadow-xl border border-white border-opacity-20">
                 <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white mb-6 sm:mb-8 md:mb-10 tracking-tight">
                     Create a New Post
@@ -312,12 +319,6 @@ const PostUpload = () => {
                         onClick={handlePost}
                     >
                         Share Post
-                    </button>
-                    <button
-                        className="w-full sm:w-40 md:w-48 h-12 sm:h-14 bg-gray-600 rounded-xl text-white text-base sm:text-lg font-semibold hover:bg-gray-700 transition duration-300 shadow-md"
-                        onClick={() => goTo("feed")}
-                    >
-                        Cancel
                     </button>
                 </div>
             </div>

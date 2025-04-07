@@ -1,5 +1,6 @@
 const config = {
     // host: "192.168.29.150",
+    // host: "192.168.43.80",
     host: "localhost",
     protocol: "http",
     port: "80",
@@ -8,9 +9,9 @@ const config = {
 const showErrorNotification = (message) => {
     // Remove existing notification if any
 
-    if (existingNotification) {
-        existingNotification.remove();
-    }
+    // if (existingNotification) {
+    //     existingNotification.remove();
+    // }
 
     // Create a new notification
     const notification = document.createElement("div");
@@ -110,6 +111,9 @@ export const apiCall = async (
             onSuccess(responseData);
         } else {
             const errorHandler = onError || onErrorDefault;
+            if (onError != null) {
+                errorHandler(response);
+            }
             errorHandler(responseData);
         }
     } catch (error) {

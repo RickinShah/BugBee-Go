@@ -7,13 +7,18 @@ import { handleFormChange, setToLocalStorage } from "../utils/form";
 import { validateBio, validateName } from "../validators/user";
 import { validationError } from "../utils/errors";
 import useNavigation from "../utils/navigate";
+import { ArrowLeft } from "lucide-react";
+import { FaCog } from "react-icons/fa";
 
 const CompleteProfile = () => {
     const { goTo } = useNavigation();
 
+    const [profilePath] = useState(() => localStorage.getItem("profile_path"));
+    const [name] = useState(() => localStorage.getItem("name"));
+    // const [username] = useState(() => localStorage.getItem("username"));
     const [formData, setFormData] = useState({
         bio: "",
-        name: localStorage.getItem("name"),
+        name: name,
     });
     const [image, setImage] = useState(null);
     const [croppedImage, setCroppedImage] = useState(null);
@@ -120,19 +125,49 @@ const CompleteProfile = () => {
     };
 
     return (
-        <div className="w-full h-screen flex items-center justify-center bg-gradient-to-br from-[#242380] via-blue-950 bg-purple-800">
-            <div className="bg-[#ffffff1a] p-8 rounded-lg shadow-lg flex flex-col gap-6 w-[700px]">
+        <div className="w-full min-h-screen flex items-center justify-center bg-gradient-to-br from-[#242380] via-blue-950 to-purple-800 p-4 relative">
+            <button
+                onClick={() => goTo("feed")}
+                className="absolute top-4 left-4 sm:top-6 sm:left-6 p-2 rounded-full bg-white/10 hover:bg-white/20 text-gray-300 hover:text-white transition duration-300 shadow-md backdrop-blur z-10"
+            >
+                <ArrowLeft size={24} />
+            </button>
+
+            <div className="bg-[#ffffff1a] p-6 sm:p-8 rounded-lg shadow-lg flex flex-col gap-6 w-full max-w-[700px]">
                 {/* Profile Image & Bio Section */}
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col md:flex-row items-center justify-between gap-6">
                     {/* Profile Image Section */}
-                    <div className="flex flex-col items-center w-1/2">
-                        {!image && !croppedImage && (
+                    <div className="flex flex-col items-center w-full md:w-1/2">
+                        {!image && !croppedImage && !profilePath && (
                             <label
                                 htmlFor="fileInput"
-                                className="relative w-40 h-40 rounded-full overflow-hidden cursor-pointer group border-4 border-white flex items-center justify-center bg-gray-300 text-gray-500 text-lg"
+                                className="relative w-32 h-32 sm:w-40 sm:h-40 rounded-full overflow-hidden cursor-pointer group border-4 border-white flex items-center justify-center bg-gray-300 text-gray-500 text-lg"
                             >
                                 Upload Image
                             </label>
+                        )}
+
+                        {!image && !croppedImage && profilePath && (
+                            <div
+                                className="relative w-32 h-32 sm:w-40 sm:h-40 rounded-full overflow-hidden cursor-pointer group border-4 border-white"
+                                onClick={() =>
+                                    document.getElementById("fileInput").click()
+                                }
+                            >
+                                <img
+                                    src={profilePath}
+                                    alt="Profile"
+                                    className="w-full h-full object-cover"
+                                />
+                                <div
+                                    className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0
+                                    group-hover:opacity-100 transition-opacity duration-300 rounded-full"
+                                >
+                                    <span className="text-white font-bold text-sm">
+                                        Change
+                                    </span>
+                                </div>
+                            </div>
                         )}
 
                         <input
@@ -145,7 +180,7 @@ const CompleteProfile = () => {
 
                         {showCropper && image && (
                             <div className="flex flex-col items-center">
-                                <div className="w-64 h-64 rounded-lg overflow-hidden border">
+                                <div className="w-52 h-52 sm:w-64 sm:h-64 rounded-lg overflow-hidden border">
                                     <Cropper
                                         src={image}
                                         style={{
@@ -169,13 +204,13 @@ const CompleteProfile = () => {
                                 <div className="flex space-x-4 mt-4">
                                     <button
                                         onClick={cropImage}
-                                        className="w-32 h-10 rounded-xl bg-[#ff24d046] text-gray-500 hover:bg-[#ff24cf] hover:text-gray-300 font-bold duration-700"
+                                        className="w-28 sm:w-32 h-10 rounded-xl bg-[#ff24d046] text-gray-500 hover:bg-[#ff24cf] hover:text-gray-300 font-bold duration-700"
                                     >
                                         Crop
                                     </button>
                                     <button
                                         onClick={removeImage}
-                                        className="w-32 h-10 rounded-xl bg-red-500 text-white hover:bg-red-600 font-bold duration-700"
+                                        className="w-28 sm:w-32 h-10 rounded-xl bg-red-500 text-white hover:bg-red-600 font-bold duration-700"
                                     >
                                         Remove
                                     </button>
@@ -185,7 +220,7 @@ const CompleteProfile = () => {
 
                         {croppedImage && !showCropper && (
                             <div
-                                className="relative w-40 h-40 rounded-full overflow-hidden cursor-pointer group border-4 border-white"
+                                className="relative w-32 h-32 sm:w-40 sm:h-40 rounded-full overflow-hidden cursor-pointer group border-4 border-white"
                                 onClick={editImage}
                             >
                                 <img
@@ -193,10 +228,9 @@ const CompleteProfile = () => {
                                     alt="Profile"
                                     className="w-full h-full object-cover"
                                 />
-
                                 <div
                                     className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0
-                                        group-hover:opacity-100 transition-opacity duration-300 rounded-full"
+                                    group-hover:opacity-100 transition-opacity duration-300 rounded-full"
                                 >
                                     <span className="text-white font-bold text-sm">
                                         Edit
@@ -207,9 +241,9 @@ const CompleteProfile = () => {
                     </div>
 
                     {/* Bio Section */}
-                    <div className="flex flex-col items-center w-1/2">
-                        <h2 className="text-white text-lg font-bold mb-2">
-                            Complete Your Profile
+                    <div className="flex flex-col items-center w-full md:w-1/2">
+                        <h2 className="text-white text-lg font-bold mb-2 text-center">
+                            Update Profile
                         </h2>
 
                         <input
@@ -218,7 +252,7 @@ const CompleteProfile = () => {
                             value={formData.name}
                             onChange={(e) => handleFormChange(e, setFormData)}
                             placeholder="Name"
-                            className="text-white px-4 py-3 w-full h-10 bg-[#ffffff49] mb-4 rounded-xl resize-none focus:outline-none"
+                            className="text-white px-4 py-3 w-full bg-[#ffffff49] mb-4 rounded-xl resize-none focus:outline-none"
                         />
                         <textarea
                             name="bio"
@@ -234,12 +268,18 @@ const CompleteProfile = () => {
                 <div className="flex justify-center mt-4">
                     <button
                         onClick={handleSubmit}
-                        className="w-48 h-12 rounded-xl bg-[#ff24d046] text-gray-500 hover:bg-[#ff24cf] hover:text-gray-300 text-lg font-bold duration-700"
+                        className="w-40 sm:w-48 h-12 rounded-xl bg-[#ff24d046] text-gray-500 hover:bg-[#ff24cf] hover:text-gray-300 text-lg font-bold duration-700"
                     >
                         Submit
                     </button>
                 </div>
             </div>
+            <button
+                className="absolute top-4 right-4 sm:top-6 sm:right-6 p-2 bg-[#9b9b9b6b] rounded-full hover:bg-[#75ccf2c0] transition-all duration-300 shadow-md z-10"
+                onClick={() => goTo("settings")}
+            >
+                <FaCog className="w-5 h-5 hover:w-6 hover:h-6 transition-all" />
+            </button>
         </div>
     );
 };

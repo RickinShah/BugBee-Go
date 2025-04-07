@@ -6,8 +6,11 @@ import "cropperjs/dist/cropper.css";
 import { apiCall } from "../../utils/api";
 import { validationError } from "../../utils/errors";
 import { validateName, validateUsername } from "../../validators/user";
+import useNavigation from "../../utils/navigate";
+import { ArrowLeft } from "lucide-react";
 
 const CreateCommunity = () => {
+    const { goTo } = useNavigation();
     const navigate = useNavigate();
     const [formData, setFormData] = useState({
         name: "",
@@ -121,6 +124,12 @@ const CreateCommunity = () => {
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-950 to-indigo-900 p-4">
+            <button
+                onClick={() => goTo("communities")}
+                className="absolute top-4 left-4 sm:top-6 sm:left-6 p-2 rounded-full bg-white/10 hover:bg-white/20 text-gray-300 hover:text-white transition duration-300 shadow-md backdrop-blur z-10"
+            >
+                <ArrowLeft size={24} />
+            </button>
             <div className="bg-black bg-opacity-30 p-6 sm:p-8 rounded-xl shadow-2xl w-full max-w-2xl transform transition-all duration-300 hover:shadow-3xl">
                 <h2 className="text-white text-2xl font-bold text-center mb-6">
                     Create a Community

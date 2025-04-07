@@ -9,6 +9,7 @@ import {
     FaArrowRight,
 } from "react-icons/fa";
 import { apiCall, getMediaPath } from "../utils/api";
+// import { copyToClipboard } from "../utils/form";
 
 const Card = ({ user, post_id, content, stats, files }) => {
     const [username] = useState(() => localStorage.getItem("username"));
@@ -251,7 +252,7 @@ const Card = ({ user, post_id, content, stats, files }) => {
                             <button
                                 onClick={handlePrevMedia}
                                 disabled={currentMediaIndex === 0}
-                                className={`absolute left-2 top-1/2 transform -translate-y-1/2 p-2 rounded-full bg-black bg-opacity-50 text-white ${currentMediaIndex === 0 ? "opacity-50 cursor-not-allowed" : "hover:bg-opacity-75"}`}
+                                className={`absolute left-2 top-1/2 transform -translate-y-1/2 p-2 rounded-full bg-black bg-opacity-50 text-white ${currentMediaIndex === 0 ? "opacity-0" : "hover:bg-opacity-75"}`}
                             >
                                 <FaArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
                             </button>
@@ -260,7 +261,7 @@ const Card = ({ user, post_id, content, stats, files }) => {
                                 disabled={
                                     currentMediaIndex === files.length - 1
                                 }
-                                className={`absolute right-2 top-1/2 transform -translate-y-1/2 p-2 rounded-full bg-black bg-opacity-50 text-white ${currentMediaIndex === files.length - 1 ? "opacity-50 cursor-not-allowed" : "hover:bg-opacity-75"}`}
+                                className={`absolute right-2 top-1/2 transform -translate-y-1/2 p-2 rounded-full bg-black bg-opacity-50 text-white ${currentMediaIndex === files.length - 1 ? "opacity-0" : "hover:bg-opacity-75"}`}
                             >
                                 <FaArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
                             </button>
@@ -327,7 +328,10 @@ const Card = ({ user, post_id, content, stats, files }) => {
                     </span>
                 </button>
 
-                <button className="flex items-center space-x-1 sm:space-x-2 group">
+                <button
+                    className="flex items-center space-x-1 sm:space-x-2 group"
+                    // onClick={() => copyToClipboard()}
+                >
                     <div className="p-1 sm:p-2 rounded-full bg-gradient-to-r from-[#f5c71f] to-[#c78f00] group-hover:scale-110 transition-all duration-300">
                         <FaShare className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
                     </div>
@@ -342,6 +346,29 @@ const Card = ({ user, post_id, content, stats, files }) => {
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-2 sm:p-4">
                     <div className="w-full max-w-md bg-[#230a36] rounded-lg p-3 sm:p-4 shadow-lg max-h-[90vh] flex flex-col">
                         <div className="max-h-[50vh] sm:max-h-[60vh] overflow-y-auto space-y-3 sm:space-y-4">
+                            {commentData.length === 0 && (
+                                <div className="w-full py-8 text-center text-gray-400 flex flex-col items-center gap-2">
+                                    <svg
+                                        className="w-10 h-10 text-gray-500"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth={1.5}
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            d="M7 8h10M7 12h4m1 8.5a8.38 8.38 0 004.58-1.34A8.5 8.5 0 1012 20.5z"
+                                        />
+                                    </svg>
+                                    <p className="text-lg font-medium">
+                                        No Comments Yet
+                                    </p>
+                                    <p className="text-sm text-gray-500">
+                                        Be the first to share your thoughts!
+                                    </p>
+                                </div>
+                            )}
                             {commentData.map((comment, index) => (
                                 <div
                                     key={index}
@@ -405,8 +432,8 @@ const Card = ({ user, post_id, content, stats, files }) => {
                                 type="text"
                                 value={newComment}
                                 onChange={(e) => setNewComment(e.target.value)}
-                                className="flex-1 bg-[#31144e] text-white p-2 rounded-full focus:outline-none placeholder-gray-400 text-xs sm:text-sm"
-                                placeholder="Add a comment..."
+                                className="flex-1 bg-[#31144e] font-medium text-white p-2 rounded-full focus:outline-none placeholder-gray-400 text-xs sm:text-sm"
+                                placeholder=" Add a comment..."
                             />
                             <button
                                 onClick={() => handleCommentSubmit()}

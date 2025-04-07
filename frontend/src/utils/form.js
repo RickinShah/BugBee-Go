@@ -1,8 +1,8 @@
 export const handleFormChange = (e, setFormData) => {
-    const { name, value } = e.target;
+    const { name, type, value, checked } = e.target;
     setFormData((prev) => ({
         ...prev,
-        [name]: value,
+        [name]: type === "checkbox" ? checked : value,
     }));
 };
 
@@ -25,4 +25,13 @@ export const removeFieldIfEmpty = (data, fieldName) => {
 
 export const setToLocalStorage = (name, value) => {
     localStorage.setItem(name, value != null ? value : "");
+};
+
+export const copyToClipboard = async (text) => {
+    try {
+        await navigator.clipboard.writeText(text);
+        alert("Copied to clipboard");
+    } catch (err) {
+        console.error(err);
+    }
 };

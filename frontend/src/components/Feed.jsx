@@ -1,4 +1,3 @@
-import React from "react";
 import Card from "./Cards.jsx";
 import { useState, useEffect, useRef, useCallback } from "react";
 import {
@@ -28,11 +27,10 @@ const Feed = () => {
     const [name] = useState(() => localStorage.getItem("name"));
     const [username] = useState(() => localStorage.getItem("username"));
     const [searchResults, setSearchResults] = useState([]);
+    const [communities, setCommunities] = useState([]);
     const [isSearching, setIsSearching] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
-    const [profilePath, setProfilePath] = useState(() =>
-        localStorage.getItem("profile_path"),
-    );
+    const [profilePath] = useState(() => localStorage.getItem("profile_path"));
     const { goTo } = useNavigation();
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -115,6 +113,27 @@ const Feed = () => {
         }
     };
 
+    const fetchCommunities = () => {
+        try {
+            apiCall(
+                "/v1/communities",
+                "GET",
+                null,
+                {},
+                "include",
+                false,
+                (response) => {
+                    setCommunities(response.communities);
+                },
+            );
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    useEffect(() => {
+        fetchCommunities();
+    }, []);
     // Initial fetch
     useEffect(() => {
         fetchPosts();
@@ -162,31 +181,53 @@ const Feed = () => {
             {/* Left Sidebar - Fixed */}
             <div className="hidden md:block md:w-1/5 h-screen fixed left-0 top-0 shadow-lg">
                 <div className="h-1/5 p-4">
-                    <img
-                        src="../src/assets/logo.png"
-                        alt="home"
-                        className="max-h-full mx-auto"
-                    />
+                    <button onClick={() => goTo("feed")}>
+                        <img
+                            src="../src/assets/logo.png"
+                            alt="home"
+                            className="max-h-full mx-auto"
+                        />
+                    </button>
                     <div className="mt-4 bg-gradient-to-r from-[#6767676d] to-[#9c048596] rounded-2xl flex items-center p-3 shadow-md">
-                        <div className="w-10 h-10 bg-[#ffffff86] rounded-full overflow-hidden flex-shrink-0">
-                            <img
-                                src={profilePath}
-                                alt="profile"
-                                className="w-full h-full object-cover"
-                            />
-                        </div>
+                        <button onClick={() => goTo("profile")}>
+                            <div className="w-10 h-10 bg-[#ffffff86] rounded-full overflow-hidden flex-shrink-0">
+                                <img
+                                    src={profilePath}
+                                    alt="profile"
+                                    className="w-full h-full object-cover"
+                                />
+                            </div>
+                        </button>
                         <div className="flex-grow mx-3">
-                            <div className="font-semibold text-sm truncate">
-                                {name}
-                            </div>
-                            <div className="text-gray-400 text-xs truncate">
-                                @{username}
-                            </div>
+                            <button onClick={() => goTo("profile")}>
+                                <div className="font-semibold text-sm truncate">
+                                    {name}
+                                </div>
+                                <div className="text-gray-400 text-xs truncate">
+                                    @{username}
+                                </div>
+                            </button>
                         </div>
-                        <button className="flex items-center">
-                            <div className="rounded-full mx-0.5 w-1 h-1 bg-blue-500 hover:bg-blue-800 transition"></div>
-                            <div className="rounded-full mx-0.5 w-1 h-1 bg-blue-500 hover:bg-blue-800 transition"></div>
-                            <div className="rounded-full mx-0.5 w-1 h-1 bg-blue-500 hover:bg-blue-800 transition"></div>
+                        <button
+                            className="flex items-center px-2 py-1 text-white transition-all duration-200 hover:scale-105 hover:shadow-[0_0_8px_rgba(156,4,133,0.5)] text-sm shrink-0 group"
+                            onClick={() => goTo("completeProfile")}
+                        >
+                            <span className="bg-gradient-to-r from-[#d946ef] to-[#9333ea] bg-clip-text text-transparent">
+                                Edit
+                            </span>
+                            <svg
+                                className="ml-1.5 w-4 h-4 opacity-80 group-hover:opacity-100 transition-opacity duration-200"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth="2"
+                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                                />
+                            </svg>
                         </button>
                     </div>
                 </div>
@@ -196,6 +237,7 @@ const Feed = () => {
                             {
                                 icon: <FaHome className="w-6 h-6" />,
                                 text: "Home",
+                                onClick: () => goTo("feed"),
                             },
                             {
                                 icon: <FaUsers className="w-6 h-6" />,
@@ -252,24 +294,29 @@ const Feed = () => {
             {/* Main Content Area */}
             <div className="w-full md:w-3/5 md:ml-[20%] md:mr-[20%] flex flex-col">
                 {/* Fixed Search Bar with Background */}
+
                 <div className="fixed top-0 left-0 md:left-[20%] right-0 md:right-[20%] z-10">
-                    <div className="bg-gradient-to-br from-[#242380]/90 via-blue-950/90 to-purple-800/90 w-full h-20 md:h-24"></div>
+                    <div className="bg-gradient-to-br from-[#242380] to-blue-950 w-full h-20 md:h-24"></div>
                     <div className="absolute top-0 left-0 right-0 px-4 pt-4 pb-2">
                         <div className="flex items-center w-full max-w-2xl mx-auto md:block">
                             <div className="md:hidden flex items-center mr-3">
                                 <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
-                                    <img
-                                        src={profilePath}
-                                        alt="profile"
-                                        className="w-full h-full object-cover"
-                                    />
+                                    <button
+                                        onClick={() => goTo("completeProfile")}
+                                    >
+                                        <img
+                                            src={profilePath}
+                                            alt="profile"
+                                            className="w-full h-full object-cover"
+                                        />
+                                    </button>
                                 </div>
                             </div>
                             <div className="relative flex-1">
                                 <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-white/70" />
                                 <input
                                     type="text"
-                                    className="w-full h-12 bg-gradient-to-br from-[#242380]/90 to-purple-800/90 rounded-2xl pl-10 pr-4 placeholder-white/70 text-sm border border-white/20 focus:outline-none focus:ring-2 focus:ring-pink-600/50 transition-all"
+                                    className="w-full h-12 bg-gradient-to-br from-[#242380]/90 to-blue-950/90 rounded-2xl pl-10 pr-4 placeholder-white/70 text-sm border border-white/20 focus:outline-none focus:ring-2 focus:ring-pink-600/50 transition-all"
                                     placeholder="Search"
                                     value={searchQuery}
                                     onChange={(e) =>
@@ -278,7 +325,7 @@ const Feed = () => {
                                 />
                                 {/* Search Results Dropdown */}
                                 {isSearching || searchResults.length > 0 ? (
-                                    <div className="absolute top-14 left-0 right-0 bg-gradient-to-b from-[#242380]/95 to-purple-800/95 rounded-xl shadow-xl max-h-96 overflow-y-auto z-20 border border-white/10">
+                                    <div className="absolute top-14 left-0 right-0 bg-gradient-to-b from-[#242380]/95 to-blue-950/95 rounded-xl shadow-xl max-h-96 overflow-y-auto z-20 border border-white/10">
                                         {isSearching ? (
                                             <div className="p-4 text-center text-gray-300 animate-pulse">
                                                 <span className="inline-flex items-center">
@@ -368,12 +415,46 @@ const Feed = () => {
                     <button className="p-2 bg-[#9b9b9b6b] rounded-full hover:bg-[#f5c71fc0] transition-all duration-300 shadow-md">
                         <FaBell className="w-5 h-5 hover:w-6 hover:h-6 transition-all" />
                     </button>
-                    <button className="p-2 bg-[#9b9b9b6b] rounded-full hover:bg-[#75ccf2c0] transition-all duration-300 ml-2 shadow-md">
+                    <button
+                        className="p-2 bg-[#9b9b9b6b] rounded-full hover:bg-[#75ccf2c0] transition-all duration-300 ml-2 shadow-md"
+                        onClick={() => goTo("settings")}
+                    >
                         <FaCog className="w-5 h-5 hover:w-6 hover:h-6 transition-all" />
                     </button>
                 </div>
                 <div className="flex flex-col items-center justify-between h-[calc(100vh-5rem)] px-4 pb-6">
-                    <div className="my-4 w-full h-80 bg-[#1a072cbf] rounded-2xl shadow-md"></div>
+                    <div className="my-4 w-full h-80 bg-[#1a072cbf] rounded-2xl shadow-md overflow-y-auto">
+                        <div className="p-4 border-b border-gray-700">
+                            <h2 className="text-white text-sm font-semibold">
+                                Popular Communities
+                            </h2>
+                        </div>
+                        {communities.map((community) => (
+                            <div
+                                key={community.community_id}
+                                className="flex items-center p-4 border-b border-gray-700 hover:bg-[#2a143dbf] transition-colors"
+                            >
+                                <img
+                                    src={getMediaPath(community.profile_path)}
+                                    alt={`${community.name}'s profile`}
+                                    className="w-9 h-9 rounded-full mr-4 object-cover"
+                                    onError={(e) => {
+                                        e.target.src = getMediaPath(
+                                            "/bugbee/profiles/default.jpg",
+                                        );
+                                    }}
+                                />
+                                <div className="flex flex-col">
+                                    <span className="text-white font-semibold text-sm">
+                                        {community.name}
+                                    </span>
+                                    <span className="text-gray-400 text-xs">
+                                        @{community.community_handle}
+                                    </span>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                     <button
                         className="bg-gradient-to-b from-[#7793f7] to-[#2f59f3] w-full h-11 rounded-xl font-semibold text-base hover:h-12 transition-all duration-300 flex items-center justify-center shadow-md"
                         onClick={() => goTo("postUpload")}
@@ -386,7 +467,12 @@ const Feed = () => {
             {/* Mobile Navigation */}
             <div className="md:hidden fixed bottom-0 left-0 right-0 bg-[#242380]/95 p-2 flex justify-around items-center shadow-lg">
                 {[
-                    { icon: <FaHome className="w-7 h-7" />, action: () => {} },
+                    {
+                        icon: <FaHome className="w-7 h-7" />,
+                        action: () => {
+                            goTo("feed");
+                        },
+                    },
                     {
                         icon: <FaComments className="w-7 h-7" />,
                         action: () => {},
@@ -398,8 +484,16 @@ const Feed = () => {
                                 "http://localhost:3010/newroom"),
                     },
                     {
+                        icon: <FaUsers className="w-7 h-7" />,
+                        action: () => goTo("communities"),
+                    },
+                    {
                         icon: <FaPlus className="w-7 h-7" />,
                         action: () => goTo("postUpload"),
+                    },
+                    {
+                        icon: <FaCog className="w-6 h-6" />,
+                        action: () => goTo("settings"),
                     },
                 ].map((item, index) => (
                     <button
