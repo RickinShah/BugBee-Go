@@ -1,7 +1,10 @@
 package main
 
 import (
+	"context"
+	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/RickinShah/BugBee/internal/data"
 	"github.com/RickinShah/BugBee/internal/validator"
@@ -37,7 +40,22 @@ func (app *application) createPostVoteHandler(w http.ResponseWriter, r *http.Req
 		VoteType: data.VoteType(input.VoteType),
 	}
 
-	err = app.writeJson(w, http.StatusCreated, envelope{"vote": postVote}, nil)
+	postVoteJSON, err := json.Marshal(postVote)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err = app.models.PostVotes.Redis.RPush(ctx, data.PostVoteQueueKey, postVoteJSON).Err()
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	err = app.writeJson(w, http.StatusOK, envelope{"vote": "added successfully!"}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}

@@ -19,6 +19,8 @@ const useNavigation = () => {
         settings: "/settings",
         profile: "/profile",
         changePassword: "/settings/password",
+        chat: "/chat",
+        vc: "/vc",
     };
 
     const goTo = (path, params = {}) => {

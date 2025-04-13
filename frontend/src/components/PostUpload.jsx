@@ -2,6 +2,10 @@ import { useState, useRef, useEffect } from "react";
 import { apiCall } from "../utils/api";
 import useNavigation from "../utils/navigate";
 import { ArrowLeft } from "lucide-react";
+import "./PostUpload.css";
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faImage, faPlus } from '@fortawesome/free-solid-svg-icons';
+
 
 const PostUpload = () => {
     const [selectedFiles, setSelectedFiles] = useState([]);
@@ -172,7 +176,7 @@ const PostUpload = () => {
     }, [selectedFiles, currentIndex]);
 
     return (
-        <div className="bg-gradient-to-br from-indigo-900 via-purple-900 to-blue-800 w-full min-h-screen flex justify-center items-center px-4 sm:px-6 py-20 sm:py-20">
+        <div className="bg-gradient-to-br from-[#15145d]  to-[#080a41] w-full min-h-screen flex justify-center items-center px-4 sm:px-6 py-20 sm:py-20">
             <button
                 onClick={() => goTo("feed")}
                 className="absolute top-4 left-4 sm:top-6 sm:left-6 p-2 rounded-full bg-white/10 hover:bg-white/20 text-gray-300 hover:text-white transition duration-300 shadow-md backdrop-blur z-10"
@@ -186,7 +190,7 @@ const PostUpload = () => {
                 <div className="w-full space-y-6 sm:space-y-8">
                     <div className="w-full">
                         <textarea
-                            placeholder="What's on your mind?"
+                            placeholder="Type here..."
                             value={content}
                             onChange={(e) => setContent(e.target.value)}
                             className="w-full p-3 sm:p-4 rounded-xl bg-white bg-opacity-10 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition duration-200 resize-none text-base sm:text-lg"
@@ -267,14 +271,25 @@ const PostUpload = () => {
                                 </button>
                             </div>
                         ) : (
-                            <p className="text-white text-base sm:text-lg md:text-xl font-medium">
-                                Upload photos, videos, or audio
-                            </p>
+                            <div className="flex flex-col items-center cursor-pointer text-white">
+                                <span className="relative text-5xl">
+                                    <FontAwesomeIcon icon={faImage} />
+                                    <FontAwesomeIcon
+                                    icon={faPlus}
+                                    className="absolute bottom-0 right-0 text-xs bg-indigo-600 rounded-full p-1"
+                                    />
+                                </span>
+                                <p className="text-base sm:text-lg md:text-xl font-medium mt-2 text-center">
+                                    Click here to Upload Media
+                                </p>
+                                </div>
+
                         )}
                         {selectedFiles.length > 1 && (
                             <>
                                 <button
-                                    className="absolute left-2 sm:left-4 top-1/2 transform -translate-y-1/2 bg-indigo-600 text-white p-2 sm:p-3 rounded-full shadow-lg hover:bg-indigo-700 transition duration-200"
+                                    className="absolute left-2 sm:left-4 top-1/2 transform -translate-y-1/2 text-white p-2 sm:p-3 rounded-full hover:shadow-lg transition duration-200"
+
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         prevMedia();
@@ -283,7 +298,7 @@ const PostUpload = () => {
                                     ❮
                                 </button>
                                 <button
-                                    className="absolute right-2 sm:right-4 top-1/2 transform -translate-y-1/2 bg-indigo-600 text-white p-2 sm:p-3 rounded-full shadow-lg hover:bg-indigo-700 transition duration-200"
+                                    className="absolute right-2 sm:right-4 top-1/2 transform -translate-y-1/2 text-white p-2 sm:p-3 rounded-full  hover:shadow-lg transition duration-200"
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         nextMedia();
@@ -304,7 +319,8 @@ const PostUpload = () => {
                     />
                     {selectedFiles.length > 0 && (
                         <button
-                            className="w-full mt-4 sm:mt-6 px-4 sm:px-6 py-2 sm:py-3 bg-indigo-500 text-white rounded-xl hover:bg-indigo-600 transition duration-300 text-base sm:text-lg font-medium"
+                            className="w-full mt-4 sm:mt-6 px-4 sm:px-6 py-2 sm:py-3 bg-gray-500 text-white rounded-xl hover:bg-gray-600 transition duration-200 text-base sm:text-lg font-medium"
+
                             onClick={() =>
                                 document.getElementById("fileInput").click()
                             }
@@ -315,7 +331,7 @@ const PostUpload = () => {
                 </div>
                 <div className="flex flex-col sm:flex-row justify-center mt-8 sm:mt-10 w-full space-y-4 sm:space-y-0 sm:space-x-6">
                     <button
-                        className="w-full sm:w-40 md:w-48 h-12 sm:h-14 bg-indigo-600 rounded-xl text-white text-base sm:text-lg font-semibold hover:bg-indigo-700 transition duration-300 shadow-md"
+                        className="w-full sm:w-40 md:w-48 h-12 sm:h-14 bg-[#185ce4] rounded-xl text-white text-base sm:text-lg font-semibold hover:bg-[#0051ff98] transition duration-200 shadow-md"
                         onClick={handlePost}
                     >
                         Share Post

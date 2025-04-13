@@ -80,7 +80,7 @@ const RegisterPassword = () => {
                 />
                 <button
                     onClick={handleSubmit}
-                    className="w-full py-2 mt-5 rounded-lg bg-[#ff24d046] text-gray-500 hover:bg-[#ff24cf] hover:text-gray-300 text-lg font-bold duration-700 focus:ring-2 focus:ring-pink-500"
+                    className="w-full py-2 mt-5 rounded-lg bg-[#ff24cf] text-gray-100 hover:bg-[#ff24d046] hover:text-gray-400 text-lg font-bold duration-300 "
                 >
                     Create Account
                 </button>

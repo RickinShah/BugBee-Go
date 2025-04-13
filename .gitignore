@@ -3,3 +3,4 @@ bin/
 .idea
 frontend/node_modules
 frontend/dist
+chat/node_modules

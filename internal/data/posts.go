@@ -29,6 +29,7 @@ type Post struct {
 	User      *User      `json:"user" db:"users"`
 	Stats     *PostStats `json:"stats"`
 	Files     []*File    `json:"files"`
+	VoteType  VoteType   `json:"vote_type"`
 	all       bool
 }
 
@@ -51,6 +52,7 @@ func (p *Post) MarshalJSON() ([]byte, error) {
 	if p.Stats != nil {
 		post["stats"] = p.Stats
 	}
+	post["vote_type"] = p.VoteType
 	return json.Marshal(post)
 }
 
@@ -101,7 +103,7 @@ func (m PostModel) Get(id int64) (*Post, error) {
 	}
 
 	query := `
-		SELECT u.username, p.post_pid, p.created_at, p.content, p.has_files, p.version
+		SELECT u.username, u.name, u.profile_path, p.post_pid, p.created_at, p.content, p.has_files, p.version
 		FROM posts p
 		LEFT JOIN users u ON p.user_id = u.user_pid
 		WHERE post_pid = $1
@@ -116,6 +118,8 @@ func (m PostModel) Get(id int64) (*Post, error) {
 
 	err = m.DB.QueryRowContext(ctx, query, id).Scan(
 		&post.User.Username,
+		&post.User.Name,
+		&post.User.ProfilePath,
 		&post.ID,
 		&post.CreatedAt,
 		&post.Content,
@@ -138,6 +142,53 @@ func (m PostModel) Get(id int64) (*Post, error) {
 	}(post)
 
 	return &post, nil
+}
+
+func (m PostModel) GetByUserID(userID int64) ([]*Post, error) {
+	query := `
+		SELECT post_pid, user_id, created_at, content, has_files, version
+		FROM posts
+		WHERE user_id = $1
+		ORDER BY post_pid DESC
+	`
+	var posts []*Post
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	args := []any{userID}
+
+	rows, err := m.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, ErrRecordNotFound
+		default:
+			return nil, err
+		}
+	}
+
+	for rows.Next() {
+		tempPost := Post{
+			User: &User{},
+		}
+		if err := rows.Scan(
+			&tempPost.ID,
+			&tempPost.User.ID,
+			&tempPost.CreatedAt,
+			&tempPost.Content,
+			&tempPost.HasFiles,
+			&tempPost.Version,
+		); err != nil {
+			return nil, err
+		}
+		posts = append(posts, &tempPost)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return posts, nil
 }
 
 func (m PostModel) GetAll(filters Filters) ([]*Post, error) {

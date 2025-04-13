@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { apiCall, getMediaPath } from "../utils/api";
 import { useState } from "react";
 import { handleFormChange } from "../utils/form";
+import { validationError } from "../utils/errors";
 
 const Settings = () => {
     const { goTo } = useNavigation();
@@ -35,11 +36,39 @@ const Settings = () => {
 
     const handleChange = (e) => handleFormChange(e, setFormData);
 
+    const submitData = async () => {
+        console.log(formData);
+        try {
+            await apiCall(
+                `/v1/users`,
+                "PATCH",
+                formData,
+                {},
+                "include",
+                false,
+                (response) => {
+                    console.log(response.user);
+                    response.user._id = response.user.user_id;
+                    response.user.profile_path = getMediaPath(
+                        response.user.profile_path,
+                    );
+                    localStorage.setItem("username", response.user.username);
+                    localStorage.setItem("show_nsfw", response.user.show_nsfw);
+
+                    localStorage.setItem("user", JSON.stringify(response.user));
+                },
+            );
+        } catch (error) {
+            console.log(error);
+            validationError(error);
+        }
+    };
+
     useEffect(() => {
         fetchUser();
     }, []);
     return (
-        <div className="min-h-screen w-full bg-gradient-to-br from-[#242380] via-blue-950 to-purple-800 flex items-center justify-center text-white font-sans px-4 sm:px-6 pt-20 pb-10 sm:py-0">
+        <div className="min-h-screen w-full  bg-gradient-to-br from-[#15145d]  to-[#080a41] flex items-center justify-center text-white font-sans px-4 sm:px-6 pt-20 pb-10 sm:py-0">
             <button
                 onClick={() => goTo("feed")}
                 className="absolute top-4 left-4 sm:top-6 sm:left-6 p-2 rounded-full bg-white/10 hover:bg-white/20 text-gray-300 hover:text-white transition duration-300 shadow-md backdrop-blur z-10"
@@ -100,7 +129,10 @@ const Settings = () => {
                 </div>
 
                 {/* Apply Button */}
-                <button className="w-full h-12 bg-pink-500/30 hover:bg-pink-500/50 text-white font-semibold rounded-xl shadow-md transition mb-6 text-sm sm:text-base">
+                <button
+                    className="w-full h-12 bg-[#ff24d0cb] text-gray-200 hover:bg-[#7a0f6385] hover:text-gray-400 font-semibold rounded-xl shadow-md transition mb-6 text-sm sm:text-base"
+                    onClick={() => submitData()}
+                >
                     Apply Changes
                 </button>
 

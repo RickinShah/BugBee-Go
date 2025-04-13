@@ -12,6 +12,11 @@ import (
 
 var PostStatsCacheDuration = 5 * time.Minute
 
+type VoteCount struct {
+	Upvotes   int
+	Downvotes int
+}
+
 type PostStats struct {
 	ID             int64      `json:"post_id" db:"post_pid"`
 	UpvoteCount    int        `json:"upvote_count" db:"upvote_count"`
@@ -152,6 +157,39 @@ func (m PostStatsModel) UpdateVoteCount(tx *sql.Tx, postID int64, deltaUpvote, d
 	if rowsAffected == 0 {
 		return ErrRecordNotFound
 	}
+	return nil
+}
+
+func (m PostStatsModel) BatchUpdateVoteCount(tx *sql.Tx, counts map[int64]*VoteCount) error {
+	query := `
+		UPDATE post_stats
+		SET upvote_count = upvote_count + $1,
+			downvote_count = downvote_count + $2
+		WHERE post_pid = $3
+	`
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	stmt, err := tx.Prepare(query)
+	if err != nil {
+		return err
+	}
+
+	for postID, voteCount := range counts {
+		args := []any{voteCount.Upvotes, voteCount.Downvotes, postID}
+		result, err := stmt.ExecContext(ctx, args...)
+		if err != nil {
+			return err
+		}
+		rowsAffected, err := result.RowsAffected()
+		if err != nil {
+			return err
+		}
+		if rowsAffected == 0 {
+			return ErrEditConflict
+		}
+	}
+
 	return nil
 }
 

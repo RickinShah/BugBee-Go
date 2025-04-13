@@ -49,7 +49,7 @@ func (c *Community) MarshalJSON() ([]byte, error) {
 		community["community_handle"] = c.Handle
 		community["name"] = c.Name
 		if c.ProfilePath == nil {
-			community["profile_path"] = "/bugbee/profiles/default.jpg"
+			community["profile_path"] = "/bugbee/profiles/default.png"
 		} else {
 			community["profile_path"] = c.ProfilePath
 		}

@@ -1,7 +1,9 @@
+import "./Feed.css";
 import Card from "./Cards.jsx";
 import { useState, useEffect, useRef, useCallback } from "react";
 import {
     FaHome,
+    FaEnvelope,
     FaSearch,
     FaUsers,
     FaComments,
@@ -13,6 +15,7 @@ import {
 } from "react-icons/fa";
 import useNavigation from "../utils/navigate.jsx";
 import { apiCall, getMediaPath } from "../utils/api.js";
+import { useNavigate } from "react-router-dom";
 
 // Utility to debounce a function
 const debounce = (func, delay) => {
@@ -24,6 +27,7 @@ const debounce = (func, delay) => {
 };
 
 const Feed = () => {
+    const navigate = useNavigate();
     const [name] = useState(() => localStorage.getItem("name"));
     const [username] = useState(() => localStorage.getItem("username"));
     const [searchResults, setSearchResults] = useState([]);
@@ -177,20 +181,25 @@ const Feed = () => {
     }, [handleScroll]); // Only re-run if handleScroll changes
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-[#242380] via-blue-950 to-purple-800 flex flex-col md:flex-row text-white">
+        <div className="min-h-screen bg-[#080a41] flex flex-col md:flex-row text-white">
             {/* Left Sidebar - Fixed */}
-            <div className="hidden md:block md:w-1/5 h-screen fixed left-0 top-0 shadow-lg">
+            <div className="hidden md:block md:w-1/5 h-screen fixed left-0 top-0 shadow-[10px_0_8px_-4px_rgba(0,0,0,0.1)]">
                 <div className="h-1/5 p-4">
                     <button onClick={() => goTo("feed")}>
-                        <img
-                            src="../src/assets/logo.png"
-                            alt="home"
-                            className="max-h-full mx-auto"
-                        />
+                        <div className="mylogo">
+                            <img
+                                src="../src/assets/logo.png"
+                                alt="home"
+                                width="100%"
+                                height="100%"
+                            />
+                        </div>
                     </button>
-                    <div className="mt-4 bg-gradient-to-r from-[#6767676d] to-[#9c048596] rounded-2xl flex items-center p-3 shadow-md">
-                        <button onClick={() => goTo("profile")}>
-                            <div className="w-10 h-10 bg-[#ffffff86] rounded-full overflow-hidden flex-shrink-0">
+                    <div className="userprofile">
+                        <button
+                            onClick={() => navigate(`/profile/${username}`)}
+                        >
+                            <div className="roundprofile">
                                 <img
                                     src={profilePath}
                                     alt="profile"
@@ -199,7 +208,10 @@ const Feed = () => {
                             </div>
                         </button>
                         <div className="flex-grow mx-3">
-                            <button onClick={() => goTo("profile")}>
+                            <button
+                                className="w-full text-left pt-1"
+                                onClick={() => navigate(`/profile/${username}`)}
+                            >
                                 <div className="font-semibold text-sm truncate">
                                     {name}
                                 </div>
@@ -209,7 +221,7 @@ const Feed = () => {
                             </button>
                         </div>
                         <button
-                            className="flex items-center px-2 py-1 text-white transition-all duration-200 hover:scale-105 hover:shadow-[0_0_8px_rgba(156,4,133,0.5)] text-sm shrink-0 group"
+                            className="flex items-center px-2 py-1 text-white text-sm shrink-0 transition-transform duration-200 hover:scale-[1.02]"
                             onClick={() => goTo("completeProfile")}
                         >
                             <span className="bg-gradient-to-r from-[#d946ef] to-[#9333ea] bg-clip-text text-transparent">
@@ -237,6 +249,7 @@ const Feed = () => {
                             {
                                 icon: <FaHome className="w-6 h-6" />,
                                 text: "Home",
+                                selected: true,
                                 onClick: () => goTo("feed"),
                             },
                             {
@@ -245,20 +258,29 @@ const Feed = () => {
                                 onClick: () => goTo("communities"),
                             },
                             {
-                                icon: <FaComments className="w-6 h-6" />,
+                                icon: <FaEnvelope className="w-6 h-6" />,
                                 text: "Messages",
+                                onClick: () => {
+                                    goTo("chat");
+                                    // setTimeout(() => {
+                                    //     window.location.href =
+                                    //         "http://localhost/chat";
+                                    // }, 500);
+                                },
                             },
                             {
                                 icon: <FaVideo className="w-6 h-6" />,
                                 text: "Video Conference",
-                                onClick: () =>
-                                    (window.location.href =
-                                        "http://localhost:3010/newroom"),
+                                onClick: () => goTo("vc"),
                             },
                         ].map((item, index) => (
                             <div
                                 key={index}
-                                className="flex items-center h-12 rounded-2xl hover:bg-[#9b9b9b6b] hover:text-white transition-all duration-300 px-4"
+                                className={`flex items-center h-12 rounded-2xl px-4 transition-all duration-300 cursor-pointer ${
+                                    item.selected
+                                        ? "bg-[#9b9b9b6b] text-white"
+                                        : "text-gray-400 hover:bg-[#9b9b9b6b] hover:text-white"
+                                }`}
                             >
                                 {item.icon}
                                 <button
@@ -284,7 +306,7 @@ const Feed = () => {
                                 null,
                             );
                         }}
-                        className="bg-gradient-to-b from-[#ff599e] to-[#96003e] w-full h-11 rounded-xl font-semibold text-base hover:h-12 transition-all duration-300 flex items-center justify-center shadow-md"
+                        className="bg-gradient-to-b from-[#ff599e] to-[#96003e] w-full h-11 rounded-xl font-semibold text-base hover:from-[#ff85b3] hover:to-[#b00052] transition-all duration-300 flex items-center justify-center shadow-md"
                     >
                         <FaSignOutAlt className="mr-2" /> Log Out
                     </button>
@@ -296,7 +318,7 @@ const Feed = () => {
                 {/* Fixed Search Bar with Background */}
 
                 <div className="fixed top-0 left-0 md:left-[20%] right-0 md:right-[20%] z-10">
-                    <div className="bg-gradient-to-br from-[#242380] to-blue-950 w-full h-20 md:h-24"></div>
+                    <div className="bg-[#15145d] w-full h-20 md:h-24 shadow-[inset_10px_0_8px_-4px_rgba(0,0,0,0.1),inset_-10px_0_8px_-4px_rgba(0,0,0,0.1)]"></div>
                     <div className="absolute top-0 left-0 right-0 px-4 pt-4 pb-2">
                         <div className="flex items-center w-full max-w-2xl mx-auto md:block">
                             <div className="md:hidden flex items-center mr-3">
@@ -339,7 +361,7 @@ const Feed = () => {
                                                     key={index}
                                                     className="flex items-center p-3 hover:bg-white/10 border-b border-white/5 last:border-b-0 cursor-pointer transition-all duration-200 group"
                                                     onClick={() =>
-                                                        goTo(
+                                                        navigate(
                                                             `/profile/${user.username}`,
                                                         )
                                                     }
@@ -381,8 +403,8 @@ const Feed = () => {
                 {/* Scrollable Content */}
                 <div
                     ref={scrollRef}
-                    className="flex-1 px-4 md:px-6 pt-20 md:pt-24 pb-20 overflow-y-auto"
-                    style={{ maxHeight: "calc(100vh - 5rem)" }}
+                    className="flex-1 px-4 md:px-6 pt-20 md:pt-24 pb-20 overflow-y-auto scrollbar-hide bg-[#15145d] "
+                    style={{ maxHeight: "calc(100vh - 0.5rem)" }}
                 >
                     <div className="space-y-6">
                         {posts.map((post) => (
@@ -393,6 +415,7 @@ const Feed = () => {
                                 content={post.content}
                                 stats={post.stats}
                                 files={post.files}
+                                vote_type={post.vote_type}
                             />
                         ))}
                         {loading && (
@@ -410,22 +433,20 @@ const Feed = () => {
             </div>
 
             {/* Right Sidebar - Fixed */}
-            <div className="hidden md:block w-1/5 h-screen fixed right-0 top-0">
+            <div className="hidden md:block w-1/5 h-screen fixed right-0 top-0 shadow-[-10px_0_8px_-4px_rgba(0,0,0,0.1)]">
                 <div className="h-20 flex justify-end items-center p-4">
-                    <button className="p-2 bg-[#9b9b9b6b] rounded-full hover:bg-[#f5c71fc0] transition-all duration-300 shadow-md">
-                        <FaBell className="w-5 h-5 hover:w-6 hover:h-6 transition-all" />
-                    </button>
                     <button
                         className="p-2 bg-[#9b9b9b6b] rounded-full hover:bg-[#75ccf2c0] transition-all duration-300 ml-2 shadow-md"
                         onClick={() => goTo("settings")}
                     >
-                        <FaCog className="w-5 h-5 hover:w-6 hover:h-6 transition-all" />
+                        <FaCog className="w-5 h-5  transition-all" />
                     </button>
                 </div>
+
                 <div className="flex flex-col items-center justify-between h-[calc(100vh-5rem)] px-4 pb-6">
-                    <div className="my-4 w-full h-80 bg-[#1a072cbf] rounded-2xl shadow-md overflow-y-auto">
+                    <div className="my-4 w-full h-80 bg-[#1a072cbf] rounded-2xl shadow-md overflow-y-auto scrollbar-hide">
                         <div className="p-4 border-b border-gray-700">
-                            <h2 className="text-white text-sm font-semibold">
+                            <h2 className="text-white text-sm font-semibold ">
                                 Popular Communities
                             </h2>
                         </div>
@@ -456,7 +477,7 @@ const Feed = () => {
                         ))}
                     </div>
                     <button
-                        className="bg-gradient-to-b from-[#7793f7] to-[#2f59f3] w-full h-11 rounded-xl font-semibold text-base hover:h-12 transition-all duration-300 flex items-center justify-center shadow-md"
+                        className="bg-gradient-to-b from-[#7793f7] to-[#2f59f3] w-full h-11 rounded-xl font-semibold text-base hover:from-[#a2b8ff] hover:to-[#4a74ff]  transition-all duration-300 flex items-center justify-center shadow-md"
                         onClick={() => goTo("postUpload")}
                     >
                         Post
@@ -475,13 +496,13 @@ const Feed = () => {
                     },
                     {
                         icon: <FaComments className="w-7 h-7" />,
-                        action: () => {},
+                        action: () => {
+                            goTo("chat");
+                        },
                     },
                     {
                         icon: <FaVideo className="w-7 h-7" />,
-                        action: () =>
-                            (window.location.href =
-                                "http://localhost:3010/newroom"),
+                        action: () => goTo("vc"),
                     },
                     {
                         icon: <FaUsers className="w-7 h-7" />,

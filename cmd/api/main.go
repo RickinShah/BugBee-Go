@@ -65,7 +65,7 @@ func main() {
 	var cfg config
 
 	flag.IntVar(&cfg.port, "port", 4000, "API server port")
-	flag.IntVar(&cfg.clientPort, "client-port", 80, "Frontend client port")
+	flag.IntVar(&cfg.clientPort, "client-port", 443, "Frontend client port")
 	flag.StringVar(&cfg.env, "env", "development", "Environment (development|staging|production)")
 	flag.StringVar(&cfg.storage.postBasePath, "post-directory", "/bugbee/posts", "Post base directory")
 	flag.StringVar(&cfg.storage.profileBasePath, "profile-directory", "/bugbee/profiles", "Profiles directory")
@@ -123,8 +123,10 @@ func main() {
 		models: data.NewModels(db, Redis),
 		mailer: mailer.New(cfg.smtp.host, cfg.smtp.port, cfg.smtp.username, cfg.smtp.password, cfg.smtp.sender),
 	}
-	// ctx, cancel := context.WithCancel(context.Background())
-	// defer cancel()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	app.StartWorkers(ctx)
 
 	err = app.serve()
 	if err != nil {

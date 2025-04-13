@@ -6,6 +6,7 @@ import * as yup from "yup";
 import { validationError } from "../utils/errors";
 import useNavigation from "../utils/navigate";
 
+
 const LoginPage = () => {
     const { goTo } = useNavigation();
 
@@ -15,12 +16,12 @@ const LoginPage = () => {
     });
 
     const onSuccess = (response) => {
+        response.user.profile_path = getMediaPath(response.user.profile_path);
+        response.user._id = response.user.user_id;
+        setToLocalStorage("user", JSON.stringify(response.user));
         setToLocalStorage("name", response.user.name);
         setToLocalStorage("username", response.user.username);
-        setToLocalStorage(
-            "profile_path",
-            getMediaPath(response.user.profile_path),
-        );
+        setToLocalStorage("profile_path", response.user.profile_path);
         setToLocalStorage("show_nsfw", response.user.show_nsfw);
         goTo("feed");
     };
@@ -86,7 +87,7 @@ const LoginPage = () => {
                 </div>
                 <button
                     onClick={handleSubmit}
-                    className="w-full py-2 mt-5 rounded-lg bg-[#ff24d046] text-gray-500 hover:bg-[#ff24cf] hover:text-gray-300 text-lg font-bold duration-700"
+                    className="w-full py-2 mt-5 rounded-lg bg-[#ff24cf] text-gray-200 hover:bg-[#ff24d046] hover:text-gray-400 text-lg font-bold duration-300"
                 >
                     Login
                 </button>

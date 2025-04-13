@@ -1,0 +1,277 @@
+.dashboard {
+  height: 100vh;
+  background: #15145d;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+.dashboard-logo {
+  position: absolute;
+  top: 10px;
+  left: 20px;
+  width: 100px;
+  height: 100px;
+  z-index: 10;
+}
+
+/* Main container with black background */
+.dashboard-card {
+  width: 98%;
+  height: 88vh;
+  border-radius: 12px;
+  display: flex;
+  gap: 16px;
+  position: relative;
+  top: 10px;
+}
+
+/* Sidebar styling */
+.dashboard-sidebar {
+  width: 80px;
+  box-shadow: 10px 0 8px -4px #0000008a;
+  border-radius: 2px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px 0;
+  background-color: #080a41;
+}
+
+.sidebar-profile {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  overflow: hidden;
+  margin-bottom: 40px;
+  border: 2px solid #d2cdcd;
+}
+
+.sidebar-profile img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.sidebar-icons {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-grow: 1;
+  gap: 6px; /* Reduced gap between icons */
+  margin-top: 16px; /* Moderate space from profile */
+}
+
+.sidebar-icon {
+  color: #9ca3af;
+  cursor: pointer;
+  width: 60px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  border-radius: 10px;
+}
+.sidebar-icon-selected {
+  color: #fff;
+  cursor: pointer;
+  width: 60px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  background-color: #9b9b9b6b;
+  border-radius: 10px;
+}
+
+.sidebar-icon:hover {
+  color: #ffffff;
+  background-color: #9b9b9b6b;
+}
+
+.sidebar-logout {
+  color: #ff5252;
+  cursor: pointer;
+  margin-top: auto;
+  transition: all 0.2s ease;
+}
+
+.sidebar-logout:hover {
+  color: #a00d0d;
+  transform: scale(1.1);
+}
+
+/* Conversation list styling */
+.dashboard-conversation {
+  flex: 0.3;
+  background-color: #000;
+  border-radius: 12px;
+  box-shadow: 0 0 10px #2a50b0, 0 0 1px #fdfdfd8a;
+  color: #fff;
+}
+.dashboard-conv-block {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+.dashboard-title-block {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  box-sizing: border-box;
+  font-size: 28px;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.searchBoxDiv {
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0 0 20px 0;
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.searchBox {
+  width: 85%;
+  height: 40px;
+  padding: 10px 15px;
+  box-sizing: border-box;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #fff;
+
+  &::placeholder {
+    color: rgba(255, 255, 255, 0.6);
+  }
+
+  &:focus {
+    outline: none;
+    border-color: #098bc8;
+  }
+}
+
+.searched-box {
+  position: absolute;
+  top: 44px;
+  left: 0;
+  z-index: 1;
+  width: 85%;
+  background-color: #111;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 10px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.searchIcon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 5px;
+  border: none;
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+  border-radius: 50%;
+  background-color: #098bc8;
+  color: white;
+  margin-left: 10px;
+  transition: all 0.2s ease;
+}
+
+.searchIcon:hover {
+  background-color: #0876a8;
+}
+
+.conv-block {
+  width: 100%;
+
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: #708690 #111;
+}
+.conv-block::-webkit-scrollbar {
+  width: 6px;
+}
+
+.conv-block::-webkit-scrollbar-track {
+  background: #111;
+}
+
+.conv-block::-webkit-scrollbar-thumb {
+  background-color: #098bc8;
+  border-radius: 3px;
+}
+
+.search-item-profile {
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+}
+
+.search-item-mobile {
+  font-size: 14px;
+  color: #aaa;
+}
+
+.search-item {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background-color: #222;
+  }
+}
+
+.user-profile-section {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.user-profile-image {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #098bc8;
+}
+
+/* No chat selected state */
+.noChatSelected {
+  flex: 0.7;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  background-color: #000;
+  border-radius: 12px;
+  color: #fff;
+  box-shadow: 0 0 10px #2a50b0, 0 0 1px #fdfdfd8a;
+}
+
+.noChatSelected svg {
+  margin-bottom: 20px;
+  color: #098bc8;
+}

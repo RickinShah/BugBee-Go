@@ -1,19 +1,20 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import { FaSearch, FaPaperPlane } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import Card from "./Card.jsx";
-import Announcement from "./Announcement.jsx";
 import { apiCall, getMediaPath } from "../../utils/api.js";
 import { validationError } from "../../utils/errors.js";
-import { useEffect } from "react";
 import useNavigation from "../../utils/navigate.jsx";
 import addButton from "../../assets/plus-community.png";
 import backButton from "../../assets/back-1.png";
 import toggleChannelsButton from "../../assets/channels.png";
 import toggleMembersButton from "../../assets/members.png";
-import searchIcon from "../../assets/search-1.png";
 import closeButton from "../../assets/close.png";
 
 const Communities = () => {
+    const [isSearching, setIsSearching] = useState(false);
+    const [searchResults, setSearchResults] = useState([]);
+    const [searchQuery, setSearchQuery] = useState("");
     const [toggleChannel, settoggleChannel] = useState(false);
     const [channels, setChannels] = useState([]);
     const [toggleCreateCommunity, settoggleCreateCommunity] = useState(false);
@@ -27,22 +28,70 @@ const Communities = () => {
     const [selectedCommunityId, setSelectedCommunityId] = useState();
     const { goTo } = useNavigation();
     const [currentCommunity, setCurrentCommunity] = useState({});
-
+    const [user] = useState(JSON.parse(localStorage.getItem("user")));
     const [channelName, setChannelName] = useState("");
     const [selectedRoles, setSelectedRoles] = useState([]);
-    const [selectedCommunityHandle, setSelectedCommunityHandle] = useState(""); // Store current community handle
+    const [selectedCommunityHandle, setSelectedCommunityHandle] = useState("");
+    const [messages, setMessages] = useState([]);
+    const [newMessage, setNewMessage] = useState("");
+    const [selectedChannelId, setSelectedChannelId] = useState(null);
+    const messagesEndRef = useRef(null);
 
+    // Chat-related functions
+    const fetchMessages = async (channelId) => {
+        try {
+            await apiCall(
+                `/v1/community/${selectedCommunityHandle}/channels/${channelId}/messages`,
+                "GET",
+                null,
+                {},
+                "include",
+                false,
+                (response) => {
+                    setMessages(response.messages || []);
+                },
+            );
+        } catch (err) {
+            validationError(err);
+        }
+    };
+
+    const sendMessage = async () => {
+        if (!newMessage.trim() || !selectedChannelId) return;
+
+        try {
+            await apiCall(
+                `/v1/community/${selectedCommunityHandle}/channels/${selectedChannelId}/messages`,
+                "POST",
+                { content: newMessage },
+                {},
+                "include",
+                false,
+                (response) => {
+                    setMessages((prev) => [...prev, response.message]);
+                    setNewMessage("");
+                },
+            );
+        } catch (err) {
+            validationError(err);
+        }
+    };
+
+    // Scroll to bottom of messages
+    const scrollToBottom = () => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    };
+
+    useEffect(() => {
+        scrollToBottom();
+    }, [messages]);
+
+    // Existing functions
     function CreateCommunity() {
         settoggleCreateCommunity(!toggleCreateCommunity);
     }
 
-    function JoinedCommunity() {
-        alert("Search bar");
-        CreateCommunity();
-    }
-
     function ChannelToggleFunction() {
-        // Reset form state when toggling the modal
         if (!toggleChannel) {
             setChannelName("");
             setSelectedRoles([]);
@@ -55,9 +104,11 @@ const Communities = () => {
     const goToUserPage = () => {
         navigate("/feed");
     };
+
     const goToCommunitySetting = () => {
         navigate(`/community/${currentCommunity.community_handle}/settings`);
     };
+
     const goToCreateCommunity = () => {
         navigate("/community/create");
     };
@@ -66,11 +117,22 @@ const Communities = () => {
         localStorage.setItem("currentCommunity", JSON.stringify(community));
         setSelected(true);
         setToggleChannels(true);
-        setSelectedCommunityHandle(community.community_handle); // Store handle for API calls
+        setSelectedCommunityHandle(community.community_handle);
         setSelectedCommunityId(community.community_id);
         fetchMembers(community.community_handle);
         setCurrentCommunity(community);
         fetchChannels(community.community_handle);
+        setSelectedChannelId(null); // Reset channel selection
+        setMessages([]); // Clear messages
+        setSearchQuery(""); // Clear search
+        setSearchResults([]);
+    };
+
+    const handleChannelClick = (channelId) => {
+        setSelectedChannelId(channelId);
+        fetchMessages(channelId);
+        setSearchQuery(""); // Clear search when channel is selected
+        setSearchResults([]);
     };
 
     const fetchChannels = async (handle) => {
@@ -83,7 +145,6 @@ const Communities = () => {
                 "include",
                 false,
                 (response) => {
-                    console.log(response.channels);
                     setChannels(response.channels);
                 },
             );
@@ -92,17 +153,40 @@ const Communities = () => {
         }
     };
 
-    let CardDatas = [
-        {
-            imgSrc: "https://akm-img-a-in.tosshub.com/indiatoday/images/story/202409/shubman-gill-212053558-16x9_0.jpg?VersionId=sTRbbhSAwMkBA9oxYJ7fu7O8ZNu8QfNg&size=690:388",
-            Name: "Shubhman Gill",
-            ID: "Shubh",
-            UserImage:
-                "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcStud7QXebx6UWrwFpT2u-GakV8yEaTVv40sMNBoNucJpZKj1VOyi_CZmmBz18q93n3XmjbhXyhDnLrfp-mBDHEuVSUBlKo2OGp_7xkcA",
-            description: "Done and Dusted!",
-            Title: "Next Gen of Cricket",
-        },
-    ];
+    const handleSearch = async (query) => {
+        setSearchQuery(query);
+        if (query.trim() === "") {
+            setSearchResults([]);
+            setIsSearching(false);
+            return;
+        }
+
+        setIsSearching(true);
+        try {
+            await apiCall(
+                `/v1/communities/search?query=${encodeURIComponent(query)}&size=10`,
+                "GET",
+                null,
+                {},
+                "include",
+                false,
+                (response) => {
+                    const communities = Object.values(response.communities).map(
+                        (community) => ({
+                            handle: community.community_handle,
+                            name: community.name || community.username,
+                            profilePath: getMediaPath(community.profile_path),
+                        }),
+                    );
+                    setSearchResults(communities || []);
+                    setIsSearching(false);
+                },
+            );
+        } catch (error) {
+            console.error("Search failed:", error);
+            setIsSearching(false);
+        }
+    };
 
     const fetchRoles = async (handle) => {
         try {
@@ -123,13 +207,10 @@ const Communities = () => {
             );
         } catch (err) {
             validationError(err.errors);
-            return;
         }
     };
 
-    // Handle checkbox changes for role selection
     const handleRoleSelection = (roleId) => {
-        // If role is already selected, remove it; otherwise, add it
         if (selectedRoles.includes(roleId)) {
             setSelectedRoles(selectedRoles.filter((id) => id !== roleId));
         } else {
@@ -137,9 +218,7 @@ const Communities = () => {
         }
     };
 
-    // Updated createChannel function to use the collected data
     const createChannel = async () => {
-        // Validate input
         if (!channelName.trim()) {
             alert("Please enter a channel name");
             return;
@@ -150,7 +229,6 @@ const Communities = () => {
             return;
         }
 
-        // Get current community handle
         const handle = selectedCommunityHandle;
 
         try {
@@ -166,16 +244,14 @@ const Communities = () => {
                 false,
                 (response) => {
                     ChannelToggleFunction();
-                    console.log(response.channel);
                     setChannels((prevChannels) => [
-                        ...(prevChannels || []),
+                        ...prevChannels,
                         response.channel,
                     ]);
                 },
             );
         } catch (err) {
             validationError(err.errors);
-            return;
         }
     };
 
@@ -211,59 +287,46 @@ const Communities = () => {
         fetchJoinedCommunities();
     }, []);
 
-    // useEffect(() => {
-    //     // Load stored community handle from localStorage on component mount
-    //     const storedCommunity = localStorage.getItem("currentCommunity");
-    //     if (storedCommunity) {
-    //         const { handle } = JSON.parse(storedCommunity);
-    //         setCommunityHandle(handle);
-    //     }
-    // }, []);
-
     return (
         <div className="bg-gradient-to-br from-[#1e3a8a] via-[#0f172a] to-[#1e40af] w-full h-screen flex flex-col md:flex-row font-sans">
-            {/* Sidebar (Mobile Navbar / Desktop Sidebar) */}
+            {/* Sidebar */}
             <div className="bg-[#1e3a8a] w-full md:w-20 h-16 md:h-full flex flex-row md:flex-col justify-between items-center md:items-stretch shadow-2xl fixed top-0 left-0 z-20">
                 <div className="p-2 md:p-3">
                     <div className="bg-blue-950 rounded-full p-2 shadow-md hover:scale-110 transition-transform duration-300">
                         <img
                             src={profilePath}
                             alt="profile"
-                            className="w-8 h-8 md:w-10 md:h-10 rounded-full"
-                            onClick={() => goTo("profile")}
+                            className="w-8 h-8 md:w-10 md:h-10 rounded-full cursor-pointer"
+                            onClick={() =>
+                                navigate(`/profile/${user.username}`)
+                            }
                         />
                     </div>
                 </div>
 
                 <div className="flex md:flex-1 p-1 overflow-x-auto md:overflow-y-auto scrollbar-hide flex-row md:flex-col">
-                    {joinedCommunities != null &&
-                        joinedCommunities.map((community) => (
-                            <div
-                                key={community.community_id}
-                                className={`w-12 h-12 md:w-12 md:h-12 flex-shrink-0 md:my-2 mx-1 md:mx-auto rounded-full border-2 transition-all duration-300
-                        ${
-                            selectedCommunityId == community.community_id
-                                ? "border-blue-600 bg-blue-100 shadow-lg ring-4 ring-blue-500 ring-offset-2 scale-110"
-                                : "border-blue-500/50 hover:border-blue-400 hover:scale-110"
-                        }
-                    `}
+                    {joinedCommunities?.map((community) => (
+                        <div
+                            key={community.community_id}
+                            className={`w-12 h-12 md:w-12 md:h-12 flex-shrink-0 md:my-2 mx-1 md:mx-auto rounded-full border-2 transition-all duration-300
+                ${
+                    selectedCommunityId === community.community_id
+                        ? "border-blue-600 bg-blue-100 shadow-lg ring-4 ring-blue-500 ring-offset-2 scale-110"
+                        : "border-blue-500/50 hover:border-blue-400 hover:scale-110"
+                }`}
+                        >
+                            <button
+                                className="w-full h-full"
+                                onClick={() => handleCommunityClick(community)}
                             >
-                                <button
-                                    className="w-full h-full"
-                                    onClick={() =>
-                                        handleCommunityClick(community)
-                                    }
-                                >
-                                    <img
-                                        src={getMediaPath(
-                                            community.profile_path,
-                                        )}
-                                        alt={community.name}
-                                        className="w-full h-full rounded-full object-cover"
-                                    />
-                                </button>
-                            </div>
-                        ))}
+                                <img
+                                    src={getMediaPath(community.profile_path)}
+                                    alt={community.name}
+                                    className="w-full h-full rounded-full object-cover"
+                                />
+                            </button>
+                        </div>
+                    ))}
                     <button
                         onClick={CreateCommunity}
                         className="w-12 h-12 md:w-14 md:h-14 flex-shrink-0 md:my-2 mx-1 md:mx-auto rounded-full bg-blue-800/50 hover:bg-blue-700/70 transition-colors duration-300 flex items-center justify-center"
@@ -326,12 +389,6 @@ const Communities = () => {
                             Create Community
                         </button>
                         <button
-                            onClick={JoinedCommunity}
-                            className="w-full my-2 h-12 bg-blue-700 hover:bg-blue-600 text-white rounded-lg font-medium transition-all duration-200 hover:scale-105"
-                        >
-                            Join Community
-                        </button>
-                        <button
                             onClick={CreateCommunity}
                             className="w-full my-2 h-12 bg-blue-800/50 hover:bg-blue-700/70 text-white rounded-lg font-medium transition-all duration-200 hover:scale-105"
                         >
@@ -369,10 +426,14 @@ const Communities = () => {
                     </button>
                 </div>
 
-                {/* Channels Overlay (Mobile) / Sidebar (Desktop) */}
-                {toggleChannels && window.innerWidth >= 768 && (
+                {/* Channels Sidebar */}
+                {toggleChannels && (
                     <div
-                        className={`fixed md:static top-16 md:top-0 left-0 md:left-0 w-3/4 md:w-60 h-[calc(100vh-4rem)] md:h-full bg-blue-900/20 flex flex-col backdrop-blur-sm z-30 md:z-10 transition-transform duration-300 ${toggleChannels ? "translate-x-0" : "-translate-x-full"} md:translate-x-0 shadow-md md:shadow-lg`}
+                        className={`fixed md:static top-16 md:top-0 left-0 md:left-0 w-3/4 md:w-60 h-[calc(100vh-4rem)] md:h-full bg-blue-900/20 flex flex-col backdrop-blur-sm z-30 md:z-10 transition-transform duration-300 ${
+                            toggleChannels
+                                ? "translate-x-0"
+                                : "-translate-x-full"
+                        } md:translate-x-0 shadow-md md:shadow-lg`}
                     >
                         <div className="h-16 md:h-20 bg-blue-950/30 flex items-center justify-between px-4 border-b border-blue-800/50">
                             <button
@@ -415,19 +476,30 @@ const Communities = () => {
                                 </button>
                             </div>
                             <div className="flex flex-col items-center">
-                                {channels &&
-                                    channels.map((channel) => (
-                                        <Card
-                                            key={channel.channel_id}
-                                            name={channel.name}
-                                            community_id={channel.community_id}
-                                        />
-                                    ))}
+                                {channels?.map((channel) => (
+                                    <button
+                                        key={channel.channel_id}
+                                        onClick={() =>
+                                            handleChannelClick(
+                                                channel.channel_id,
+                                            )
+                                        }
+                                        className={`w-full text-left p-2 rounded-lg ${
+                                            selectedChannelId ===
+                                            channel.channel_id
+                                                ? "bg-blue-700 text-white"
+                                                : "text-gray-300 hover:bg-blue-800/30"
+                                        }`}
+                                    >
+                                        # {channel.name}
+                                    </button>
+                                ))}
                             </div>
                         </div>
                     </div>
                 )}
 
+                {/* Create Channel Modal */}
                 {toggleChannel && (
                     <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center">
                         <div className="w-11/12 max-w-sm md:w-[30rem] bg-blue-950/95 rounded-2xl p-6 md:p-8 shadow-xl transform scale-100 transition-all duration-300">
@@ -490,50 +562,138 @@ const Communities = () => {
                 )}
 
                 {/* Main Content Area */}
-                <div className="flex-1 bg-gradient-to-br from-blue-950 via-[#0f172a] to-blue-900 p-4 md:p-8 h-full">
-                    <div className="w-full h-14 mb-4 md:h-16 md:mb-8 flex justify-center">
-                        <div className="w-full md:w-11/12 flex items-center gap-2 md:gap-4">
-                            <div className="relative flex-1">
-                                <img
-                                    src={searchIcon}
-                                    alt="search"
-                                    className="w-4 md:w-6 h-4 md:h-6 invert absolute left-3 md:left-4 top-1/2 -translate-y-1/2"
-                                />
+                <div className="flex-1 bg-gradient-to-br from-blue-950 via-[#0f172a] to-blue-900 p-4 md:p-8 h-full flex flex-col">
+                    {!selectedChannelId && (
+                        <div className="relative mb-4 max-w-7xl mx-10 md:mx-20">
+                            <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-white/70" />
+                            <input
+                                type="text"
+                                className="w-full h-12 bg-gradient-to-br from-[#242380]/90 to-blue-950/90 rounded-2xl pl-10 pr-4 placeholder-white/70 text-sm border border-white/20 focus:outline-none focus:ring-2 focus:ring-pink-600/50 transition-all"
+                                placeholder="Search"
+                                value={searchQuery}
+                                onChange={(e) => handleSearch(e.target.value)}
+                            />
+                            {isSearching || searchResults.length > 0 ? (
+                                <div className="absolute top-14 left-0 right-0 bg-gradient-to-b from-[#242380]/95 to-blue-950/95 rounded-xl shadow-xl max-h-96 overflow-y-auto z-20 border border-white/10">
+                                    {isSearching ? (
+                                        <div className="p-4 text-center text-gray-300 animate-pulse">
+                                            <span className="inline-flex items-center">
+                                                <FaSearch className="w-4 h-4 mr-2" />
+                                                Searching...
+                                            </span>
+                                        </div>
+                                    ) : searchResults.length > 0 ? (
+                                        searchResults.map(
+                                            (community, index) => (
+                                                <div
+                                                    key={index}
+                                                    className="flex items-center p-3 hover:bg-white/10 border-b border-white/5 last:border-b-0 cursor-pointer transition-all duration-200 group"
+                                                    onClick={() =>
+                                                        handleCommunityClick(
+                                                            community,
+                                                        )
+                                                    }
+                                                >
+                                                    <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 mr-3 border border-white/20 group-hover:border-pink-500/50 transition-colors">
+                                                        <img
+                                                            src={
+                                                                community.profilePath
+                                                            }
+                                                            alt={`${community.name}'s profile`}
+                                                            className="w-full h-full object-cover"
+                                                        />
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="flex items-center justify-between">
+                                                            <span className="font-semibold text-white truncate group-hover:text-pink-400 transition-colors">
+                                                                {community.name}
+                                                            </span>
+                                                        </div>
+                                                        <div className="text-sm text-gray-400 truncate">
+                                                            @{community.handle}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ),
+                                        )
+                                    ) : (
+                                        <div className="p-4 text-center text-gray-400">
+                                            <span className="inline-flex items-center">
+                                                No results found
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
+                            ) : null}
+                        </div>
+                    )}
+
+                    {/* Chat Area */}
+                    {isSelected && selectedChannelId ? (
+                        <div className="flex-1 flex flex-col bg-blue-950/50 rounded-xl p-4">
+                            <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-blue-700 scrollbar-track-blue-900/20 mb-4">
+                                {messages.map((message, index) => (
+                                    <div
+                                        key={index}
+                                        className={`flex ${
+                                            message.user_id === user.user_id
+                                                ? "justify-end"
+                                                : "justify-start"
+                                        } mb-3`}
+                                    >
+                                        <div
+                                            className={`max-w-[70%] p-3 rounded-lg ${
+                                                message.user_id === user.user_id
+                                                    ? "bg-blue-600 text-white"
+                                                    : "bg-gray-700 text-gray-200"
+                                            }`}
+                                        >
+                                            <div className="text-xs text-gray-300 mb-1">
+                                                {message.username} •{" "}
+                                                {new Date(
+                                                    message.created_at,
+                                                ).toLocaleTimeString()}
+                                            </div>
+                                            <p>{message.content}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                                <div ref={messagesEndRef} />
+                            </div>
+                            <div className="flex items-center gap-2">
                                 <input
                                     type="text"
-                                    placeholder="Search"
-                                    className="w-full h-10 md:h-14 bg-blue-900/30 text-white placeholder-blue-300 rounded-xl pl-10 md:pl-12 pr-4 border border-blue-800/50 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-500/50 text-sm md:text-base shadow-sm"
+                                    value={newMessage}
+                                    onChange={(e) =>
+                                        setNewMessage(e.target.value)
+                                    }
+                                    placeholder="Type a message..."
+                                    className="flex-1 h-12 bg-blue-900/40 rounded-lg text-white border border-blue-800/50 focus:outline-none focus:border-blue-600 px-4"
+                                    onKeyPress={(e) =>
+                                        e.key === "Enter" && sendMessage()
+                                    }
                                 />
+                                <button
+                                    onClick={sendMessage}
+                                    className="h-12 w-12 flex items-center justify-center bg-blue-700 hover:bg-blue-600 rounded-lg transition-all duration-200"
+                                >
+                                    <FaPaperPlane className="text-white" />
+                                </button>
                             </div>
-                            <button className="w-10 md:w-14 h-10 md:h-14 bg-blue-700 hover:bg-blue-600 rounded-xl flex items-center justify-center transition-all duration-300 hover:scale-105 shadow-md">
-                                <img
-                                    src={addButton}
-                                    alt="add"
-                                    className="w-5 md:w-7 h-5 md:h-7 invert"
-                                />
-                            </button>
                         </div>
-                    </div>
-                    <div className="overflow-y-auto h-[calc(100%-3.5rem)] md:h-[calc(100%-5rem)] scrollbar-thin scrollbar-thumb-blue-700 scrollbar-track-blue-900/20 space-y-4 md:space-y-6">
-                        {isSelected &&
-                            CardDatas.map((CardItem, index) => (
-                                <Announcement
-                                    key={index}
-                                    imgSrc={CardItem.imgSrc}
-                                    UserImage={CardItem.UserImage}
-                                    Name={CardItem.Name}
-                                    ID={CardItem.ID}
-                                    description={CardItem.description}
-                                    title={CardItem.Title}
-                                />
-                            ))}
-                    </div>
+                    ) : (
+                        <div className="flex-1 flex items-center justify-center text-gray-400">
+                            Select a channel to start chatting
+                        </div>
+                    )}
                 </div>
 
-                {/* Members Overlay (Mobile) / Sidebar (Desktop) */}
+                {/* Members Sidebar */}
                 {toggleMembers && (
                     <div
-                        className={`fixed md:static inset-0 md:inset-auto w-3/4 md:w-60 h-full bg-blue-900/20 flex flex-col backdrop-blur-sm z-30 md:z-10 transition-transform duration-300 ${toggleMembers ? "translate-x-0" : "translate-x-full"} md:translate-x-0 shadow-md md:shadow-lg`}
+                        className={`fixed md:static inset-0 md:inset-auto w-3/4 md:w-60 h-full bg-blue-900/20 flex flex-col backdrop-blur-sm z-30 md:z-10 transition-transform duration-300 ${
+                            toggleMembers ? "translate-x-0" : "translate-x-full"
+                        } md:translate-x-0 shadow-md md:shadow-lg`}
                     >
                         <div className="h-16 md:h-20 bg-blue-950/30 flex items-center justify-between px-6 border-b border-blue-800/50">
                             <span className="text-white font-semibold text-base md:text-lg">
@@ -578,4 +738,5 @@ const Communities = () => {
         </div>
     );
 };
+
 export default Communities;

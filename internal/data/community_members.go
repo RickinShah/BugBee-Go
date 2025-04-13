@@ -60,6 +60,48 @@ func (m CommunityMemberModel) Get(communityID int64) ([]*User, error) {
 	return users, nil
 }
 
+func (m CommunityMemberModel) Delete(userID, communityID int64) error {
+	query := `
+		DELETE FROM community_members
+		WHERE user_id = $1, community_id = $2
+	`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	tx, err := m.DB.BeginTx(context.Background(), nil)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err != nil {
+			tx.Rollback()
+		}
+	}()
+
+	args := []any{userID, communityID}
+
+	result, err := tx.ExecContext(ctx, query, args...)
+	if err != nil {
+		return err
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rows == 0 {
+		return ErrEditConflict
+	}
+
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (m CommunityMemberModel) GetAllCommunities(userID int64) ([]*Community, error) {
 	query := `
 		SELECT c.community_pid, c.creator_id, c.handle, c.name, c.created_at, c.updated_at, c.profile_path, c.is_official, c.member_count, c.version

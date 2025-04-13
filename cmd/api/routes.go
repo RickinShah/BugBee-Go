@@ -17,11 +17,12 @@ func (app *application) routes() http.Handler {
 	router.HandleFunc("PUT /v1/users/activated", app.activateUserHandler)
 	router.HandleFunc("PATCH /v1/register/email", app.registerEmailHandler)
 	router.HandleFunc("PATCH /v1/register/username", app.registerUsernameHandler)
-	router.HandleFunc("POST /v1/profile", app.requireActivatedUser(app.updateProfileHandler))
+	router.HandleFunc("POST /v1/profile", app.updateProfileHandler)
 	router.HandleFunc("GET /v1/users/{username}", app.getUserHandler)
 	router.HandleFunc("GET /v1/users", app.searchUserHandler)
 	router.HandleFunc("DELETE /v1/users", app.requireAuthenticatedUser(app.deleteUserHandler))
 	router.HandleFunc("POST /v1/users/logout", app.logoutHandler)
+	router.HandleFunc("PATCH /v1/users", app.settingsHandler)
 
 	// Token Generation and Login
 	router.HandleFunc("POST /v1/tokens/authentication", app.createAuthenticationHandler)
@@ -64,7 +65,7 @@ func (app *application) routes() http.Handler {
 	// router.HandleFunc("GET /v1/search/posts", app.searchPostsHandler)
 
 	// Comments & Replies
-	router.HandleFunc("POST /v1/posts/{post_id}/comments", app.requireAuthenticatedUser(app.createCommentHandler))
+	router.HandleFunc("POST /v1/posts/{post_id}/comments", app.createCommentHandler)
 	router.HandleFunc("PATCH /v1/posts/{post_id}/comments/{comment_id}", app.updateCommentHandler)
 	router.HandleFunc("DELETE /v1/posts/{post_id}/comments/{comment_id}", app.deleteCommentHandler)
 	router.HandleFunc("POST /v1/posts/{post_id}/comments/{comment_id}/vote", app.createCommentVoteHandler)

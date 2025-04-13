@@ -24,12 +24,14 @@ build/api:
 	@go build -o=./bin/api ./cmd/api
 	@echo -e "\e[32m✔ Build completed.\e[0m"
 
-.PHONY: build/api
+.PHONY: build/frontend
 build/frontend: services/nginx
 	@echo -e "\e[33m=> Building Backend...\e[0m"
 	@npm run build --prefix ./frontend
 	@sudo cp -r ./frontend/dist/* /usr/share/nginx/html
 	@echo -e "\e[32m✔ Build completed.\e[0m"
+
+
 
 # ==================================================================================== #
 # DEVELOPMENT
@@ -50,6 +52,16 @@ run/app: build/frontend run/api
 run/api: build/api services/up
 	@echo -e "\e[33m=> Running Backend...\e[0m"
 	@./bin/api -db-dsn=${BUGBEE_DB_DSN} -smtp-username=${SMTP_USERNAME} -smtp-password=${SMTP_PASSWORD} -encryption-key=${ENCRYPTION_KEY} -smtp-sender=${SMTP_SENDER}
+
+.PHONY: run/vc
+run/vc:
+	@echo -e "\e[33m=> Running Video Chat...\e[0m"
+	@npm start --prefix ./mirotalksfu
+
+.PHONY: run/chat
+run/chat:
+	@echo -e "\e[33m=> Running Messaging...\e[0m"
+	@npm start --prefix ./chat
 
 # ==================================================================================== #
 # SERVICES

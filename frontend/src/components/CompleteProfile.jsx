@@ -125,7 +125,7 @@ const CompleteProfile = () => {
     };
 
     return (
-        <div className="w-full min-h-screen flex items-center justify-center bg-gradient-to-br from-[#242380] via-blue-950 to-purple-800 p-4 relative">
+        <div className="w-full min-h-screen flex items-center justify-center bg-gradient-to-br from-[#15145d]  to-[#080a41] p-4 relative">
             <button
                 onClick={() => goTo("feed")}
                 className="absolute top-4 left-4 sm:top-6 sm:left-6 p-2 rounded-full bg-white/10 hover:bg-white/20 text-gray-300 hover:text-white transition duration-300 shadow-md backdrop-blur z-10"
@@ -204,7 +204,7 @@ const CompleteProfile = () => {
                                 <div className="flex space-x-4 mt-4">
                                     <button
                                         onClick={cropImage}
-                                        className="w-28 sm:w-32 h-10 rounded-xl bg-[#ff24d046] text-gray-500 hover:bg-[#ff24cf] hover:text-gray-300 font-bold duration-700"
+                                        className="w-28 sm:w-32 h-10 rounded-xl bg-[#ff24cf] text-gray-200 hover:bg-[#ff24d046] hover:text-gray-400 font-bold duration-300"
                                     >
                                         Crop
                                     </button>
@@ -268,7 +268,7 @@ const CompleteProfile = () => {
                 <div className="flex justify-center mt-4">
                     <button
                         onClick={handleSubmit}
-                        className="w-40 sm:w-48 h-12 rounded-xl bg-[#ff24d046] text-gray-500 hover:bg-[#ff24cf] hover:text-gray-300 text-lg font-bold duration-700"
+                        className="w-40 sm:w-48 h-12 rounded-xl bg-[#ff24cf] text-gray-200 hover:bg-[#ff24d046] hover:text-gray-400 text-lg font-bold duration-300"
                     >
                         Submit
                     </button>
@@ -278,7 +278,7 @@ const CompleteProfile = () => {
                 className="absolute top-4 right-4 sm:top-6 sm:right-6 p-2 bg-[#9b9b9b6b] rounded-full hover:bg-[#75ccf2c0] transition-all duration-300 shadow-md z-10"
                 onClick={() => goTo("settings")}
             >
-                <FaCog className="w-5 h-5 hover:w-6 hover:h-6 transition-all" />
+                <FaCog className="w-5 h-5  transition-all" />
             </button>
         </div>
     );

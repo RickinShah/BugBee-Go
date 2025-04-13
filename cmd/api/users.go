@@ -43,7 +43,7 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 
 	user := &data.User{
 		Email:     pendingUser.Email,
-		Username:  *pendingUser.Username,
+		Username:  strings.ToLower(*pendingUser.Username),
 		Activated: false,
 	}
 
@@ -412,6 +412,48 @@ func (app *application) registerUsernameHandler(w http.ResponseWriter, r *http.R
 
 }
 
+func (app *application) settingsHandler(w http.ResponseWriter, r *http.Request) {
+	var input struct {
+		Username string `json:"username"`
+		ShowNsfw bool   `json:"show_nsfw"`
+	}
+
+	err := app.readJson(w, r, &input)
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	user := app.contextGetUser(r)
+
+	v := validator.New()
+
+	if data.ValidateUsername(v, input.Username); !v.Valid() {
+		app.failedValidationResponse(w, r, v.Errors)
+		return
+	}
+
+	user.Username = input.Username
+	user.ShowNsfw = input.ShowNsfw
+
+	if err = app.models.Users.Update(user); err != nil {
+		switch {
+		case errors.Is(err, data.ErrEditConflict):
+			app.editConflictResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+	user.SetMarshalType(data.Frontend)
+
+	if err = app.writeJson(w, http.StatusOK, envelope{"user": user}, nil); err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+}
+
 func (app *application) updateProfileHandler(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseMultipartForm(10 << 20)
 	if err != nil {
@@ -528,9 +570,18 @@ func (app *application) getUserHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-
 	user.SetMarshalType(2)
-	err = app.writeJson(w, http.StatusOK, envelope{"user": user}, nil)
+
+	posts, err := app.models.Posts.GetByUserID(user.ID)
+
+	var postIDs []int64
+
+	for _, post := range posts {
+		postIDs = append(postIDs, post.ID)
+	}
+
+	files, err := app.models.Files.GetSingle(postIDs)
+	err = app.writeJson(w, http.StatusOK, envelope{"user": user, "posts": files}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}
@@ -539,6 +590,7 @@ func (app *application) getUserHandler(w http.ResponseWriter, r *http.Request) {
 
 func (app *application) searchUserHandler(w http.ResponseWriter, r *http.Request) {
 	query, err := app.readStringParam("query", r)
+	user := app.contextGetUser(r)
 	if err != nil {
 		app.badRequestResponse(w, r, err)
 		return
@@ -548,7 +600,7 @@ func (app *application) searchUserHandler(w http.ResponseWriter, r *http.Request
 		size = 10
 	}
 
-	users, err := app.models.Users.GetUsersByUsernameOrName(query, size)
+	users, err := app.models.Users.GetUsersByUsernameOrName(query, size, user.Username)
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):

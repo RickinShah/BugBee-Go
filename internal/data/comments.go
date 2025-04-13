@@ -27,6 +27,7 @@ type Comment struct {
 	UpdatedAt       time.Time    `json:"updated_at" db:"updated_at"`
 	Content         string       `json:"content" db:"content"`
 	Stats           CommentStats `json:"stats" db:"comment_stats"`
+	VoteType        VoteType     `json:"vote_type"`
 	Version         int64        `json:"version" db:"version"`
 	all             bool
 }
@@ -42,6 +43,7 @@ func (c *Comment) MarshalJSON() ([]byte, error) {
 	comment["updated_at"] = c.UpdatedAt
 	comment["content"] = c.Content
 	comment["user"] = c.User
+	comment["vote_type"] = c.VoteType
 	if c.all {
 		comment["comment_stats"] = c.Stats
 	}

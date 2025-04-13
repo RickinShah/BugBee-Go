@@ -16,6 +16,9 @@ import CommunitySetting from "./components/Communities/CommunitySetting";
 import UserProfile from "./components/UserProfile";
 import Settings from "./components/Settings";
 import ChangePassword from "./components/ChangePassword";
+import Dashboard from "./components/Dashboard/dashboard";
+import VideoCall from "./components/VideoCall/videoCall";
+import SinglePost from "./components/SinglePost";
 
 const App = () => {
     return (
@@ -61,7 +64,10 @@ const App = () => {
                         element={<CreateCommunity />}
                     />
                     <Route path="/communities" element={<Communities />} />
-                    <Route path="/profile" element={<UserProfile />} />
+                    <Route
+                        path="/profile/:username"
+                        element={<UserProfile />}
+                    />
                     <Route path="/settings" element={<Settings />} />
                     <Route
                         path="/settings/password"
@@ -72,6 +78,12 @@ const App = () => {
                         path="/community/:handle/settings"
                         element={<CommunitySetting />}
                     />
+                    <Route path="/chat" element={<Dashboard />}></Route>
+                    <Route path="/vc" element={<VideoCall />}></Route>
+                    <Route
+                        path="/posts/:postId"
+                        element={<SinglePost />}
+                    ></Route>
                 </Routes>
             </Router>
         </>

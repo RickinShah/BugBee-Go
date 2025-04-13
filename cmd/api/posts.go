@@ -257,6 +257,8 @@ func (app *application) getAllPostHandler(w http.ResponseWriter, r *http.Request
 		size = 10
 	}
 
+	user := app.contextGetUser(r)
+
 	filters := data.Filters{
 		PageSize: size,
 		LastID:   lastID,
@@ -299,6 +301,11 @@ func (app *application) getAllPostHandler(w http.ResponseWriter, r *http.Request
 			}
 			post.Files = files
 		}
+	}
+
+	if err = app.models.PostVotes.GetAll(posts, user.ID); err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
 	}
 
 	err = app.writeJson(w, http.StatusOK, envelope{"posts": posts}, nil)

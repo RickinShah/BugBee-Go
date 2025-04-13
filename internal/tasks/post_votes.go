@@ -55,8 +55,7 @@ package tasks
 // 			if len(postVoteBatch) > 0 {
 // 				processPostVoteBatch(models, &postVoteBatch)
 // 			}
-// 		case postVoteTask := <-postVoteTaskChan:
-// 			postVoteBatch = append(postVoteBatch, postVoteTask.Data)
+// 		case postVoteTask := <-postVoteTaskChan: // 			postVoteBatch = append(postVoteBatch, postVoteTask.Data)
 
 // 			if len(postVoteBatch) >= postVoteBatchSize {
 // 				processPostVoteBatch(models, &postVoteBatch)

@@ -62,27 +62,26 @@ const (
 func (u *User) MarshalJSON() ([]byte, error) {
 	user := make(map[string]any, 11)
 	if u.marshalType == 0 {
-		u.marshalType = 1
+		u.marshalType = Full
 	}
-	if u.marshalType == 4 {
+	if u.marshalType == IDOnly || u.marshalType == Frontend || u.marshalType == Full {
 		user["user_id"] = strconv.FormatInt(u.ID, 10)
 	}
-	if u.marshalType == 1 || u.marshalType == 2 || u.marshalType == 3 {
+	if u.marshalType == Full || u.marshalType == Frontend || u.marshalType == Minimal {
 		user["username"] = u.Username
 		user["name"] = u.Name
 		if u.ProfilePath == nil {
-			user["profile_path"] = "/bugbee/profiles/default.jpg"
+			user["profile_path"] = "/bugbee/profiles/default.png"
 		} else {
 			user["profile_path"] = u.ProfilePath
 		}
 	}
-	if u.marshalType == 1 || u.marshalType == 2 {
+	if u.marshalType == Full || u.marshalType == Frontend {
 		user["email"] = u.Email
 		user["bio"] = u.Bio
 		user["show_nsfw"] = u.ShowNsfw
 	}
-	if u.marshalType == 1 {
-		user["user_id"] = strconv.FormatInt(u.ID, 10)
+	if u.marshalType == Full {
 		user["activated"] = u.Activated
 		user["created_at"] = u.CreatedAt
 		user["version"] = u.Version
@@ -364,13 +363,13 @@ func (m UserModel) Update(user *User, token ...string) error {
 	return nil
 }
 
-func (m UserModel) GetUsersByUsernameOrName(name string, limit int) ([]User, error) {
+func (m UserModel) GetUsersByUsernameOrName(name string, limit int, username string) ([]User, error) {
 	query := `
 		WITH similarity_scores AS (
 			SELECT username, name, profile_path,
 			GREATEST(word_similarity(name, $1), word_similarity(username, $1)) AS match_similarity
 			FROM users
-			WHERE name % $1 OR username % $1
+			WHERE (name % $1 OR username % $1) AND username != $3
 			ORDER BY match_similarity DESC
 			LIMIT $2
 		)
@@ -380,7 +379,7 @@ func (m UserModel) GetUsersByUsernameOrName(name string, limit int) ([]User, err
 		SELECT username, name, profile_path,
 		GREATEST(word_similarity(username, $1), word_similarity(name, $1)) AS match_similarity
 		FROM users
-		WHERE NOT EXISTS (SELECT 1 FROM similarity_scores)
+		WHERE NOT EXISTS (SELECT 1 FROM similarity_scores) AND username != $3
 		AND (username ^@ $1 OR name ^@ $1)
 		ORDER BY match_similarity DESC NULLS LAST
 		LIMIT $2;
@@ -389,7 +388,7 @@ func (m UserModel) GetUsersByUsernameOrName(name string, limit int) ([]User, err
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	args := []any{name, limit}
+	args := []any{name, limit, username}
 
 	rows, err := m.DB.QueryContext(ctx, query, args...)
 	if err != nil {

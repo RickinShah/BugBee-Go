@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -64,24 +63,20 @@ func (app *application) createAuthenticationHandler(w http.ResponseWriter, r *ht
 	}
 
 	cookie := http.Cookie{
-		Name:     "auth_token",
-		Value:    token.Plaintext,
-		Expires:  token.Expiry.UTC(),
-		HttpOnly: true,
-		SameSite: http.SameSiteLaxMode,
-		Secure:   false,
-		Path:     "/",
+		Name:        "auth_token",
+		Value:       token.Plaintext,
+		Expires:     token.Expiry.UTC(),
+		HttpOnly:    true,
+		SameSite:    http.SameSiteNoneMode,
+		Secure:      true,
+		Path:        "/",
+		Partitioned: true,
 	}
 
 	http.SetCookie(w, &cookie)
 
-	headers := http.Header{
-		"Access-Control-Allow-Origin":      []string{fmt.Sprintf("%s://%s:%d", app.config.protocol, app.config.host, app.config.clientPort)},
-		"Access-Control-Allow-Credentials": []string{"true"},
-	}
-
 	user.SetMarshalType(data.Frontend)
-	err = app.writeJson(w, http.StatusCreated, envelope{"user": user}, headers)
+	err = app.writeJson(w, http.StatusCreated, envelope{"user": user}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}

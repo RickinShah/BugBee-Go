@@ -73,14 +73,14 @@ type File struct {
 
 func (f *File) MarshalJSON() ([]byte, error) {
 	file := make(map[string]any, 7)
-	file["file_id"] = f.ID
+	file["file_id"] = strconv.FormatInt(f.ID, 10)
 	file["path"] = f.Path
 	file["is_nsfw"] = f.IsNSFW
 	file["type"] = f.Type
+	file["post_id"] = strconv.FormatInt(f.PostID, 10)
+	file["created_at"] = f.CreatedAt
 	if f.all {
-		file["post_id"] = f.PostID
 		file["size"] = f.Size
-		file["created_at"] = f.CreatedAt
 	}
 	return json.Marshal(file)
 }
@@ -163,6 +163,54 @@ func GetFilePath(basePath string, ID int64, extension string) (string, error) {
 		return "", err
 	}
 	return filepath.Join(fullDirPath, fileIDStr+extension), nil
+}
+
+func (m FileModel) GetSingle(postIDs []int64) ([]*File, error) {
+	query := `
+		SELECT DISTINCT ON (post_id) file_pid, post_id, path, type, size, is_nsfw, created_at
+		FROM files
+		WHERE post_id = ANY($1)
+		ORDER BY post_id DESC, file_pid ASC
+	`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	rows, err := m.DB.QueryContext(ctx, query, toPostgresIntArray(postIDs))
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, ErrRecordNotFound
+		default:
+			return nil, err
+		}
+	}
+	defer rows.Close()
+
+	var files []*File
+
+	for rows.Next() {
+		var file File
+
+		err := rows.Scan(
+			&file.ID,
+			&file.PostID,
+			&file.Path,
+			&file.Type,
+			&file.Size,
+			&file.IsNSFW,
+			&file.CreatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		files = append(files, &file)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return files, nil
 }
 
 func (m FileModel) Get(postID int64) ([]*File, error) {
@@ -267,4 +315,12 @@ func (m FileModel) UpdatePath(tx *sql.Tx, file File) error {
 
 func (m FileModel) generateCacheKey(postID int64) string {
 	return "files:" + strconv.FormatInt(postID, 10)
+}
+
+func toPostgresIntArray(ids []int64) string {
+	str := make([]string, len(ids))
+	for i, id := range ids {
+		str[i] = strconv.FormatInt(id, 10)
+	}
+	return "{" + strings.Join(str, ",") + "}"
 }

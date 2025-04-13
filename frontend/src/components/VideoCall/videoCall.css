@@ -1,0 +1,435 @@
+/* Importing Google Fonts and FontAwesome */
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap");
+@import url("https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css");
+
+/* Reset and base styles */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: "Poppins", sans-serif;
+  background: #000; /* fallback */
+  color: white;
+}
+
+/* Container */
+.video-call-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #080a41 0%, #1a0b2e 100%);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Background glow */
+.video-call-container::before {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(
+    circle,
+    rgba(9, 139, 200, 0.1) 0%,
+    transparent 80%
+  );
+  z-index: 0;
+}
+
+/* Header */
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 30px;
+  z-index: 10; /* Increased z-index to ensure it's above other elements */
+  flex-wrap: wrap;
+  position: relative; /* Added to ensure z-index works properly */
+  top:10px;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  flex-wrap: wrap;
+  position: relative;
+  z-index: 15; /* Ensure this is above other elements */
+}
+
+.vc-logo {
+  position: relative;
+  left: -65px;
+  top: -20px;
+  width: 100px;
+  height: 100px;
+}
+
+.vc {
+  position: relative;
+  left: -130px;
+}
+
+.header-left h2 {
+  font-weight: 500;
+  font-size: 18px;
+  margin-left: 10px;
+}
+
+.header-right {
+  display: flex;
+  gap: 15px;
+  z-index: 15; /* Ensure this is above other elements */
+}
+
+/* Icon Buttons - Fixed the back button styles */
+.icon-button,
+.back-button {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: white;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative; /* Added to ensure hover effects work */
+  z-index: 20; /* Higher z-index to ensure it's clickable */
+}
+
+/* Made the hover effect more prominent */
+.icon-button:hover,
+.back-button:hover {
+  background: rgba(255, 255, 255, 0.3);
+  
+}
+
+
+
+/* Content */
+.dashboard-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 0 30px 30px;
+  position: relative;
+  z-index: 5;
+}
+
+/* User Card */
+.user-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.14);
+  border-radius: 50px;
+  backdrop-filter: blur(5px);
+  margin-bottom: 30px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  gap: 20px;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.user-avatar {
+  width: 50px;
+  height: 50px;
+  background: linear-gradient(135deg, #00ff9d, #00b8ff);
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.user-details h3 {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.user-details p {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+}
+
+.time-info {
+  text-align: right;
+}
+
+.current-time {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.current-date {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+}
+
+/* Glass Container */
+.glass-container {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.182);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  padding: 40px;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-container::before {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(
+    circle,
+    rgba(255, 255, 255, 0.1) 0%,
+    transparent 70%
+  );
+  z-index: 0;
+}
+
+.headline {
+  font-size: 50px;
+  font-weight: 700;
+  margin-bottom: 40px;
+  position: relative;
+  z-index: 1;
+}
+
+.underline {
+  position: relative;
+  color: #ffffff;
+}
+
+/* Join/Create Meeting Area */
+.mix {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 30px;
+  flex-wrap: wrap;
+  position: relative;
+  z-index: 1;
+  margin-top: 50px;
+}
+
+.new-meeting-button {
+  padding: 15px 30px;
+  background: linear-gradient(90deg, #00c16e, #00ff9d);
+  color: #000000;
+  border: none;
+  border-radius: 30px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.3s ease;
+  box-shadow: 0 5px 15px rgba(0, 255, 157, 0.3);
+}
+
+.new-meeting-button:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0, 255, 157, 0.4);
+}
+
+/* Join Meeting Input */
+.join-meeting {
+  display: flex;
+  width: 100%;
+  max-width: 600px;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.input-container {
+  flex: 1;
+  position: relative;
+  min-width: 200px;
+}
+
+.input-container input {
+  width: 100%;
+  padding: 15px 20px;
+  background: rgba(19, 9, 9, 0.137);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 30px;
+  color: white;
+  font-size: 16px;
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+.input-container input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.input-container input:focus {
+  border-color: #00b8ff;
+  box-shadow: 0 0 10px rgba(0, 184, 255, 0.3);
+}
+
+.join-button {
+  padding: 15px 30px;
+  background: linear-gradient(90deg, #0088ff, #00b8ff);
+  color: white;
+  border: none;
+  border-radius: 30px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 5px 15px rgba(0, 184, 255, 0.3);
+}
+
+.join-button:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0, 184, 255, 0.4);
+}
+
+/* Responsive Queries */
+@media (max-width: 1024px) {
+  .headline {
+    font-size: 36px;
+    margin-bottom: 30px;
+  }
+
+  .glass-container {
+    padding: 30px;
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 15px;
+  }
+
+  .header-left h2 {
+    font-size: 16px;
+  }
+
+  .dashboard-content {
+    padding: 0 15px 20px;
+  }
+
+  .user-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+    border-radius: 20px;
+    padding: 15px;
+  }
+
+  .user-avatar {
+    width: 45px;
+    height: 45px;
+    font-size: 18px;
+  }
+
+  .user-details h3 {
+    font-size: 16px;
+  }
+
+  .user-details p,
+  .current-date {
+    font-size: 13px;
+  }
+
+  .time-info {
+    align-self: flex-end;
+    text-align: right;
+    width: 100%;
+  }
+
+  .current-time {
+    font-size: 16px;
+  }
+
+  .glass-container {
+    padding: 20px;
+  }
+
+  .headline {
+    font-size: 28px;
+    text-align: center;
+    margin-bottom: 25px;
+  }
+
+  .mix {
+    flex-direction: column;
+    gap: 15px;
+    top: 0;
+    left: 0;
+    padding: 0;
+    align-items: stretch;
+  }
+
+  .new-meeting-button,
+  .join-button {
+    width: 100%;
+    justify-content: center;
+    padding: 14px 20px;
+    font-size: 15px;
+  }
+
+  .join-meeting {
+    flex-direction: column;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .input-container input {
+    width: 100%;
+    font-size: 15px;
+    padding: 14px;
+  }
+}
+@media (max-width: 480px) {
+  .headline {
+    font-size: 22px;
+  }
+
+  .icon-button,
+  .back-button {
+    width: 35px;
+    height: 35px;
+  }
+
+  .new-meeting-button,
+  .join-button {
+    padding: 12px 20px;
+    font-size: 14px;
+  }
+
+  .input-container input {
+    padding: 12px 16px;
+    font-size: 14px;
+  }
+}

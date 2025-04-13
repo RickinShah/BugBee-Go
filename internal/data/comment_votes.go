@@ -48,6 +48,37 @@ func (m *CommentVoteModel) Get(tx *sql.Tx, commentID int64, userID int64) (*Comm
 	return &commentVote, nil
 }
 
+func (m *CommentVoteModel) GetAll(comments []*Comment) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	query := `
+		SELECT comment_id, user_id, vote_type
+		FROM comment_votes WHERE comment_id = $1 AND user_id = $2
+	`
+
+	stmt, err := m.DB.Prepare(query)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	for _, comment := range comments {
+		if err := stmt.QueryRowContext(ctx, comment.ID, comment.User.ID).Scan(
+			&comment.VoteType,
+		); err != nil {
+			switch {
+			case errors.Is(err, sql.ErrNoRows):
+				continue
+			default:
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
 func (m *CommentVoteModel) Insert(tx *sql.Tx, commentVote *CommentVote) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()

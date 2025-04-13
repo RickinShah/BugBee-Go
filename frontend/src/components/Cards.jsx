@@ -7,11 +7,14 @@ import {
     FaReply,
     FaArrowLeft,
     FaArrowRight,
+    FaSmile,
 } from "react-icons/fa";
-import { apiCall, getMediaPath } from "../utils/api";
+import { apiCall, copyToClipboard, getMediaPath } from "../utils/api";
+import { useNavigate } from "react-router-dom";
+import EmojiPicker from "emoji-picker-react";
 // import { copyToClipboard } from "../utils/form";
 
-const Card = ({ user, post_id, content, stats, files }) => {
+const Card = ({ user, post_id, content, stats, files, vote_type }) => {
     const [username] = useState(() => localStorage.getItem("username"));
     const [profile_path] = useState(() => localStorage.getItem("profile_path"));
     const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
@@ -19,40 +22,36 @@ const Card = ({ user, post_id, content, stats, files }) => {
     const [like, setLike] = useState(stats.upvote_count);
     const [dislike, setDislike] = useState(stats.downvote_count);
     const [commentCount, setCommentCount] = useState(stats.comment_count);
-    const [isLiked, setIsLiked] = useState(false);
-    const [isDisliked, setIsDisliked] = useState(false);
+    const [isLiked, setIsLiked] = useState(vote_type == 1 ? true : false);
+    const [isDisliked, setIsDisliked] = useState(
+        vote_type == -1 ? true : false,
+    );
     const [commentToggle, setCommentToggle] = useState(false);
     const [newComment, setNewComment] = useState("");
     const [isPortrait, setIsPortrait] = useState(false); // New state for orientation
     const [postId, setPostId] = useState(() => post_id);
+    const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+    const navigate = useNavigate();
 
     const handleLike = () => {
         if (isLiked) {
             setLike(like - 1);
             setIsLiked(false);
-            handleVote(false, isDisliked);
+            handleVote(0);
         } else {
             setLike(like + 1);
             setIsLiked(true);
             if (isDisliked) {
                 setDislike(dislike - 1);
                 setIsDisliked(false);
-                handleVote(true, false);
-            } else {
-                handleVote(true, isDisliked);
             }
+            handleVote(1);
         }
     };
 
-    const handleVote = (upvote, downvote) => {
-        let vote = 0;
-        if (upvote === true) {
-            vote = 1;
-        } else if (downvote === true) {
-            vote = -1;
-        }
-
+    const handleVote = (vote) => {
         const data = { vote_type: vote };
+        console.log("Voted" + vote);
         apiCall(
             `/v1/posts/${postId}/votes`,
             "POST",
@@ -69,17 +68,15 @@ const Card = ({ user, post_id, content, stats, files }) => {
         if (isDisliked) {
             setDislike(dislike - 1);
             setIsDisliked(false);
-            handleVote(isLiked, false);
+            handleVote(0);
         } else {
             setDislike(dislike + 1);
             setIsDisliked(true);
             if (isLiked) {
                 setLike(like - 1);
                 setIsLiked(false);
-                handleVote(false, true);
-            } else {
-                handleVote(isLiked, true);
             }
+            handleVote(-1);
         }
     };
 
@@ -117,6 +114,7 @@ const Card = ({ user, post_id, content, stats, files }) => {
 
     const toggleComments = () => {
         setCommentToggle(!commentToggle);
+        if (showEmojiPicker) setShowEmojiPicker(false);
     };
 
     const getComments = () => {
@@ -130,6 +128,7 @@ const Card = ({ user, post_id, content, stats, files }) => {
             (response) => {
                 const comments = response.comments;
                 console.log(comments);
+                setCommentCount(comments.length);
                 setCommentData(
                     comments.map((comment) => ({
                         Comments: comment.content,
@@ -149,7 +148,6 @@ const Card = ({ user, post_id, content, stats, files }) => {
         if (newComment.trim()) {
             data.content = newComment;
             setCommentData([
-                ...commentData,
                 {
                     profile_path: profile_path,
                     username: username,
@@ -160,9 +158,11 @@ const Card = ({ user, post_id, content, stats, files }) => {
                     isLiked: false,
                     isDisliked: false,
                 },
+                ...commentData,
             ]);
             setCommentCount(commentCount + 1);
             setNewComment("");
+            setShowEmojiPicker(false);
         }
 
         apiCall(
@@ -176,18 +176,28 @@ const Card = ({ user, post_id, content, stats, files }) => {
         );
     };
 
-    const handleNextMedia = () => {
+    const handleNextMedia = (e) => {
+        e.stopPropagation();
         if (currentMediaIndex < files.length - 1) {
             setCurrentMediaIndex(currentMediaIndex + 1);
             setIsPortrait(false); // Reset orientation for new media
         }
     };
 
-    const handlePrevMedia = () => {
+    const handlePrevMedia = (e) => {
+        e.stopPropagation();
         if (currentMediaIndex > 0) {
             setCurrentMediaIndex(currentMediaIndex - 1);
             setIsPortrait(false); // Reset orientation for new media
         }
+    };
+
+    const handleEmojiClick = (emojiObject) => {
+        setNewComment(newComment + emojiObject.emoji);
+    };
+
+    const toggleEmojiPicker = () => {
+        setShowEmojiPicker(!showEmojiPicker);
     };
 
     const renderMedia = () => {
@@ -196,7 +206,7 @@ const Card = ({ user, post_id, content, stats, files }) => {
 
         const mediaPath = getMediaPath(currentFile.path);
 
-        const mediaClasses = `rounded-md max-w-full max-h-[80vh] object-contain ${
+        const mediaClasses = `rounded-md max-w-full max-h-[60vh] object-contain ${
             isPortrait ? "max-w-[50%] sm:max-w-[60%]" : ""
         }`; // Reduce width for portrait
 
@@ -229,7 +239,10 @@ const Card = ({ user, post_id, content, stats, files }) => {
     return (
         <div className="relative bg-gradient-to-br from-80% from-[#4b207a70] to-[#8c02a170] w-full max-w-2xl mx-auto rounded-lg p-2 sm:p-4 my-5 shadow-md">
             {/* Header */}
-            <div className="h-10 flex items-center flex-wrap gap-2">
+            <div
+                className="h-10 flex items-center flex-wrap gap-2 cursor-pointer"
+                onClick={() => navigate(`/profile/${user.username}`)}
+            >
                 <img
                     src={getMediaPath(user.profile_path)}
                     alt="Profile"
@@ -244,17 +257,20 @@ const Card = ({ user, post_id, content, stats, files }) => {
             </div>
 
             {/* Content with Navigation */}
-            <div className="mt-3 w-full relative">
-                <div className="bg-[#1a072cbf] w-full rounded-2xl flex items-center justify-center overflow-hidden">
+            <div className="mt-3 w-full relative cursor-pointer">
+                <div
+                    className="bg-[#1a072cbf] w-full rounded-2xl flex items-center justify-center overflow-hidden"
+                    onClick={() => navigate(`/posts/${post_id}`)}
+                >
                     {renderMedia()}
                     {files.length > 1 && (
                         <>
                             <button
                                 onClick={handlePrevMedia}
                                 disabled={currentMediaIndex === 0}
-                                className={`absolute left-2 top-1/2 transform -translate-y-1/2 p-2 rounded-full bg-black bg-opacity-50 text-white ${currentMediaIndex === 0 ? "opacity-0" : "hover:bg-opacity-75"}`}
+                                className={`absolute left-2 top-1/2 transform -translate-y-1/2 p-2 rounded-full bg-black z-20 bg-opacity-50 text-white ${currentMediaIndex === 0 ? "opacity-0" : "hover:bg-opacity-75"}`}
                             >
-                                <FaArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
+                                ❮
                             </button>
                             <button
                                 onClick={handleNextMedia}
@@ -263,7 +279,7 @@ const Card = ({ user, post_id, content, stats, files }) => {
                                 }
                                 className={`absolute right-2 top-1/2 transform -translate-y-1/2 p-2 rounded-full bg-black bg-opacity-50 text-white ${currentMediaIndex === files.length - 1 ? "opacity-0" : "hover:bg-opacity-75"}`}
                             >
-                                <FaArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
+                                ❯
                             </button>
                             <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex space-x-1">
                                 {files.map((_, index) => (
@@ -330,7 +346,7 @@ const Card = ({ user, post_id, content, stats, files }) => {
 
                 <button
                     className="flex items-center space-x-1 sm:space-x-2 group"
-                    // onClick={() => copyToClipboard()}
+                    onClick={() => copyToClipboard(post_id)}
                 >
                     <div className="p-1 sm:p-2 rounded-full bg-gradient-to-r from-[#f5c71f] to-[#c78f00] group-hover:scale-110 transition-all duration-300">
                         <FaShare className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
@@ -343,7 +359,7 @@ const Card = ({ user, post_id, content, stats, files }) => {
 
             {/* Comments Section */}
             {commentToggle && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-2 sm:p-4">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80 p-2 sm:p-4">
                     <div className="w-full max-w-md bg-[#230a36] rounded-lg p-3 sm:p-4 shadow-lg max-h-[90vh] flex flex-col">
                         <div className="max-h-[50vh] sm:max-h-[60vh] overflow-y-auto space-y-3 sm:space-y-4">
                             {commentData.length === 0 && (
@@ -377,10 +393,22 @@ const Card = ({ user, post_id, content, stats, files }) => {
                                     <img
                                         src={comment.profile_path}
                                         alt="User"
-                                        className="rounded-full w-6 h-6 sm:w-8 sm:h-8 mt-1"
+                                        className="rounded-full w-6 h-6 sm:w-8 sm:h-8 mt-1 cursor-pointer"
+                                        onClick={() =>
+                                            navigate(
+                                                `/profile/${comment.username}`,
+                                            )
+                                        }
                                     />
                                     <div className="flex-1">
-                                        <div className="flex items-center space-x-2">
+                                        <div
+                                            className="flex items-center space-x-2 cursor-pointer"
+                                            onClick={() =>
+                                                navigate(
+                                                    `/profile/${comment.username}`,
+                                                )
+                                            }
+                                        >
                                             <h3 className="font-semibold text-white text-xs sm:text-sm">
                                                 {comment.username}
                                             </h3>
@@ -389,64 +417,63 @@ const Card = ({ user, post_id, content, stats, files }) => {
                                         <p className="text-white text-xs sm:text-sm mt-1">
                                             {comment.Comments}
                                         </p>
-                                        {/* { <div className="flex items-center space-x-3 sm:space-x-4 mt-2">
-                                            <button
-                                                onClick={() =>
-                                                    handleCommentLike(index)
-                                                }
-                                                className="flex items-center space-x-1 text-gray-400 hover:text-white transition-colors"
-                                            >
-                                                <FaArrowUp
-                                                    className={`w-3 h-3 sm:w-4 sm:h-4 ${comment.isLiked ? "text-[#ff599e]" : ""}`}
-                                                />
-                                                <span className="text-xs">
-                                                    {comment.likes}
-                                                </span>
-                                            </button>
-                                            <button
-                                                onClick={() =>
-                                                    handleCommentDislike(index)
-                                                }
-                                                className="flex items-center space-x-1 text-gray-400 hover:text-white transition-colors"
-                                            >
-                                                <FaArrowDown
-                                                    className={`w-3 h-3 sm:w-4 sm:h-4 ${comment.isDisliked ? "text-[#7793f7]" : ""}`}
-                                                />
-                                                <span className="text-xs">
-                                                    {comment.dislikes}
-                                                </span>
-                                            </button>
-                                            <button className="flex items-center space-x-1 text-gray-400 hover:text-white transition-colors">
-                                                <FaReply className="w-3 h-3 sm:w-4 sm:h-4" />
-                                                <span className="text-xs">
-                                                    Reply
-                                                </span>
-                                            </button>
-                                        </div> */}
                                     </div>
                                 </div>
                             ))}
                         </div>
-                        <div className="mt-3 sm:mt-4 flex items-center space-x-2 shrink-0">
-                            <input
-                                type="text"
-                                value={newComment}
-                                onChange={(e) => setNewComment(e.target.value)}
-                                className="flex-1 bg-[#31144e] font-medium text-white p-2 rounded-full focus:outline-none placeholder-gray-400 text-xs sm:text-sm"
-                                placeholder=" Add a comment..."
-                            />
-                            <button
-                                onClick={() => handleCommentSubmit()}
-                                className="bg-gradient-to-r from-[#75ccf2] to-[#1a8bc0] px-3 py-1 sm:px-4 sm:py-2 rounded-full text-white font-semibold text-xs sm:text-sm hover:from-[#1a8bc0] hover:to-[#75ccf2] transition-all duration-300"
-                            >
-                                Post
-                            </button>
-                            <button
-                                onClick={toggleComments}
-                                className="text-gray-400 hover:text-white text-xs sm:text-sm font-semibold"
-                            >
-                                Cancel
-                            </button>
+                        <div className="mt-3 sm:mt-4 flex flex-col shrink-0">
+                            {/* Comment input area with emoji picker */}
+                            <div className="relative w-full mb-2">
+                                <div className="relative flex items-center w-full">
+                                    <input
+                                        type="text"
+                                        value={newComment}
+                                        onChange={(e) =>
+                                            setNewComment(e.target.value)
+                                        }
+                                        className="w-full bg-[#31144e] font-medium text-white p-2 rounded-full focus:outline-none placeholder-gray-400 text-xs sm:text-sm pr-10"
+                                        placeholder=" Add a comment..."
+                                    />
+                                    <button
+                                        onClick={toggleEmojiPicker}
+                                        className="absolute right-3 text-gray-400 hover:text-gray-100 transition-colors"
+                                        type="button"
+                                    >
+                                        <FaSmile className="w-5 h-5" />
+                                    </button>
+                                </div>
+
+                                {showEmojiPicker && (
+                                    <div className="absolute z-10 bottom-full mb-2 left-0">
+                                        <EmojiPicker
+                                            onEmojiClick={handleEmojiClick}
+                                            searchDisabled={false}
+                                            skinTonesDisabled={false}
+                                            width={300}
+                                            height={350}
+                                            previewConfig={{
+                                                showPreview: false,
+                                            }}
+                                        />
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Action buttons */}
+                            <div className="flex justify-end space-x-2">
+                                <button
+                                    onClick={() => handleCommentSubmit()}
+                                    className="bg-gradient-to-r from-[#75ccf2] to-[#1a8bc0] px-3 py-1 sm:px-4 sm:py-2 rounded-full text-white font-semibold text-xs sm:text-sm hover:from-[#1a8bc0] hover:to-[#75ccf2] transition-all duration-300"
+                                >
+                                    Post
+                                </button>
+                                <button
+                                    onClick={toggleComments}
+                                    className="bg-[#31144e] px-3 py-1 sm:px-4 sm:py-2 rounded-full text-gray-300 hover:text-white text-xs sm:text-sm font-semibold transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>

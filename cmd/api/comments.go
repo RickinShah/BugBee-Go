@@ -170,6 +170,11 @@ func (app *application) getComments(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err = app.models.CommentVotes.GetAll(comments); err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
 	err = app.writeJson(w, http.StatusOK, envelope{"comments": comments}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)

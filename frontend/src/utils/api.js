@@ -1,10 +1,11 @@
 const config = {
-    // host: "192.168.29.150",
-    // host: "192.168.43.80",
     host: "localhost",
-    protocol: "http",
-    port: "80",
+    protocol: "https",
+    port: "443",
 };
+
+export const appHost = config.host;
+export const vcHost = "localhost:3010";
 
 const showErrorNotification = (message) => {
     // Remove existing notification if any
@@ -37,7 +38,7 @@ const showErrorNotification = (message) => {
     // Auto-remove after 5 seconds
     setTimeout(() => {
         if (notification) notification.remove();
-    }, 5000);
+    }, 2000);
 };
 
 export const onErrorDefault = (error) => {
@@ -126,4 +127,19 @@ export const apiCall = async (
 
 export const getMediaPath = (dirPath) => {
     return `${config.protocol}://${config.host}:${config.port}/media${dirPath}`;
+};
+
+export const copyToClipboard = (currentPostId) => {
+    const host = window.location.origin;
+    const fullUrl = `${host}/posts/${currentPostId}`;
+    navigator.clipboard
+        .writeText(fullUrl)
+        .then(() => {
+            showErrorNotification("Copied to clipboard");
+            console.log("Copied to clipboard:", fullUrl);
+            // You can add a toast/alert here if needed
+        })
+        .catch((err) => {
+            console.error("Failed to copy:", err);
+        });
 };
