@@ -28,7 +28,6 @@ const io = new Server(server, {
     },
 });
 
-const UserRoutes = require("./Routes/user");
 const ConversationRoutes = require("./Routes/conversation");
 const MessageRoutes = require("./Routes/message");
 const CommunityMessageRoutes = require("./Routes/community_message");
@@ -81,7 +80,6 @@ app.use(
     }),
 );
 
-app.use("/api/auth", UserRoutes);
 app.use("/api/conversation", ConversationRoutes);
 app.use("/api/chat", MessageRoutes);
 app.use("/api/channels", CommunityMessageRoutes);

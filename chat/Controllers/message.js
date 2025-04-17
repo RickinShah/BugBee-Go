@@ -1,5 +1,3 @@
-const MessageSchema = require("../Models/message");
-const MessageModal = require("../Models/message");
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
