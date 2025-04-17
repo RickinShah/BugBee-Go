@@ -66,8 +66,7 @@ run/chat:
 .PHONY: run/nsfw-detector
 run/nsfw-detector:
 	@echo -e "\e[33m=> Running NSFW Detector...\e[0m"
-	@source "./fastapi/.venv/bin/activate"
-	@uvicorn --app-dir ./fastapi/ app:app --host 0.0.0.0 --port 8001
+	@fastapi/.venv/bin/uvicorn --app-dir ./fastapi/ app:app --host 0.0.0.0 --port 8001
 
 # ==================================================================================== #
 # SERVICES
