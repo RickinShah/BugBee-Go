@@ -7,7 +7,7 @@ import requests
 from io import BytesIO
 
 app = FastAPI()
-model_directory = "./nsfw-detector-model"
+model_directory = "./fastapi/nsfw-detector-model"
 
 def download_model(model_directory):
     required_files = ['config.json', 'model.safetensors', 'preprocessor_config.json']
