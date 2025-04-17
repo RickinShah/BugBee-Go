@@ -2,9 +2,12 @@ package worker
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"errors"
+	"flag"
 	"fmt"
+	"net/http"
 	"os"
 	"strconv"
 	"time"
@@ -14,7 +17,50 @@ import (
 	"github.com/go-redis/redis/v8"
 )
 
+type NSFWResponse struct {
+	NSFW int    `json:"nsfw"`
+	Err  string `json:"error", omitempty`
+}
+
 var logger = jsonlog.New(os.Stdout, jsonlog.LevelInfo)
+
+func StartNSFWWorker(ctx context.Context, m data.Models, workerID int) {
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				logger.PrintInfo("[Worker stopping]", map[string]string{
+					"workerID:": strconv.Itoa(workerID),
+				})
+				return
+			default:
+				var file data.File
+				result := m.Posts.Redis.RPop(ctx, data.NSFWQueue)
+				if err := result.Err(); err != nil {
+					if err == redis.Nil {
+						time.Sleep(5 * time.Second)
+						continue
+					}
+				}
+
+				fileStr := result.Val()
+
+				err := json.Unmarshal([]byte(fileStr), &file)
+				if err != nil {
+					logger.PrintError(err, map[string]string{
+						"workerID": strconv.Itoa(workerID),
+						"fileID":   strconv.FormatInt(file.ID, 10),
+					})
+				}
+
+				if err = processNSFW(ctx, file, m); err != nil {
+					continue
+				}
+
+			}
+		}
+	}()
+}
 
 func StartCommentWorker(ctx context.Context, m data.Models, workerID int) {
 	go func() {
@@ -216,5 +262,70 @@ func updateComments(ctx context.Context, key string, m data.Models) error {
 		logger.PrintError(err, nil)
 		return err
 	}
+	return nil
+}
+
+func processNSFW(ctx context.Context, file data.File, m data.Models) error {
+	serverProtocol := flag.Lookup("protocol").Value.String()
+	serverHost := flag.Lookup("host").Value.String()
+	// serverPort, err := strconv.ParseInt(flag.Lookup("port").Value.String(), 10, 64)
+	// if err != nil {
+	// 	logger.PrintError(err, nil)
+	// 	return err
+	// }
+
+	imageURL := fmt.Sprintf("%s://%s:%d/media%s", serverProtocol, serverHost, 443, file.Path)
+	apiURL := "http://localhost:8001/api/posts/check-nsfw?image_url=" + imageURL
+
+	req, err := http.NewRequest("GET", apiURL, nil)
+	if err != nil {
+		logger.PrintError(errors.New("Error requesting nsfw-detector: "+err.Error()), map[string]string{
+			"fileID": strconv.FormatInt(file.ID, 10),
+		})
+		return err
+	}
+
+	client := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true,
+			},
+		},
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		logger.PrintError(errors.New("Error making response nsfw-detector: "+err.Error()), map[string]string{
+			"fileID": strconv.FormatInt(file.ID, 10),
+		})
+		return err
+	}
+	defer resp.Body.Close()
+
+	var result NSFWResponse
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		logger.PrintError(errors.New("Error decoding response nsfw-detector: "+err.Error()), map[string]string{
+			"fileID": strconv.FormatInt(file.ID, 10),
+		})
+		return err
+	}
+
+	if result.Err != "" {
+		logger.PrintError(errors.New("NSFW detector returned error: "+result.Err), map[string]string{
+			"fileID": strconv.FormatInt(file.ID, 10),
+		})
+		return errors.New(result.Err)
+	}
+
+	if result.NSFW == 1 {
+		file.IsNSFW = true
+		if err := m.Files.UpdateNSFW(file); err != nil {
+			logger.PrintError(errors.New("Error decoding response nsfw-detector: "+err.Error()), map[string]string{
+				"fileID": strconv.FormatInt(file.ID, 10),
+			})
+			return err
+		}
+	}
+
 	return nil
 }

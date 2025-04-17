@@ -3,7 +3,7 @@ import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Cropper from "react-cropper";
 import "cropperjs/dist/cropper.css";
-import { apiCall } from "../../utils/api";
+import { apiCall, getDefaultProfilePath } from "../../utils/api";
 import { validationError } from "../../utils/errors";
 import { validateName, validateUsername } from "../../validators/user";
 import useNavigation from "../../utils/navigate";
@@ -21,6 +21,7 @@ const CreateCommunity = () => {
     const [showCropper, setShowCropper] = useState(false);
     const [imageBlob, setImageBlob] = useState(null);
     const cropperRef = useRef(null);
+    const profilePath = getDefaultProfilePath();
 
     useEffect(() => {
         if (image && !croppedImage) {
@@ -138,13 +139,31 @@ const CreateCommunity = () => {
                 <div className="flex flex-col md:flex-row items-center gap-6">
                     {/* Profile Image Section */}
                     <div className="w-full md:w-1/2 flex flex-col items-center">
-                        {!image && !croppedImage && (
-                            <label
-                                htmlFor="fileInput"
-                                className="relative w-32 h-32 sm:w-40 sm:h-40 rounded-full overflow-hidden cursor-pointer group border-4 border-white flex items-center justify-center bg-black bg-opacity-50 text-gray-400 text-sm sm:text-lg transition-all duration-300 hover:bg-opacity-70"
+
+                        {!image && !croppedImage && profilePath && (
+                            <div
+                                className="relative w-32 h-32 sm:w-40 sm:h-40 rounded-full overflow-hidden cursor-pointer group border-4 border-white"
+                                onClick={() =>
+                                    document.getElementById("fileInput").click()
+                                }
                             >
-                                Upload Image
-                            </label>
+                                <img
+                                    src={profilePath}
+                                    alt="Profile"
+                                    className="w-full h-full object-cover"
+                                />
+
+                                {/* Center overlay for 'Change' */}
+                                <div
+                                    className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0
+        group-hover:opacity-100 transition-opacity duration-300 rounded-full"
+                                >
+                                    <span className="text-white font-bold text-sm">
+                                        Change
+                                    </span>
+                                </div>
+
+                            </div>
                         )}
 
                         <input

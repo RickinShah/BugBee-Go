@@ -51,7 +51,7 @@ run/app: build/frontend run/api
 .PHONY: run/api
 run/api: build/api services/up
 	@echo -e "\e[33m=> Running Backend...\e[0m"
-	@./bin/api -db-dsn=${BUGBEE_DB_DSN} -smtp-username=${SMTP_USERNAME} -smtp-password=${SMTP_PASSWORD} -encryption-key=${ENCRYPTION_KEY} -smtp-sender=${SMTP_SENDER}
+	@./bin/api -db-dsn=${BUGBEE_DB_DSN} -smtp-username=${SMTP_USERNAME} -smtp-password=${SMTP_PASSWORD} -encryption-key=${ENCRYPTION_KEY} -smtp-sender=${SMTP_SENDER} -client-host=${CLIENT_HOST} -host=${SERVER_HOST} -client-port=${CLIENT_PORT} -client-protocol=${CLIENT_PROTOCOL}
 
 .PHONY: run/vc
 run/vc:
@@ -62,6 +62,12 @@ run/vc:
 run/chat:
 	@echo -e "\e[33m=> Running Messaging...\e[0m"
 	@npm start --prefix ./chat
+
+.PHONY: run/nsfw-detector
+run/nsfw-detector:
+	@echo -e "\e[33m=> Running NSFW Detector...\e[0m"
+	@source "./fastapi/.venv/bin/activate"
+	@uvicorn --app-dir ./fastapi/ app:app --host 0.0.0.0 --port 8001
 
 # ==================================================================================== #
 # SERVICES

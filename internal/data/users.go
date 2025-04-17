@@ -434,7 +434,7 @@ func (m UserModel) GetUsersByUsernameOrName(name string, limit int, username str
 	return users, nil
 }
 
-func (m UserModel) Delete(userID int64) error {
+func (m UserModel) Delete(user *User) error {
 	query := `
 		DELETE FROM users WHERE user_pid = $1
 	`
@@ -442,7 +442,7 @@ func (m UserModel) Delete(userID int64) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	result, err := m.DB.ExecContext(ctx, query, userID)
+	result, err := m.DB.ExecContext(ctx, query, user.ID)
 	if err != nil {
 		return err
 	}
@@ -453,6 +453,8 @@ func (m UserModel) Delete(userID int64) error {
 	if rows == 0 {
 		return ErrEditConflict
 	}
+	cacheKey := m.generateCacheKey(user.Username)
+	CacheDel(m.Redis, cacheKey)
 	return nil
 }
 

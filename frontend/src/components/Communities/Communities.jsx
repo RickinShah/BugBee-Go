@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { FaSearch, FaPaperPlane } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import Card from "./Card.jsx";
-import { apiCall, getMediaPath } from "../../utils/api.js";
+import { apiCall, chatApiCall, getMediaPath } from "../../utils/api.js";
 import { validationError } from "../../utils/errors.js";
 import useNavigation from "../../utils/navigate.jsx";
 import addButton from "../../assets/plus-community.png";
@@ -10,6 +10,7 @@ import backButton from "../../assets/back-1.png";
 import toggleChannelsButton from "../../assets/channels.png";
 import toggleMembersButton from "../../assets/members.png";
 import closeButton from "../../assets/close.png";
+import socket from "../../socket.js";
 
 const Communities = () => {
     const [isSearching, setIsSearching] = useState(false);
@@ -36,19 +37,30 @@ const Communities = () => {
     const [newMessage, setNewMessage] = useState("");
     const [selectedChannelId, setSelectedChannelId] = useState(null);
     const messagesEndRef = useRef(null);
+    const [selectedChannel, setSelectedChannel] = useState({});
+
+    const formatMessageTime = (timestamp) => {
+        const date = new Date(timestamp);
+        return date.toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: true,
+        });
+    };
 
     // Chat-related functions
     const fetchMessages = async (channelId) => {
         try {
-            await apiCall(
-                `/v1/community/${selectedCommunityHandle}/channels/${channelId}/messages`,
+            await chatApiCall(
+                `/channels/chat/${channelId}`,
                 "GET",
                 null,
                 {},
                 "include",
                 false,
                 (response) => {
-                    setMessages(response.messages || []);
+                    console.log(response.message)
+                    setMessages(response.message || []);
                 },
             );
         } catch (err) {
@@ -59,23 +71,40 @@ const Communities = () => {
     const sendMessage = async () => {
         if (!newMessage.trim() || !selectedChannelId) return;
 
+        console.log(selectedChannelId);
+        console.log(selectedChannel.channel_id);
         try {
-            await apiCall(
-                `/v1/community/${selectedCommunityHandle}/channels/${selectedChannelId}/messages`,
+            await chatApiCall(
+                `/channels/chat`,
                 "POST",
-                { content: newMessage },
+                {
+                    conversation: String(selectedChannelId),
+                    content: newMessage
+                },
                 {},
                 "include",
                 false,
                 (response) => {
-                    setMessages((prev) => [...prev, response.message]);
-                    setNewMessage("");
+                    console.log(response)
+                    // setMessages((prev) => [...prev, response.message]);
+                    socket.emit("sendMessage", selectedChannelId, response.message)
+                    setNewMessage("")
                 },
             );
         } catch (err) {
             validationError(err);
         }
     };
+
+    useEffect(() => {
+        socket.on("receiveMessage", (response) => {
+            setMessages((prev) => [...prev, response])
+        });
+
+        return () => {
+            socket.off("receiveMessage");
+        }
+    }, [selectedChannelId])
 
     // Scroll to bottom of messages
     const scrollToBottom = () => {
@@ -115,25 +144,29 @@ const Communities = () => {
 
     const handleCommunityClick = (community) => {
         localStorage.setItem("currentCommunity", JSON.stringify(community));
+        setCurrentCommunity(community);
         setSelected(true);
         setToggleChannels(true);
         setSelectedCommunityHandle(community.community_handle);
         setSelectedCommunityId(community.community_id);
         fetchMembers(community.community_handle);
-        setCurrentCommunity(community);
         fetchChannels(community.community_handle);
         setSelectedChannelId(null); // Reset channel selection
         setMessages([]); // Clear messages
         setSearchQuery(""); // Clear search
         setSearchResults([]);
+
     };
 
-    const handleChannelClick = (channelId) => {
-        setSelectedChannelId(channelId);
-        fetchMessages(channelId);
+    const handleChannelClick = (channel) => {
+        setSelectedChannelId(channel.channel_id);
+        setSelectedChannel(channel);
+        fetchMessages(channel.channel_id);
+        socket.emit("joinChannel", channel.channel_id);
         setSearchQuery(""); // Clear search when channel is selected
         setSearchResults([]);
     };
+
 
     const fetchChannels = async (handle) => {
         try {
@@ -218,6 +251,21 @@ const Communities = () => {
         }
     };
 
+    const joinCommunity = async (community) => {
+        console.log(community.handle)
+        await apiCall(
+            `/v1/community/${community.handle}`,
+            "POST",
+            null,
+            {},
+            "include",
+            false,
+            (response) => {
+                console.log(response);
+            },
+        )
+    }
+
     const createChannel = async () => {
         if (!channelName.trim()) {
             alert("Please enter a channel name");
@@ -244,10 +292,13 @@ const Communities = () => {
                 false,
                 (response) => {
                     ChannelToggleFunction();
-                    setChannels((prevChannels) => [
-                        ...prevChannels,
-                        response.channel,
-                    ]);
+                    if (prevChannels) {
+                        setChannels((prevChannels) => [
+                            ...prevChannels,
+                            response.channel,
+                        ]);
+
+                    }
                 },
             );
         } catch (err) {
@@ -292,7 +343,7 @@ const Communities = () => {
             {/* Sidebar */}
             <div className="bg-[#1e3a8a] w-full md:w-20 h-16 md:h-full flex flex-row md:flex-col justify-between items-center md:items-stretch shadow-2xl fixed top-0 left-0 z-20">
                 <div className="p-2 md:p-3">
-                    <div className="bg-blue-950 rounded-full p-2 shadow-md hover:scale-110 transition-transform duration-300">
+                    <div className="bg-blue-950 rounded-full p-2 shadow-md">
                         <img
                             src={profilePath}
                             alt="profile"
@@ -309,11 +360,10 @@ const Communities = () => {
                         <div
                             key={community.community_id}
                             className={`w-12 h-12 md:w-12 md:h-12 flex-shrink-0 md:my-2 mx-1 md:mx-auto rounded-full border-2 transition-all duration-300
-                ${
-                    selectedCommunityId === community.community_id
-                        ? "border-blue-600 bg-blue-100 shadow-lg ring-4 ring-blue-500 ring-offset-2 scale-110"
-                        : "border-blue-500/50 hover:border-blue-400 hover:scale-110"
-                }`}
+                ${selectedCommunityId === community.community_id
+                                    ? "border-blue-600 bg-blue-100 shadow-lg ring-4 ring-blue-500 ring-offset-2 scale-110"
+                                    : "border-blue-500/50 hover:border-blue-400 hover:scale-110"
+                                }`}
                         >
                             <button
                                 className="w-full h-full"
@@ -340,16 +390,6 @@ const Communities = () => {
                 </div>
                 <div className="p-4 md:p-4 hidden md:block">
                     <div className="w-full h-auto bg-blue-700/80 text-white rounded-xl font-medium flex flex-col items-center justify-center space-y-4 py-4">
-                        <button
-                            className="w-1/2 h-full p-1 bg-blue-700/80 hover:bg-blue-600 text-white rounded-xl font-medium transition-all duration-300 hover:scale-105 flex flex-col items-center justify-center"
-                            onClick={() => setToggleChannels(!toggleChannels)}
-                        >
-                            <img
-                                src={toggleChannelsButton}
-                                alt="channels"
-                                className="w-4 h-4 invert"
-                            />
-                        </button>
                         <button
                             className="w-1/2 h-full p-1 hover:bg-blue-600 text-white rounded-xl font-medium transition-all duration-300 hover:scale-105 flex flex-col items-center justify-center"
                             onClick={() => setToggleMembers(!toggleMembers)}
@@ -429,11 +469,10 @@ const Communities = () => {
                 {/* Channels Sidebar */}
                 {toggleChannels && (
                     <div
-                        className={`fixed md:static top-16 md:top-0 left-0 md:left-0 w-3/4 md:w-60 h-[calc(100vh-4rem)] md:h-full bg-blue-900/20 flex flex-col backdrop-blur-sm z-30 md:z-10 transition-transform duration-300 ${
-                            toggleChannels
-                                ? "translate-x-0"
-                                : "-translate-x-full"
-                        } md:translate-x-0 shadow-md md:shadow-lg`}
+                        className={`fixed md:static top-16 md:top-0 left-0 md:left-0 w-3/4 md:w-60 h-[calc(100vh-4rem)] md:h-full bg-blue-900/20 flex flex-col backdrop-blur-sm z-30 md:z-10 transition-transform duration-300 ${toggleChannels
+                            ? "translate-x-0"
+                            : "-translate-x-full"
+                            } md:translate-x-0 shadow-md md:shadow-lg`}
                     >
                         <div className="h-16 md:h-20 bg-blue-950/30 flex items-center justify-between px-4 border-b border-blue-800/50">
                             <button
@@ -481,15 +520,14 @@ const Communities = () => {
                                         key={channel.channel_id}
                                         onClick={() =>
                                             handleChannelClick(
-                                                channel.channel_id,
+                                                channel,
                                             )
                                         }
-                                        className={`w-full text-left p-2 rounded-lg ${
-                                            selectedChannelId ===
+                                        className={`w-full text-left p-2 rounded-lg ${selectedChannelId ===
                                             channel.channel_id
-                                                ? "bg-blue-700 text-white"
-                                                : "text-gray-300 hover:bg-blue-800/30"
-                                        }`}
+                                            ? "bg-blue-700 text-white"
+                                            : "text-gray-300 hover:bg-blue-800/30"
+                                            }`}
                                     >
                                         # {channel.name}
                                     </button>
@@ -589,9 +627,7 @@ const Communities = () => {
                                                     key={index}
                                                     className="flex items-center p-3 hover:bg-white/10 border-b border-white/5 last:border-b-0 cursor-pointer transition-all duration-200 group"
                                                     onClick={() =>
-                                                        handleCommunityClick(
-                                                            community,
-                                                        )
+                                                        joinCommunity(community)
                                                     }
                                                 >
                                                     <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 mr-3 border border-white/20 group-hover:border-pink-500/50 transition-colors">
@@ -635,26 +671,22 @@ const Communities = () => {
                                 {messages.map((message, index) => (
                                     <div
                                         key={index}
-                                        className={`flex ${
-                                            message.user_id === user.user_id
-                                                ? "justify-end"
-                                                : "justify-start"
-                                        } mb-3`}
+                                        className={`flex ${message.sender._id === user._id
+                                            ? "justify-end"
+                                            : "justify-start"
+                                            } mb-3`}
                                     >
                                         <div
-                                            className={`max-w-[70%] p-3 rounded-lg ${
-                                                message.user_id === user.user_id
-                                                    ? "bg-blue-600 text-white"
-                                                    : "bg-gray-700 text-gray-200"
-                                            }`}
+                                            className={`max-w-[70%] p-3 rounded-lg ${message.sender._id === user._id
+                                                ? "bg-blue-600 text-white"
+                                                : "bg-gray-700 text-gray-200"
+                                                }`}
                                         >
                                             <div className="text-xs text-gray-300 mb-1">
-                                                {message.username} •{" "}
-                                                {new Date(
-                                                    message.created_at,
-                                                ).toLocaleTimeString()}
+                                                {message.sender.username} •{" "}
+                                                {formatMessageTime(message.createdAt)}
                                             </div>
-                                            <p>{message.content}</p>
+                                            <p>{message.message}</p>
                                         </div>
                                     </div>
                                 ))}
@@ -691,13 +723,12 @@ const Communities = () => {
                 {/* Members Sidebar */}
                 {toggleMembers && (
                     <div
-                        className={`fixed md:static inset-0 md:inset-auto w-3/4 md:w-60 h-full bg-blue-900/20 flex flex-col backdrop-blur-sm z-30 md:z-10 transition-transform duration-300 ${
-                            toggleMembers ? "translate-x-0" : "translate-x-full"
-                        } md:translate-x-0 shadow-md md:shadow-lg`}
+                        className={`fixed md:static inset-0 md:inset-auto w-3/4 md:w-60 h-full bg-blue-900/20 flex flex-col backdrop-blur-sm z-30 md:z-10 transition-transform duration-300 ${toggleMembers ? "translate-x-0" : "translate-x-full"
+                            } md:translate-x-0 shadow-md md:shadow-lg`}
                     >
                         <div className="h-16 md:h-20 bg-blue-950/30 flex items-center justify-between px-6 border-b border-blue-800/50">
                             <span className="text-white font-semibold text-base md:text-lg">
-                                Members - {currentCommunity.member_count || 0}
+                                Members - {members.length || currentCommunity.member_count || 0}
                             </span>
                             <button
                                 onClick={() => setToggleMembers(false)}

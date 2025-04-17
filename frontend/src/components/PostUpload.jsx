@@ -3,9 +3,8 @@ import { apiCall } from "../utils/api";
 import useNavigation from "../utils/navigate";
 import { ArrowLeft } from "lucide-react";
 import "./PostUpload.css";
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faImage, faPlus } from '@fortawesome/free-solid-svg-icons';
-
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faImage, faPlus } from "@fortawesome/free-solid-svg-icons";
 
 const PostUpload = () => {
     const [selectedFiles, setSelectedFiles] = useState([]);
@@ -275,21 +274,19 @@ const PostUpload = () => {
                                 <span className="relative text-5xl">
                                     <FontAwesomeIcon icon={faImage} />
                                     <FontAwesomeIcon
-                                    icon={faPlus}
-                                    className="absolute bottom-0 right-0 text-xs bg-indigo-600 rounded-full p-1"
+                                        icon={faPlus}
+                                        className="absolute bottom-0 right-0 text-xs bg-indigo-600 rounded-full p-1"
                                     />
                                 </span>
                                 <p className="text-base sm:text-lg md:text-xl font-medium mt-2 text-center">
                                     Click here to Upload Media
                                 </p>
-                                </div>
-
+                            </div>
                         )}
                         {selectedFiles.length > 1 && (
                             <>
                                 <button
                                     className="absolute left-2 sm:left-4 top-1/2 transform -translate-y-1/2 text-white p-2 sm:p-3 rounded-full hover:shadow-lg transition duration-200"
-
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         prevMedia();
@@ -320,7 +317,6 @@ const PostUpload = () => {
                     {selectedFiles.length > 0 && (
                         <button
                             className="w-full mt-4 sm:mt-6 px-4 sm:px-6 py-2 sm:py-3 bg-gray-500 text-white rounded-xl hover:bg-gray-600 transition duration-200 text-base sm:text-lg font-medium"
-
                             onClick={() =>
                                 document.getElementById("fileInput").click()
                             }

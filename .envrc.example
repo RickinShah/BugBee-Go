@@ -8,3 +8,7 @@ export SMTP_SENDER='BugBee <example@gmail.com>'
 export REDIS_ADDRESS=localhost:6379
 export REDIS_PASSWORD=
 export ENCRYPTION_KEY=ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEF
+export CLIENT_HOST=localhost
+export SERVER_HOST=localhost
+export CLIENT_PORT=443
+export CLIENT_PROTOCOL=https

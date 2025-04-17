@@ -100,6 +100,22 @@ func (app *application) createPostHandler(w http.ResponseWriter, r *http.Request
 				return
 			}
 			err = data.SaveFile(multipartFile, file.Path)
+
+			fileJSON, err := file.MarshalJSON()
+			if err != nil {
+				app.serverErrorResponse(w, r, err)
+				return
+			}
+
+			if strings.HasPrefix(file.Type, "image/") {
+				err = app.models.Files.Redis.LPush(context.Background(), data.NSFWQueue, fileJSON).Err()
+				if err != nil {
+					app.serverErrorResponse(w, r, err)
+					return
+				}
+
+			}
+
 			multipartFile.Close()
 			if err != nil {
 				app.serverErrorResponse(w, r, err)
@@ -180,7 +196,9 @@ func (app *application) deletePostHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	err = app.models.Posts.Delete(id, id)
+	user := app.contextGetUser(r)
+
+	err = app.models.Posts.Delete(id, user.ID)
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):

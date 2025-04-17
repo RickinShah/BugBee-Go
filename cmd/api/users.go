@@ -34,6 +34,10 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 	}
 
 	pendingUser, err := app.models.PendingUsers.Get(input.RegID)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
 
 	if pendingUser.Username == nil {
 		v.AddError("username", "must be provided")
@@ -94,7 +98,7 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		embedData := map[string]any{
 			"activationToken": token.Plaintext,
 			"userID":          user.ID,
-			"url":             fmt.Sprintf("%s://%s:%d", app.config.protocol, app.config.host, app.config.clientPort),
+			"url":             fmt.Sprintf("%s://%s:%d", app.config.client.protocol, app.config.client.host, app.config.client.port),
 		}
 		err = app.mailer.Send(user.Email, "user_welcome.tmpl", embedData)
 		if err != nil {
@@ -477,6 +481,11 @@ func (app *application) updateProfileHandler(w http.ResponseWriter, r *http.Requ
 
 	name := strings.TrimSpace(r.FormValue("name"))
 	bio := strings.TrimSpace(r.FormValue("bio"))
+	removedProfile, err := strconv.ParseBool(r.FormValue("removedProfile"))
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
 
 	v := validator.New()
 
@@ -494,6 +503,10 @@ func (app *application) updateProfileHandler(w http.ResponseWriter, r *http.Requ
 	}
 	if name != "" {
 		user.Name = &name
+	}
+
+	if removedProfile {
+		user.ProfilePath = nil
 	}
 
 	if !noFileFound {
@@ -619,7 +632,7 @@ func (app *application) searchUserHandler(w http.ResponseWriter, r *http.Request
 
 func (app *application) deleteUserHandler(w http.ResponseWriter, r *http.Request) {
 	user := app.contextGetUser(r)
-	err := app.models.Users.Delete(user.ID)
+	err := app.models.Users.Delete(user)
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrEditConflict):
@@ -627,12 +640,6 @@ func (app *application) deleteUserHandler(w http.ResponseWriter, r *http.Request
 		default:
 			app.serverErrorResponse(w, r, err)
 		}
-		return
-	}
-
-	err = app.models.Tokens.DeleteAllForUser(data.ScopeAuthentication, user.ID)
-	if err != nil {
-		app.serverErrorResponse(w, r, err)
 		return
 	}
 
@@ -648,6 +655,71 @@ func (app *application) deleteUserHandler(w http.ResponseWriter, r *http.Request
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}
+}
+
+func (app *application) changePasswordHandler(w http.ResponseWriter, r *http.Request) {
+	var input struct {
+		OldPassword     string `json:"old_password"`
+		NewPassword     string `json:"password"`
+		ConfirmPassword string `json:"confirm_password"`
+	}
+
+	if err := app.readJson(w, r, &input); err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	v := validator.New()
+
+	if data.ValidatePasswordPlainText(v, input.OldPassword); !v.Valid() {
+		app.failedValidationResponse(w, r, v.Errors)
+		return
+	}
+
+	if data.ValidatePasswordPlainText(v, input.NewPassword); !v.Valid() {
+		app.failedValidationResponse(w, r, v.Errors)
+		return
+	}
+
+	if data.ValidateConfirmPassword(v, input.NewPassword, input.ConfirmPassword); !v.Valid() {
+		app.failedValidationResponse(w, r, v.Errors)
+		return
+	}
+
+	user := app.contextGetUser(r)
+
+	match, err := user.Password.Matches(input.OldPassword)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	if !match {
+		app.invalidCredentialsResponse(w, r)
+		return
+	}
+
+	err = user.Password.Set(input.NewPassword)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	if err = app.models.Users.Update(user); err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			app.notFoundResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	if err = app.writeJson(w, http.StatusOK, envelope{"password": "updated successfully"}, nil); err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
 }
 
 func (app *application) logoutHandler(w http.ResponseWriter, r *http.Request) {

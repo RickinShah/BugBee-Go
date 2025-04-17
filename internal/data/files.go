@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"image/jpeg"
 	"io"
 	"mime/multipart"
@@ -37,6 +38,8 @@ var AllowedFileTypes = map[string]bool{
 	"audio/x-m4a":      true,
 	// "application/pdf": true,
 }
+
+const NSFWQueue = "nsfw_detector:queue"
 
 var MIMEToExtension = map[string]string{
 	"image/jpeg":       ".jpg",
@@ -214,14 +217,14 @@ func (m FileModel) GetSingle(postIDs []int64) ([]*File, error) {
 }
 
 func (m FileModel) Get(postID int64) ([]*File, error) {
-	filesJSON, err := CacheGet(m.Redis, m.generateCacheKey(postID))
-	if nil == err {
-		var files []*File
-		err := json.Unmarshal([]byte(filesJSON), &files)
-		if nil == err {
-			return files, nil
-		}
-	}
+	// filesJSON, err := CacheGet(m.Redis, m.generateCacheKey(postID))
+	// if nil == err {
+	// 	var files []*File
+	// 	err := json.Unmarshal([]byte(filesJSON), &files)
+	// 	if nil == err {
+	// 		return files, nil
+	// 	}
+	// }
 	query := `
 		SELECT file_pid, post_id, path, type, size, is_nsfw, created_at
 		FROM files
@@ -286,6 +289,35 @@ func (m FileModel) Insert(tx *sql.Tx, file *File) error {
 	args := []any{file.PostID, file.Path, file.Type, file.Size}
 
 	return tx.QueryRowContext(ctx, query, args...).Scan(&file.ID, &file.CreatedAt)
+}
+
+func (m FileModel) UpdateNSFW(file File) error {
+	query := `
+	UPDATE files 
+	SET is_nsfw = $1
+	WHERE file_pid = $2
+	`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	args := []any{file.IsNSFW, file.ID}
+
+	_, err := m.DB.ExecContext(ctx, query, args...)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return ErrRecordNotFound
+		default:
+			return err
+		}
+	}
+
+	cacheKey := m.generateCacheKey(file.ID)
+	fmt.Print(cacheKey)
+
+	m.Redis.Del(context.Background(), cacheKey)
+	return nil
 }
 
 func (m FileModel) UpdatePath(tx *sql.Tx, file File) error {

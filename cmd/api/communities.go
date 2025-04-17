@@ -56,7 +56,7 @@ func (app *application) createCommunityHandler(w http.ResponseWriter, r *http.Re
 	input.Handle = strings.ToLower(input.Handle)
 	community := data.Community{
 		Name:      input.Name,
-		CreatorID: user.ID,
+		CreatorID: &user.ID,
 		Handle:    input.Handle,
 	}
 
@@ -248,7 +248,7 @@ func (app *application) updateCommunityHandler(w http.ResponseWriter, r *http.Re
 
 	community.Handle = strings.ToLower(input.NewHandle)
 	community.Name = input.Name
-	community.CreatorID = user.ID
+	community.CreatorID = &user.ID
 
 	tx, err := app.models.Communities.DB.BeginTx(context.Background(), nil)
 	if err != nil {
@@ -314,7 +314,7 @@ func (app *application) getCommunitiesHandler(w http.ResponseWriter, r *http.Req
 	v := validator.New()
 
 	qs := r.URL.Query()
-	input.Sort = app.readString(qs, "sort", "member_count")
+	input.Sort = app.readString(qs, "sort", "-member_count")
 	input.PageSize = app.readInt(qs, "page_size", 5, v)
 	input.LastID = int64(app.readInt(qs, "last_id", 0, v))
 
@@ -435,6 +435,15 @@ func (app *application) searchCommunityHandler(w http.ResponseWriter, r *http.Re
 	}
 }
 
+// func (app *application) channelIsAccessible(w http.ResponseWriter, r *http.Request) {
+// 	var input struct {
+// 		ChannelID int64 `json:"channel_id,string"`
+// 	}
+//
+// 	user := app.contextGetUser(r)
+//
+// }
+
 func (app *application) deleteCommunityHandler(w http.ResponseWriter, r *http.Request) {
 	var input struct {
 		Handle string
@@ -462,7 +471,7 @@ func (app *application) deleteCommunityHandler(w http.ResponseWriter, r *http.Re
 	}
 
 	v := validator.New()
-	if data.ValidateCreatorID(v, user.ID, community.CreatorID); !v.Valid() {
+	if data.ValidateCreatorID(v, user.ID, *community.CreatorID); !v.Valid() {
 		app.failedValidationResponse(w, r, v.Errors)
 		return
 	}

@@ -10,6 +10,7 @@ const Settings = () => {
     const { goTo } = useNavigation();
     const [username] = useState(() => localStorage.getItem("username"));
     const [user, setUser] = useState({});
+    const [deleteAccountModal, setDeleteAccountModal] = useState(false);
 
     const fetchUser = async () => {
         await apiCall(
@@ -36,8 +37,27 @@ const Settings = () => {
 
     const handleChange = (e) => handleFormChange(e, setFormData);
 
+    const deleteAccount = async () => {
+        try {
+            await apiCall(
+                `/v1/users`,
+                "DELETE",
+                null,
+                {},
+                "include",
+                false,
+                () => {
+                    setDeleteAccountModal(false);
+                    localStorage.clear;
+                    goTo("login");
+                },
+            );
+        } catch (error) {
+            validationError(error);
+        }
+    };
+
     const submitData = async () => {
-        console.log(formData);
         try {
             await apiCall(
                 `/v1/users`,
@@ -47,7 +67,6 @@ const Settings = () => {
                 "include",
                 false,
                 (response) => {
-                    console.log(response.user);
                     response.user._id = response.user.user_id;
                     response.user.profile_path = getMediaPath(
                         response.user.profile_path,
@@ -68,10 +87,35 @@ const Settings = () => {
         fetchUser();
     }, []);
     return (
-        <div className="min-h-screen w-full  bg-gradient-to-br from-[#15145d]  to-[#080a41] flex items-center justify-center text-white font-sans px-4 sm:px-6 pt-20 pb-10 sm:py-0">
+        <div className="min-h-screen w-full bg-gradient-to-br from-[#15145d]  to-[#080a41] flex items-center justify-center text-white font-sans px-4 sm:px-6 pt-20 pb-10 sm:py-0 md:py-10">
+            {deleteAccountModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+                    <div className="bg-gradient-to-br from-[#15145d] to-[#080a41] p-6 rounded-xl shadow-xl w-80">
+                        <h2 className="text-lg font-semibold mb-4">
+                            Are you sure?
+                        </h2>
+                        <div className="flex justify-end gap-4">
+                            <button
+                                onClick={() => deleteAccount()}
+                                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-500/50"
+                            >
+                                Yes
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setDeleteAccountModal(false);
+                                }}
+                                className="px-4 py-2 bg-blue-900 rounded hover:bg-blue-900/50"
+                            >
+                                No
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
             <button
                 onClick={() => goTo("feed")}
-                className="absolute top-4 left-4 sm:top-6 sm:left-6 p-2 rounded-full bg-white/10 hover:bg-white/20 text-gray-300 hover:text-white transition duration-300 shadow-md backdrop-blur z-10"
+                className="absolute md:fixed top-4 left-4 sm:top-6 sm:left-6 p-2 rounded-full bg-white/10 hover:bg-white/20 text-gray-300 hover:text-white transition duration-300 shadow-md backdrop-blur z-10"
             >
                 <ArrowLeft size={24} />
             </button>
@@ -152,6 +196,12 @@ const Settings = () => {
                     </button>
                     <button className="w-full h-12 bg-white/10 hover:bg-white/20 rounded-lg px-4 text-left font-semibold text-gray-200 transition">
                         About Us
+                    </button>
+                    <button
+                        className="w-full h-12 bg-red-500 hover:bg-red-500/50 rounded-lg px-4 text-left font-semibold text-gray-200 transition"
+                        onClick={() => setDeleteAccountModal(true)}
+                    >
+                        Delete Account
                     </button>
                 </div>
             </div>

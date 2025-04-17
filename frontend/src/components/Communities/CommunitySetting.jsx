@@ -185,7 +185,7 @@ const CommunitySetting = () => {
                 {},
                 "include",
                 false,
-                () => {},
+                () => { },
             );
         } catch (err) {
             validationError(err.errors);
@@ -479,7 +479,6 @@ const CommunitySetting = () => {
                             </div>
                         </div>
                     )}
-                    );
                     {toggleRole && (
                         <div className="w-full h-full flex flex-col items-center justify-start p-4 md:p-8">
                             <div className="w-full max-w-6xl flex flex-col md:flex-row gap-6">
@@ -495,155 +494,7 @@ const CommunitySetting = () => {
                                                 onClick={() =>
                                                     setCurrentRole(role.ID)
                                                 }
-                                                className="w-full text-left p-3 bg-blue-800/50 rounded-lg text-white font-medium hover:bg-blue-700/70 hover:scale-102 transition-all duration-300"
-                                            >
-                                                {role.Name}
-                                            </button>
-                                        ))}
-                                    </div>
-                                    <button className="w-full mt-4 h-12 bg-blue-700 text-white rounded-xl hover:bg-blue-600 transition-all duration-300 hover:scale-105">
-                                        Apply
-                                    </button>
-                                    <button
-                                        onClick={toggleCreateRole}
-                                        className="w-full mt-2 h-12 bg-blue-700 text-white rounded-xl hover:bg-blue-600 transition-all duration-300 hover:scale-105"
-                                    >
-                                        Create Role
-                                    </button>
-                                </div>
-
-                                {/* Members */}
-                                <div className="w-full md:w-1/2 p-4 bg-blue-900/20 rounded-xl overflow-y-auto scrollbar-thin scrollbar-thumb-blue-700 scrollbar-track-blue-900/20">
-                                    {members.map((member, index) => (
-                                        <div
-                                            key={index}
-                                            className="flex items-center justify-between my-2 p-2 hover:bg-blue-800/30 rounded-lg transition-all duration-200"
-                                        >
-                                            <div className="flex items-center space-x-3">
-                                                <img
-                                                    src={member.profile_path}
-                                                    alt="profile"
-                                                    className="h-10 w-10 rounded-full object-cover hover:scale-110 transition-transform duration-300"
-                                                />
-                                                <p className="text-white text-lg font-medium">
-                                                    {member.username}
-                                                </p>
-                                            </div>
-                                            <input
-                                                type="checkbox"
-                                                className="w-5 h-5 accent-blue-500 rounded focus:ring-blue-600"
-                                                onChange={(e) =>
-                                                    addRoleToUserApi(
-                                                        e,
-                                                        currentRole,
-                                                        member.username,
-                                                    )
-                                                }
-                                            />
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* Create Role Modal */}
-                            {createRole && (
-                                <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
-                                    <div className="w-full max-w-2xl bg-gradient-to-b from-blue-950 to-blue-900 rounded-2xl p-6 md:p-8 shadow-xl max-h-[90vh] overflow-y-auto">
-                                        <div className="flex justify-between items-center mb-6">
-                                            <p className="text-2xl md:text-3xl text-white font-semibold">
-                                                Create Role
-                                            </p>
-                                            <button
-                                                onClick={toggleCreateRole}
-                                                className="hover:scale-110 transition-transform duration-200"
-                                            >
-                                                <img
-                                                    src={closeButton}
-                                                    alt="close"
-                                                    className="w-6 h-6 invert"
-                                                />
-                                            </button>
-                                        </div>
-                                        <div className="space-y-6">
-                                            <div>
-                                                <p className="text-white text-lg md:text-xl font-medium mb-2">
-                                                    Role Name
-                                                </p>
-                                                <input
-                                                    type="text"
-                                                    value={roleName}
-                                                    onChange={(e) =>
-                                                        setRoleName(
-                                                            e.target.value,
-                                                        )
-                                                    }
-                                                    className="w-full h-12 bg-blue-900/40 text-white text-lg rounded-xl px-4 placeholder-blue-300 border border-blue-800/50 focus:outline-none focus:border-blue-600"
-                                                    placeholder="Enter role name"
-                                                />
-                                            </div>
-                                            <div>
-                                                <p className="text-white text-lg md:text-xl font-medium mb-2">
-                                                    Select Permissions
-                                                </p>
-                                                <div className="h-64 overflow-y-auto bg-blue-900/40 rounded-xl p-4 scrollbar-thin scrollbar-thumb-blue-700 scrollbar-track-blue-900/20">
-                                                    {Permissions.map(
-                                                        (permission) => (
-                                                            <label
-                                                                key={
-                                                                    permission.code
-                                                                }
-                                                                className="flex justify-between items-center py-2 px-4 hover:bg-blue-800/30 rounded-md transition-colors duration-200 cursor-pointer"
-                                                            >
-                                                                <span className="text-white text-base md:text-lg">
-                                                                    {
-                                                                        permission.Name
-                                                                    }
-                                                                </span>
-                                                                <input
-                                                                    type="checkbox"
-                                                                    checked={selectedPermissions.includes(
-                                                                        permission.code,
-                                                                    )}
-                                                                    onChange={() =>
-                                                                        handlePermissionChange(
-                                                                            permission.code,
-                                                                        )
-                                                                    }
-                                                                    className="w-5 h-5 accent-blue-500 rounded focus:ring-blue-600"
-                                                                />
-                                                            </label>
-                                                        ),
-                                                    )}
-                                                </div>
-                                            </div>
-                                            <button
-                                                onClick={handleCreateRoleSubmit}
-                                                className="w-full h-12 bg-blue-700 text-white rounded-xl font-medium hover:bg-blue-600 transition-all duration-300 hover:scale-105"
-                                            >
-                                                Create
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    )}
-                    {toggleRole && (
-                        <div className="w-full h-full flex flex-col items-center justify-start p-4 md:p-8">
-                            <div className="w-full max-w-6xl flex flex-col md:flex-row gap-6">
-                                {/* Roles List */}
-                                <div className="w-full md:w-1/2 flex flex-col">
-                                    <p className="text-xl md:text-2xl text-white font-semibold mb-4 text-center md:text-left">
-                                        Roles
-                                    </p>
-                                    <div className="flex-1 bg-blue-900/20 rounded-xl p-4 space-y-2 overflow-y-auto scrollbar-thin scrollbar-thumb-blue-700 scrollbar-track-blue-900/20">
-                                        {roles.map((role, index) => (
-                                            <button
-                                                key={index}
-                                                onClick={() =>
-                                                    setCurrentRole(role.ID)
-                                                }
-                                                className="w-full text-left p-3 bg-blue-800/50 rounded-lg text-white font-medium hover:bg-blue-700/70 hover:scale-102 transition-all duration-300"
+                                                className={`w-full text-left p-3 rounded-lg text-white font-medium hover:bg-blue-700/70 hover:scale-102 transition-all duration-300 ${currentRole == role.ID ? 'bg-blue-700/70' : ''}`}
                                             >
                                                 {role.Name}
                                             </button>

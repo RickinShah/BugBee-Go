@@ -8,13 +8,15 @@ import {
     FaArrowLeft,
     FaArrowRight,
     FaSmile,
+    FaEllipsisV,
+    FaTrash
 } from "react-icons/fa";
 import { apiCall, copyToClipboard, getMediaPath } from "../utils/api";
 import { useNavigate } from "react-router-dom";
 import EmojiPicker from "emoji-picker-react";
 // import { copyToClipboard } from "../utils/form";
 
-const Card = ({ user, post_id, content, stats, files, vote_type }) => {
+const Card = ({ user, post_id, content, stats, files, vote_type, onRemove }) => {
     const [username] = useState(() => localStorage.getItem("username"));
     const [profile_path] = useState(() => localStorage.getItem("profile_path"));
     const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
@@ -31,6 +33,8 @@ const Card = ({ user, post_id, content, stats, files, vote_type }) => {
     const [isPortrait, setIsPortrait] = useState(false); // New state for orientation
     const [postId, setPostId] = useState(() => post_id);
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+    const [loggedUser] = useState(() => JSON.parse(localStorage.getItem("user")));
+    const [showMenu, setShowMenu] = useState(false); // New state for three dots menu
     const navigate = useNavigate();
 
     const handleLike = () => {
@@ -59,7 +63,7 @@ const Card = ({ user, post_id, content, stats, files, vote_type }) => {
             {},
             "include",
             false,
-            () => {},
+            () => { },
             null,
         );
     };
@@ -172,7 +176,7 @@ const Card = ({ user, post_id, content, stats, files, vote_type }) => {
             {},
             "include",
             false,
-            () => {},
+            () => { },
         );
     };
 
@@ -200,15 +204,53 @@ const Card = ({ user, post_id, content, stats, files, vote_type }) => {
         setShowEmojiPicker(!showEmojiPicker);
     };
 
+    // Toggle the menu visibility
+    const toggleMenu = (e) => {
+        e.stopPropagation();
+        setShowMenu(!showMenu);
+    };
+
+    // Handle delete post action
+    const handleDeletePost = (e) => {
+        e.stopPropagation();
+        if (confirm("Are you sure you want to delete this post?")) {
+
+            apiCall(
+                `/v1/posts/${postId}`,
+                "DELETE",
+                null,
+                {},
+                "include",
+                false,
+                (response) => {
+                    console.log("Post deleted successfully");
+                    onRemove(postId)
+                },
+                (error) => {
+                    console.error("Error deleting post:", error);
+                    alert("Failed to delete post. Please try again.");
+                }
+            );
+        }
+        setShowMenu(false);
+    };
+
+    // Click outside to close menu
+    const handleClickOutside = () => {
+        if (showMenu) {
+            setShowMenu(false);
+        }
+    };
+
     const renderMedia = () => {
         const currentFile = files[currentMediaIndex];
         if (!currentFile) return null;
 
         const mediaPath = getMediaPath(currentFile.path);
 
-        const mediaClasses = `rounded-md max-w-full max-h-[60vh] object-contain ${
-            isPortrait ? "max-w-[50%] sm:max-w-[60%]" : ""
-        }`; // Reduce width for portrait
+        console.log(currentFile.is_nsfw);
+        const mediaClasses = `rounded-md max-w-full max-h-[60vh] object-contain ${isPortrait ? "max-w-[50%] sm:max-w-[60%]" : ""
+            } ${currentFile.is_nsfw && !loggedUser?.show_nsfw ? 'blur-md' : ""}`; // Reduce width for portrait
 
         if (currentFile.type === "video" || mediaPath.endsWith(".mp4")) {
             return (
@@ -237,23 +279,49 @@ const Card = ({ user, post_id, content, stats, files, vote_type }) => {
     };
 
     return (
-        <div className="relative bg-gradient-to-br from-80% from-[#4b207a70] to-[#8c02a170] w-full max-w-2xl mx-auto rounded-lg p-2 sm:p-4 my-5 shadow-md">
-            {/* Header */}
-            <div
-                className="h-10 flex items-center flex-wrap gap-2 cursor-pointer"
-                onClick={() => navigate(`/profile/${user.username}`)}
-            >
-                <img
-                    src={getMediaPath(user.profile_path)}
-                    alt="Profile"
-                    className="rounded-full w-6 h-6 sm:w-8 sm:h-8"
-                />
-                <h3 className="mx-2 sm:mx-3 font-semibold text-white text-sm sm:text-base">
-                    {user.name}
-                </h3>
-                <h2 className="text-gray-400 text-xs sm:text-sm">
-                    @{user.username}
-                </h2>
+        <div className="relative bg-gradient-to-br from-80% from-[#4b207a70] to-[#8c02a170] w-full max-w-2xl mx-auto rounded-lg p-2 sm:p-4 my-5 shadow-md" onClick={handleClickOutside}>
+            {/* Header with three dots menu */}
+            <div className="h-10 flex items-center justify-between flex-wrap gap-2">
+                <div
+                    className="flex items-center flex-wrap gap-2 cursor-pointer"
+                    onClick={() => navigate(`/profile/${user.username}`)}
+                >
+                    <img
+                        src={getMediaPath(user.profile_path)}
+                        alt="Profile"
+                        className="rounded-full w-6 h-6 sm:w-8 sm:h-8"
+                    />
+                    <h3 className="mx-2 sm:mx-3 font-semibold text-white text-sm sm:text-base">
+                        {user.name}
+                    </h3>
+                    <h2 className="text-gray-400 text-xs sm:text-sm">
+                        @{user.username}
+                    </h2>
+                </div>
+
+                {/* Three dots menu */}
+                {user.username === username && (
+                    <div className="relative">
+                        <button
+                            onClick={toggleMenu}
+                            className="p-1 text-gray-300 hover:text-white transition-colors"
+                        >
+                            <FaEllipsisV className="w-4 h-4" />
+                        </button>
+
+                        {/* Dropdown menu */}
+                        {showMenu && (
+                            <div className="absolute right-0 top-full mt-1 bg-[#31144e] rounded-md shadow-lg z-30 w-32">
+                                <button
+                                    onClick={handleDeletePost}
+                                    className="absolute right-0 top-0 flex items-center gap-1 bg-[#d52626] px-3 py-3 rounded-md text-white hover:bg-[#f02b2b] transition-colors text-xs z-30"
+                                >
+                                    <FaTrash className="w-4 h-4" /> Delete Post
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
 
             {/* Content with Navigation */}
@@ -446,11 +514,13 @@ const Card = ({ user, post_id, content, stats, files, vote_type }) => {
                                 {showEmojiPicker && (
                                     <div className="absolute z-10 bottom-full mb-2 left-0">
                                         <EmojiPicker
+                                            preload
                                             onEmojiClick={handleEmojiClick}
                                             searchDisabled={false}
                                             skinTonesDisabled={false}
                                             width={300}
                                             height={350}
+                                            theme="dark"
                                             previewConfig={{
                                                 showPreview: false,
                                             }}

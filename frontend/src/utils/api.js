@@ -1,7 +1,8 @@
 const config = {
+    // host: "localhost",
     host: "localhost",
     protocol: "https",
-    port: "443",
+    port: "",
 };
 
 export const appHost = config.host;
@@ -95,9 +96,57 @@ export const apiCall = async (
             headers: isMultipart
                 ? headers
                 : {
-                      "Content-Type": "application/json",
-                      ...headers,
-                  },
+                    "Content-Type": "application/json",
+                    ...headers,
+                },
+            body: data ? (isMultipart ? data : JSON.stringify(data)) : null,
+        };
+        // console.log(fetchOptions);
+        if (credentials) {
+            fetchOptions.credentials = credentials;
+        }
+
+        const response = await fetch(`${baseUrl}${endpoint}`, fetchOptions);
+        const responseData = await response.json();
+
+        if (response.ok) {
+            onSuccess(responseData);
+        } else {
+            const errorHandler = onError || onErrorDefault;
+            if (onError != null) {
+                errorHandler(response);
+            }
+            errorHandler(responseData);
+        }
+    } catch (error) {
+        // console.error("API Error: ", error);
+
+        const errorHandler = onError || onErrorDefault;
+        errorHandler(error);
+    }
+};
+
+export const chatApiCall = async (
+    endpoint,
+    method = "GET",
+    data = null,
+    headers = {},
+    credentials = null,
+    isMultipart,
+    onSuccess,
+    onError = null,
+) => {
+    const baseUrl = `${config.protocol}://${config.host}:${config.port}/chat/api`;
+
+    try {
+        const fetchOptions = {
+            method,
+            headers: isMultipart
+                ? headers
+                : {
+                    "Content-Type": "application/json",
+                    ...headers,
+                },
             body: data ? (isMultipart ? data : JSON.stringify(data)) : null,
         };
         // console.log(fetchOptions);
@@ -127,6 +176,10 @@ export const apiCall = async (
 
 export const getMediaPath = (dirPath) => {
     return `${config.protocol}://${config.host}:${config.port}/media${dirPath}`;
+};
+
+export const getDefaultProfilePath = () => {
+    return `${config.protocol}://${config.host}:${config.port}/media/bugbee/profiles/default.png`;
 };
 
 export const copyToClipboard = (currentPostId) => {

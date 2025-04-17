@@ -23,6 +23,7 @@ func (app *application) routes() http.Handler {
 	router.HandleFunc("DELETE /v1/users", app.requireAuthenticatedUser(app.deleteUserHandler))
 	router.HandleFunc("POST /v1/users/logout", app.logoutHandler)
 	router.HandleFunc("PATCH /v1/users", app.settingsHandler)
+	router.HandleFunc("PATCH /v1/users/password", app.changePasswordHandler)
 
 	// Token Generation and Login
 	router.HandleFunc("POST /v1/tokens/authentication", app.createAuthenticationHandler)

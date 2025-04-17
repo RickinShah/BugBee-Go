@@ -80,7 +80,15 @@ func (app *application) joinCommunityHandler(w http.ResponseWriter, r *http.Requ
 
 	err = app.models.CommunityMembers.InsertTx(tx, &communityMember)
 	if err != nil {
-		app.serverErrorResponse(w, r, err)
+		switch {
+		case errors.Is(err, data.ErrEditConflict):
+			err = app.writeJson(w, http.StatusOK, envelope{input.Handle: "already joined!"}, nil)
+			if err != nil {
+				app.serverErrorResponse(w, r, err)
+			}
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
 		return
 	}
 

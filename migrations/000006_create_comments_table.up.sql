@@ -2,7 +2,7 @@ CREATE TABLE IF NOT EXISTS comments (
     comment_pid bigint PRIMARY KEY DEFAULT next_id(),
     post_id bigint NOT NULL REFERENCES posts ON DELETE CASCADE,
     parent_comment_id bigint REFERENCES comments ON DELETE CASCADE,
-    user_id bigint REFERENCES users ON DELETE SET NULL,
+    user_id bigint REFERENCES users ON DELETE CASCADE,
     content TEXT NOT NULL CHECK (LENGTH(TRIM(content)) BETWEEN 1 AND 500),
     edited bool NOT NULL DEFAULT false,
     created_at timestamp(0) with time zone NOT NULL DEFAULT NOW(),

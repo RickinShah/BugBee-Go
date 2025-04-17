@@ -93,14 +93,14 @@ func (m PostModel) Insert(tx *sql.Tx, post *Post) error {
 }
 
 func (m PostModel) Get(id int64) (*Post, error) {
-	postJSON, err := CacheGet(m.Redis, m.generateCacheKey(id))
-	if nil == err {
-		var post Post
-		err := json.Unmarshal([]byte(postJSON), &post)
-		if nil == err {
-			return &post, nil
-		}
-	}
+	// postJSON, err := CacheGet(m.Redis, m.generateCacheKey(id))
+	// if nil == err {
+	// 	var post Post
+	// 	err := json.Unmarshal([]byte(postJSON), &post)
+	// 	if nil == err {
+	// 		return &post, nil
+	// 	}
+	// }
 
 	query := `
 		SELECT u.username, u.name, u.profile_path, p.post_pid, p.created_at, p.content, p.has_files, p.version
@@ -116,7 +116,7 @@ func (m PostModel) Get(id int64) (*Post, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	err = m.DB.QueryRowContext(ctx, query, id).Scan(
+	err := m.DB.QueryRowContext(ctx, query, id).Scan(
 		&post.User.Username,
 		&post.User.Name,
 		&post.User.ProfilePath,

@@ -12,14 +12,14 @@ import (
 )
 
 type Channel struct {
-	ID          int64  `json:"channel_id" db:"channel_pid"`
-	CommunityID int64  `json:"community_id" db:"community_id"`
+	ID          int64  `json:"channel_id,string" db:"channel_pid"`
+	CommunityID int64  `json:"community_id,string" db:"community_id"`
 	Name        string `json:"name" db:"name"`
 }
 
 type ChannelRole struct {
-	ChannelID int64 `json:"channel_id" db:"channel_id"`
-	RoleID    int64 `json:"role_id" db:"role_id"`
+	ChannelID int64 `json:"channel_id, string" db:"channel_id"`
+	RoleID    int64 `json:"role_id, string" db:"role_id"`
 }
 
 type ChannelModel struct {

@@ -2,7 +2,7 @@ import * as yup from "yup";
 import { useState, useRef, useEffect } from "react";
 import Cropper from "react-cropper";
 import "cropperjs/dist/cropper.css";
-import { apiCall, getMediaPath } from "../utils/api";
+import { apiCall, getDefaultProfilePath, getMediaPath } from "../utils/api";
 import { handleFormChange, setToLocalStorage } from "../utils/form";
 import { validateBio, validateName } from "../validators/user";
 import { validationError } from "../utils/errors";
@@ -13,11 +13,14 @@ import { FaCog } from "react-icons/fa";
 const CompleteProfile = () => {
     const { goTo } = useNavigation();
 
-    const [profilePath] = useState(() => localStorage.getItem("profile_path"));
+    const [profilePath, setProfilePath] = useState(() =>
+        localStorage.getItem("profile_path"),
+    );
     const [name] = useState(() => localStorage.getItem("name"));
+    const [user] = useState(() => JSON.parse(localStorage.getItem("user")));
     // const [username] = useState(() => localStorage.getItem("username"));
     const [formData, setFormData] = useState({
-        bio: "",
+        bio: user.bio,
         name: name,
     });
     const [image, setImage] = useState(null);
@@ -25,6 +28,7 @@ const CompleteProfile = () => {
     const [showCropper, setShowCropper] = useState(false);
     const [imageBlob, setImageBlob] = useState(null);
     const cropperRef = useRef(null);
+    const [removedProfile, setRemovedProfile] = useState(false);
 
     useEffect(() => {
         if (image && !croppedImage) {
@@ -96,6 +100,7 @@ const CompleteProfile = () => {
             const formDataObj = new FormData();
             formDataObj.append("bio", submissionData.bio);
             formDataObj.append("name", submissionData.name);
+            formDataObj.append("removedProfile", removedProfile);
             let file = null;
             if (imageBlob)
                 file = new File([imageBlob], "profile.jpg", {
@@ -110,12 +115,17 @@ const CompleteProfile = () => {
                 "include",
                 true,
                 (response) => {
+                    response.user._id = response.user.user_id;
+                    response.user.profile_path = getMediaPath(
+                        response.user.profile_path,
+                    );
                     setToLocalStorage("name", response.user.name);
                     setToLocalStorage("bio", submissionData.bio);
                     setToLocalStorage(
                         "profile_path",
-                        getMediaPath(response.user.profile_path),
+                        response.user.profile_path,
                     );
+                    setToLocalStorage("user", JSON.stringify(response.user));
                     goTo("feed");
                 },
             );
@@ -159,14 +169,30 @@ const CompleteProfile = () => {
                                     alt="Profile"
                                     className="w-full h-full object-cover"
                                 />
+
+                                {/* Center overlay for 'Change' */}
                                 <div
                                     className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0
-                                    group-hover:opacity-100 transition-opacity duration-300 rounded-full"
+        group-hover:opacity-100 transition-opacity duration-300 rounded-full"
                                 >
                                     <span className="text-white font-bold text-sm">
                                         Change
                                     </span>
                                 </div>
+
+                                {/* Top-right overlay button for 'Remove' */}
+                                <button
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.stopPropagation(); // Prevent triggering the 'Change' click
+                                        setProfilePath(getDefaultProfilePath());
+                                        setRemovedProfile(true);
+                                        // handleRemoveProfile(); // Your remove handler function
+                                    }}
+                                    className="absolute top-5 right-5 hover:bg-white hover:bg-opacity-10 text-white text-xs font-semibold px-2 py-1 rounded-xl opacity-0 group-hover:opacity-90 transition-opacity duration-300"
+                                >
+                                    x
+                                </button>
                             </div>
                         )}
 

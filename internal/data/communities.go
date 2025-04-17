@@ -21,7 +21,7 @@ const CommunityCacheDuration = 30 * time.Minute
 
 type Community struct {
 	ID          int64     `json:"community_id,string" db:"community_pid"`
-	CreatorID   int64     `json:"creator_id,string" db:"creator_id"`
+	CreatorID   *int64    `json:"creator_id,string" db:"creator_id"`
 	Handle      string    `json:"community_handle" db:"handle"`
 	Name        string    `json:"name" db:"name"`
 	Description *string   `json:"description" db:"description"`
@@ -56,7 +56,9 @@ func (c *Community) MarshalJSON() ([]byte, error) {
 		community["member_count"] = c.MemberCount
 	}
 	if c.marshalType == Frontend || c.marshalType == Full {
-		community["creator_id"] = strconv.FormatInt(c.CreatorID, 10)
+		if c.CreatorID != nil {
+			community["creator_id"] = strconv.FormatInt(*c.CreatorID, 10)
+		}
 		community["description"] = c.Description
 		community["updated_at"] = c.UpdatedAt
 		community["created_at"] = c.CreatedAt

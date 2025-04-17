@@ -158,6 +158,8 @@ func (m CommunityMemberModel) InsertTx(tx *sql.Tx, cm *CommunityMember) error {
 	query := `
 		INSERT INTO community_members (user_id, community_id)
 		VALUES ($1, $2)
+		ON CONFLICT
+		DO NOTHING
 		RETURNING created_at
 	`
 
@@ -168,7 +170,12 @@ func (m CommunityMemberModel) InsertTx(tx *sql.Tx, cm *CommunityMember) error {
 
 	err := tx.QueryRowContext(ctx, query, args...).Scan(&cm.CreatedAt)
 	if err != nil {
-		return err
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return ErrEditConflict
+		default:
+			return err
+		}
 	}
 	return nil
 }

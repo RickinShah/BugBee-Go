@@ -6,7 +6,7 @@ import EmojiEmotionsIcon from "@mui/icons-material/EmojiEmotions";
 import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import socket from "../../socket";
-import { getMediaPath } from "../../utils/api";
+import { getDefaultProfilePath, getMediaPath } from "../../utils/api";
 import { appHost } from "../../utils/api";
 import EmojiPicker from "emoji-picker-react";
 
@@ -75,7 +75,7 @@ const Chats = (props) => {
             if (messagesWithDisplayProps.length > 0) {
                 const lastMsg =
                     messagesWithDisplayProps[
-                        messagesWithDisplayProps.length - 1
+                    messagesWithDisplayProps.length - 1
                     ];
                 if (props.updateLastMessage) {
                     props.updateLastMessage(lastMsg.message);
@@ -114,6 +114,7 @@ const Chats = (props) => {
             );
 
             socket.emit("sendMessage", props.selectedId, response.data);
+            console.log(response.data)
             setContent("");
             setImageFile(null);
             setImagePreview(null);
@@ -131,7 +132,7 @@ const Chats = (props) => {
     // Handle emoji selection - add to input instead of sending immediately
     const onEmojiClick = (emojiData) => {
         setContent(prevContent => prevContent + emojiData.emoji);
-        
+
         // Focus back on input after emoji selection
         if (inputRef.current) {
             inputRef.current.focus();
@@ -249,20 +250,24 @@ const Chats = (props) => {
         return !isSameDay(currentDate, prevDate);
     };
 
+    const selectedUserProfile = props?.selectedUserDetails[0]?.profile_path
+        ? getMediaPath(props?.selectedUserDetails[0]?.profile_path)
+        : getDefaultProfilePath();
+
+    const selectedUserName = props?.selectedUserDetails[0]?.name ? props?.selectedUserDetails[0].name : "Deleted User";
+
     return (
         <div className="dashboard-chats">
             <div className="chatNameBlock">
                 <div className="chat-profile-img">
                     <img
                         className="dp"
-                        src={getMediaPath(
-                            props?.selectedUserDetails[0]?.profile_path,
-                        )}
+                        src={selectedUserProfile}
                         alt="Profile"
                     />
                 </div>
                 <div className="chat-name">
-                    {props?.selectedUserDetails[0]?.name}
+                    {selectedUserName}
                 </div>
             </div>
 
@@ -353,7 +358,7 @@ const Chats = (props) => {
                         />
                         {showEmojiPicker && (
                             <div className="emoji-picker-dropdown">
-                                <EmojiPicker 
+                                <EmojiPicker
                                     onEmojiClick={onEmojiClick}
                                     autoFocusSearch={false}
                                     theme="dark"

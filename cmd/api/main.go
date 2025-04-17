@@ -19,12 +19,16 @@ import (
 const version = "1.0.0"
 
 type config struct {
-	port       int
-	clientPort int
-	env        string
-	host       string
-	protocol   string
-	storage    struct {
+	client struct {
+		port     int
+		host     string
+		protocol string
+	}
+	port     int
+	env      string
+	host     string
+	protocol string
+	storage  struct {
 		postBasePath    string
 		profileBasePath string
 	}
@@ -65,7 +69,9 @@ func main() {
 	var cfg config
 
 	flag.IntVar(&cfg.port, "port", 4000, "API server port")
-	flag.IntVar(&cfg.clientPort, "client-port", 443, "Frontend client port")
+	flag.StringVar(&cfg.client.host, "client-host", "localhost", "Frontend client host")
+	flag.StringVar(&cfg.client.protocol, "client-protocol", "https", "Frontend client port")
+	flag.IntVar(&cfg.client.port, "client-port", 443, "Frontend client port")
 	flag.StringVar(&cfg.env, "env", "development", "Environment (development|staging|production)")
 	flag.StringVar(&cfg.storage.postBasePath, "post-directory", "/bugbee/posts", "Post base directory")
 	flag.StringVar(&cfg.storage.profileBasePath, "profile-directory", "/bugbee/profiles", "Profiles directory")
@@ -89,7 +95,7 @@ func main() {
 	flag.StringVar(&cfg.redis.password, "redis-password", "", "Cache server password")
 	flag.IntVar(&cfg.redis.db, "cache-db", 0, "Cache server db")
 	flag.StringVar(&cfg.host, "host", "localhost", "API server host")
-	flag.StringVar(&cfg.protocol, "protocol", "http", "API server http protocol")
+	flag.StringVar(&cfg.protocol, "protocol", "https", "API server http protocol")
 
 	flag.String("encryption-key", "", "Encryption key")
 

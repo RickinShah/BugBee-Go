@@ -4,3 +4,7 @@ bin/
 frontend/node_modules
 frontend/dist
 chat/node_modules
+fastapi/nsfw-detector-model/
+chat/uploads
+fastapi/.venv
+fastapi/__pycache__/

@@ -7,15 +7,13 @@ import { validationError } from "../utils/errors.js";
 import useNavigation from "../utils/navigate.jsx";
 import {
     FaHome,
-    FaSearch,
+    FaEnvelope,
     FaUsers,
     FaComments,
     FaVideo,
-    FaBell,
     FaCog,
     FaSignOutAlt,
     FaPlus,
-    FaEnvelope,
 } from "react-icons/fa";
 
 const UserProfile = () => {
@@ -23,29 +21,9 @@ const UserProfile = () => {
     const [username] = useState(useParams().username);
     const [fetchedUser, setFetchedUser] = useState({});
     const { goTo } = useNavigation();
-    const [communities, setCommunities] = useState([]);
 
     const [userPosts, setUserPosts] = useState([]);
     const navigate = useNavigate();
-
-    const goToPostPage = () => {
-        navigate("/newpost");
-    };
-    const goToUserProfile = () => {
-        navigate("/userprofile");
-    };
-    const goToUserPage = () => {
-        navigate("/userpage");
-    };
-    const Logout = () => {
-        navigate("/");
-    };
-    const VC = () => {
-        navigate("/vc");
-    };
-    const settings = () => {
-        navigate("/settings");
-    };
 
     const fetchUser = async () => {
         try {
@@ -66,34 +44,9 @@ const UserProfile = () => {
         }
     };
 
-    const fetchCommunities = () => {
-        try {
-            apiCall(
-                "/v1/communities",
-                "GET",
-                null,
-                {},
-                "include",
-                false,
-                (response) => {
-                    setCommunities(response.communities);
-                },
-            );
-        } catch (err) {
-            console.error(err);
-        }
-    };
-
-    useEffect(() => {
-        fetchCommunities();
-    }, []);
-
     useEffect(() => {
         fetchUser();
     }, []);
-
-    const profilePath = user.profile_path;
-    const name = user.name;
 
     return (
         <div className="min-h-screen bg-[#15145d] flex flex-col md:flex-row text-white">
@@ -101,16 +54,17 @@ const UserProfile = () => {
             <div className="hidden md:block bg-[#080a41] md:w-1/5 h-screen fixed left-0 top-0 shadow-[10px_0_8px_-4px_rgba(0,0,0,0.1)]">
                 <div className="h-1/5 p-4">
                     <button onClick={() => goTo("feed")}>
-                        <div className="mylogo">
+                        <div className="mylogo cursor-pointer">
                             <img
                                 src="../src/assets/logo.png"
                                 alt="home"
                                 width="100%"
                                 height="100%"
+                                onClick={() => goTo("feed")}
                             />
                         </div>
                     </button>
-                    <div className="userprofile">
+                    <div className="userprofile cursor-pointer">
                         <button
                             onClick={() => navigate(`/profile/${username}`)}
                         >
@@ -164,7 +118,6 @@ const UserProfile = () => {
                             {
                                 icon: <FaHome className="w-6 h-6" />,
                                 text: "Home",
-                                selected: true,
                                 onClick: () => goTo("feed"),
                             },
                             {
@@ -187,11 +140,10 @@ const UserProfile = () => {
                         ].map((item, index) => (
                             <div
                                 key={index}
-                                className={`flex items-center h-12 rounded-2xl px-4 transition-all duration-300 cursor-pointer ${
-                                    item.selected
-                                        ? "bg-[#9b9b9b6b] text-white"
-                                        : "text-gray-400 hover:bg-[#9b9b9b6b] hover:text-white"
-                                }`}
+                                className={`flex items-center h-12 rounded-2xl px-4 transition-all duration-300 cursor-pointer ${item.selected
+                                    ? "bg-[#9b9b9b6b] text-white"
+                                    : "text-gray-400 hover:bg-[#9b9b9b6b] hover:text-white"
+                                    }`}
                             >
                                 {item.icon}
                                 <button
@@ -224,39 +176,60 @@ const UserProfile = () => {
                 </div>
             </div>
 
+            <div className="mylogo cursor-pointer">
+                <img
+                    src="../src/assets/logo.png"
+                    alt="home"
+                    width="100%"
+                    height="100%"
+                    onClick={() => goTo("feed")}
+                />
+            </div>
+
             {/* Main Content - Instagram Inspired */}
-            <div className="w-full md:w-3/5 md:ml-[30%] md:mr-[10%]  flex flex-col">
+            <div className="my-5 lg:my-0 w-full md:w-3/5 md:ml-[30%] md:mr-[10%] flex flex-col">
                 <div className="h-full w-full overflow-auto scrollbar-hide   p-8">
                     {/* Profile Info Section */}
                     <div className="bg-[#1a072cbf] mb-0.5 p-6 rounded-lg">
                         {/* Profile Section */}
-                        <div className="flex flex-col md:flex-row items-start md:items-center">
+                        <div className="flex flex-row items-start md:items-center">
                             {/* Profile Picture */}
-                            <div className="w-24 h-24 md:w-40 md:h-40 rounded-full border-2 border-gray-300 overflow-hidden flex-shrink-0 mb-6 md:mb-0">
+                            <div className="flex w-24 h-24 md:w-40 md:h-40 rounded-full border-2 border-gray-300 overflow-hidden flex-shrink-0">
                                 <img
                                     src={getMediaPath(fetchedUser.profile_path)}
                                     alt="Profile"
                                     className="h-full w-full object-cover"
                                 />
                             </div>
+                            {/* <div className="md:hidden w-24 h-24 md:w-40 md:h-40 rounded-full border-2 border-gray-300 overflow-hidden flex-shrink-0 mb-6 md:mb-0 m-auto">
+                                <img
+                                    src={getMediaPath(fetchedUser.profile_path)}
+                                    alt="Profile"
+                                    className="h-full w-full object-cover"
+                                />
+                            </div> */}
 
-                            {/* Profile Details */}
-                            <div className="md:ml-10 flex flex-col">
-                                <h1 className="text-2xl md:text-3xl font-semibold mb-2">
+                            <div className="ml-6 mt-2 md:mt-0 md:ml-10 flex flex-col">
+                                <h1 className="text-2xl md:text-3xl font-semibold mb-0">
                                     {fetchedUser.name}
                                 </h1>
-                                <p className="text-gray-400 mb-4">
+                                <p className="text-gray-400 mb-2">
                                     @{fetchedUser.username}
                                 </p>
-                                <p className="text-white text-sm md:text-base mb-4 max-w-lg">
+                                <p className="hidden md:flex text-white text-sm md:text-base mb-2 max-w-lg">
                                     {fetchedUser.bio || "No bio yet."}
                                 </p>
                             </div>
                         </div>
 
+                        <div>
+                            <p className="flex mt-2 md:hidden text-white text-sm md:text-base mb-2 max-w-lg">
+                                {fetchedUser.bio || "No bio yet."}
+                            </p>
+                        </div>
                         {/* Stats Section */}
                         <div
-                            className="border border-gray-700 py-3 mt-4 rounded-lg"
+                            className="border border-gray-700 py-3 mt-4 md:mt-4 rounded-lg"
                             style={{
                                 boxShadow:
                                     "inset 0 4px 12px rgba(255, 255, 255, 0.12), inset 0 -4px 12px rgba(255, 255, 255, 0.12)",
@@ -274,7 +247,8 @@ const UserProfile = () => {
                     </div>
 
                     {/* Posts Grid */}
-                    <div className="grid grid-cols-3 gap-1 md:gap-1 bg-[#1a072cbf]  p-1.5 md:p-1.5 rounded-lg">
+
+                    {userPosts && (<div className="grid grid-cols-3 gap-1 md:gap-1 bg-[#1a072cbf]  p-1.5 md:p-1.5 rounded-lg">
                         {userPosts &&
                             userPosts.map((post, index) => (
                                 <button
@@ -288,13 +262,13 @@ const UserProfile = () => {
                                         <img
                                             src={getMediaPath(post.path)}
                                             alt={`Post ${index}`}
-                                            className="w-full h-full object-cover transition duration-300 group-hover:opacity-90 rounded"
+                                            className={`w-full h-full object-cover transition duration-300 group-hover:opacity-70 rounded ${post.is_nsfw && !user?.show_nsfw ? 'blur-md' : ""}`}
                                         />
                                     ) : post.type.startsWith("video/") ? (
                                         <div className="w-full h-full relative">
                                             <video
                                                 src={getMediaPath(post.path)}
-                                                className="w-full h-full object-cover pointer-events-none"
+                                                className="w-full h-full object-cover pointer-events-none transition duration-300 group-hover:opacity-70"
                                                 muted
                                                 preload="metadata"
                                             />
@@ -350,7 +324,48 @@ const UserProfile = () => {
                             </div>
                         )}
                     </div>
+                    )}
                 </div>
+            </div>
+            <div className="md:hidden fixed bottom-0 left-0 right-0 bg-[#242380]/95 p-2 flex justify-around items-center shadow-lg">
+                {[
+                    {
+                        icon: <FaHome className="w-7 h-7" />,
+                        action: () => {
+                            goTo("feed");
+                        },
+                    },
+                    {
+                        icon: <FaComments className="w-7 h-7" />,
+                        action: () => {
+                            goTo("chat");
+                        },
+                    },
+                    {
+                        icon: <FaVideo className="w-7 h-7" />,
+                        action: () => goTo("vc"),
+                    },
+                    {
+                        icon: <FaUsers className="w-7 h-7" />,
+                        action: () => goTo("communities"),
+                    },
+                    {
+                        icon: <FaPlus className="w-7 h-7" />,
+                        action: () => goTo("postUpload"),
+                    },
+                    {
+                        icon: <FaCog className="w-6 h-6" />,
+                        action: () => goTo("settings"),
+                    },
+                ].map((item, index) => (
+                    <button
+                        key={index}
+                        onClick={item.action}
+                        className="p-2 hover:text-gray-300 transition-colors"
+                    >
+                        {item.icon}
+                    </button>
+                ))}
             </div>
         </div>
     );

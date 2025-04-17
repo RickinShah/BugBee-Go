@@ -39,6 +39,11 @@ const SinglePost = () => {
     const [commentCount, setCommentCount] = useState(0);
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
+    const handleRemove = (id) => {
+        setPosts(prev => prev.filter(post => post.post_id !== id));
+        goTo("feed");
+    }
+
     const fetchCommunities = () => {
         try {
             apiCall(
@@ -60,43 +65,6 @@ const SinglePost = () => {
     useEffect(() => {
         fetchCommunities();
     }, []);
-
-    const handleSearch = async (query) => {
-        setSearchQuery(query);
-        if (query.trim() === "") {
-            setSearchResults([]);
-            setIsSearching(false);
-            return;
-        }
-
-        setIsSearching(true);
-        try {
-            await apiCall(
-                `/v1/users?query=${encodeURIComponent(query)}&size=10`,
-                "GET",
-                null,
-                {},
-                "include",
-                false,
-                (response) => {
-                    const users = Object.values(response.users).map((user) => ({
-                        username: user.username,
-                        name: user.name || user.username,
-                        profilePath: getMediaPath(user.profile_path),
-                    }));
-                    setSearchResults(users || []);
-                    setIsSearching(false);
-                },
-                (error) => {
-                    console.error("Search error:", error);
-                    setIsSearching(false);
-                },
-            );
-        } catch (error) {
-            console.error("Search failed:", error);
-            setIsSearching(false);
-        }
-    };
 
     const fetchPosts = async () => {
         if (loading || !hasMore || isFetching) return;
@@ -200,7 +168,7 @@ const SinglePost = () => {
 
     useEffect(() => {
         fetchPosts();
-        fetchComments();
+        window.innerWidth >= 768 ? fetchComments() : null;
     }, []);
 
     return (
@@ -294,11 +262,10 @@ const SinglePost = () => {
                         ].map((item, index) => (
                             <div
                                 key={index}
-                                className={`flex items-center h-12 rounded-2xl px-4 transition-all duration-300 cursor-pointer ${
-                                    item.selected
-                                        ? "bg-[#9b9b9b6b] text-white"
-                                        : "text-gray-400 hover:bg-[#9b9b9b6b] hover:text-white"
-                                }`}
+                                className={`flex items-center h-12 rounded-2xl px-4 transition-all duration-300 cursor-pointer ${item.selected
+                                    ? "bg-[#9b9b9b6b] text-white"
+                                    : "text-gray-400 hover:bg-[#9b9b9b6b] hover:text-white"
+                                    }`}
                             >
                                 {item.icon}
                                 <button
@@ -331,6 +298,15 @@ const SinglePost = () => {
                 </div>
             </div>
 
+            <div className="mylogo cursor-pointer">
+                <img
+                    src="../src/assets/logo.png"
+                    alt="home"
+                    width="100%"
+                    height="100%"
+                    onClick={() => goTo("feed")}
+                />
+            </div>
             {/* Main Content Area - MODIFIED: Made postcard larger by adjusting width ratios */}
             <div className="w-full md:w-4/5 md:ml-[20%] flex flex-col">
                 {/* Scrollable Content */}
@@ -351,6 +327,7 @@ const SinglePost = () => {
                                     content={post.content}
                                     stats={post.stats}
                                     files={post.files}
+                                    onRemove={handleRemove}
                                     className="w-full" // Added full width to card
                                 />
                             ))}
@@ -362,139 +339,142 @@ const SinglePost = () => {
                         </div>
 
                         {/* Comments Column - MODIFIED: Reduced width */}
-                        <div className="w-full lg:w-1/4 mt-6 lg:mt-0 bg-gradient-to-br from-80% from-[#4b207a70] to-[#8c02a170] rounded-lg shadow-md p-4 relative right-16 bottom-1">
-                            <h3 className="text-xl font-semibold mb-4 text-white border-b border-gray-700 pb-2">
-                                Comments ({commentCount})
-                            </h3>
+                        {window.innerWidth >= 640 && (
+                            <div className="w-full lg:w-1/4 bg-gradient-to-br from-80% from-[#4b207a70] to-[#8c02a170] rounded-lg shadow-md p-4 relative right-10 bottom-1">
+                                <h3 className="text-xl font-semibold mb-4 text-white border-b border-gray-700 pb-2">
+                                    Comments ({commentCount})
+                                </h3>
 
-                            {/* Comment input section */}
-                            <div className="mb-4">
-                                <div className="relative flex items-center">
-                                    <input
-                                        type="text"
-                                        value={newComment}
-                                        onChange={(e) =>
-                                            setNewComment(e.target.value)
-                                        }
-                                        className="w-full bg-[#31144e] font-medium text-white p-2 rounded-full focus:outline-none placeholder-gray-400 pr-10"
-                                        placeholder="Add a comment..."
-                                    />
-                                    <button
-                                        onClick={toggleEmojiPicker}
-                                        className="absolute right-10 text-gray-400 hover:text-gray-100"
-                                        type="button"
-                                    >
-                                        <FaSmile className="w-5 h-5" />
-                                    </button>
-                                    <button
-                                        onClick={handleCommentSubmit}
-                                        className="absolute right-2 bg-gradient-to-r from-[#75ccf2] to-[#1a8bc0] rounded-full w-7 h-7 flex items-center justify-center"
-                                    >
-                                        <svg
-                                            className="w-4 h-4 text-white"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
+                                {/* Comment input section */}
+                                <div className="mb-4">
+                                    <div className="relative flex items-center">
+                                        <input
+                                            type="text"
+                                            value={newComment}
+                                            onChange={(e) =>
+                                                setNewComment(e.target.value)
+                                            }
+                                            className="w-full bg-[#31144e] font-medium text-white p-2 rounded-full focus:outline-none placeholder-gray-400 pr-10"
+                                            placeholder="Add a comment..."
+                                        />
+                                        <button
+                                            onClick={toggleEmojiPicker}
+                                            className="absolute right-10 text-gray-400 hover:text-gray-100"
+                                            type="button"
                                         >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth="2"
-                                                d="M14 5l7 7m0 0l-7 7m7-7H3"
+                                            <FaSmile className="w-5 h-5" />
+                                        </button>
+                                        <button
+                                            onClick={handleCommentSubmit}
+                                            className="absolute right-2 bg-gradient-to-r from-[#75ccf2] to-[#1a8bc0] rounded-full w-7 h-7 flex items-center justify-center"
+                                        >
+                                            <svg
+                                                className="w-4 h-4 text-white"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                viewBox="0 0 24 24"
+                                            >
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth="2"
+                                                    d="M14 5l7 7m0 0l-7 7m7-7H3"
+                                                />
+                                            </svg>
+                                        </button>
+                                    </div>
+
+                                    {showEmojiPicker && (
+                                        <div className="absolute z-10 mt-2">
+                                            <EmojiPicker
+                                                onEmojiClick={handleEmojiClick}
+                                                searchDisabled={false}
+                                                skinTonesDisabled={false}
+                                                width={300}
+                                                height={350}
+                                                previewConfig={{
+                                                    showPreview: false,
+                                                }}
                                             />
-                                        </svg>
-                                    </button>
+                                        </div>
+                                    )}
                                 </div>
 
-                                {showEmojiPicker && (
-                                    <div className="absolute z-10 mt-2">
-                                        <EmojiPicker
-                                            onEmojiClick={handleEmojiClick}
-                                            searchDisabled={false}
-                                            skinTonesDisabled={false}
-                                            width={300}
-                                            height={350}
-                                            previewConfig={{
-                                                showPreview: false,
-                                            }}
-                                        />
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Comments list */}
-                            <div className="max-h-[calc(100vh-280px)] overflow-y-auto space-y-4 pr-2">
-                                {commentData.length === 0 ? (
-                                    <div className="text-center py-8 text-gray-400">
-                                        <svg
-                                            className="w-10 h-10 mx-auto text-gray-500 mb-2"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            strokeWidth={1.5}
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                d="M7 8h10M7 12h4m1 8.5a8.38 8.38 0 004.58-1.34A8.5 8.5 0 1012 20.5z"
-                                            />
-                                        </svg>
-                                        <p className="text-lg font-medium">
-                                            No Comments Yet
-                                        </p>
-                                        <p className="text-sm">
-                                            Be the first to share your thoughts!
-                                        </p>
-                                    </div>
-                                ) : (
-                                    commentData.map((comment, index) => (
-                                        <div
-                                            key={index}
-                                            className="flex space-x-2"
-                                        >
-                                            <img
-                                                src={comment.profile_path}
-                                                alt={comment.username}
-                                                className="w-8 h-8 rounded-full mt-1 cursor-pointer"
-                                                onClick={() =>
-                                                    navigate(
-                                                        `/profile/${comment.username}`,
-                                                    )
-                                                }
-                                            />
-                                            <div className="flex-1">
-                                                <div className="flex items-baseline">
-                                                    <span
-                                                        className="font-semibold text-white text-sm mr-2 cursor-pointer"
-                                                        onClick={() =>
-                                                            navigate(
-                                                                `/profile/${comment.username}`,
-                                                            )
-                                                        }
-                                                    >
-                                                        {comment.username}
-                                                    </span>
-                                                    <span className="text-gray-300 text-xs">
-                                                        {/* Time would go here */}
-                                                    </span>
-                                                </div>
-                                                <p className="text-gray-200 text-sm mt-1">
-                                                    {comment.Comments}
-                                                </p>
-                                                <div className="flex items-center space-x-4 mt-1 text-xs text-gray-400">
-                                                    <span className="cursor-pointer hover:text-gray-300">
-                                                        Like
-                                                    </span>
-                                                    <span className="cursor-pointer hover:text-gray-300">
-                                                        Reply
-                                                    </span>
+                                {/* Comments list */}
+                                <div className="max-h-[calc(100vh-280px)] overflow-y-auto space-y-4 pr-2">
+                                    {commentData.length === 0 ? (
+                                        <div className="text-center py-8 text-gray-400">
+                                            <svg
+                                                className="w-10 h-10 mx-auto text-gray-500 mb-2"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                strokeWidth={1.5}
+                                                viewBox="0 0 24 24"
+                                            >
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    d="M7 8h10M7 12h4m1 8.5a8.38 8.38 0 004.58-1.34A8.5 8.5 0 1012 20.5z"
+                                                />
+                                            </svg>
+                                            <p className="text-lg font-medium">
+                                                No Comments Yet
+                                            </p>
+                                            <p className="text-sm">
+                                                Be the first to share your
+                                                thoughts!
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        commentData.map((comment, index) => (
+                                            <div
+                                                key={index}
+                                                className="flex space-x-2"
+                                            >
+                                                <img
+                                                    src={comment.profile_path}
+                                                    alt={comment.username}
+                                                    className="w-8 h-8 rounded-full mt-1 cursor-pointer"
+                                                    onClick={() =>
+                                                        navigate(
+                                                            `/profile/${comment.username}`,
+                                                        )
+                                                    }
+                                                />
+                                                <div className="flex-1">
+                                                    <div className="flex items-baseline">
+                                                        <span
+                                                            className="font-semibold text-white text-sm mr-2 cursor-pointer"
+                                                            onClick={() =>
+                                                                navigate(
+                                                                    `/profile/${comment.username}`,
+                                                                )
+                                                            }
+                                                        >
+                                                            {comment.username}
+                                                        </span>
+                                                        <span className="text-gray-300 text-xs">
+                                                            {/* Time would go here */}
+                                                        </span>
+                                                    </div>
+                                                    <p className="text-gray-200 text-sm mt-1">
+                                                        {comment.Comments}
+                                                    </p>
+                                                    <div className="flex items-center space-x-4 mt-1 text-xs text-gray-400">
+                                                        <span className="cursor-pointer hover:text-gray-300">
+                                                            Like
+                                                        </span>
+                                                        <span className="cursor-pointer hover:text-gray-300">
+                                                            Reply
+                                                        </span>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    ))
-                                )}
+                                        ))
+                                    )}
+                                </div>
                             </div>
-                        </div>
+                        )}
                     </div>
                 </div>
             </div>

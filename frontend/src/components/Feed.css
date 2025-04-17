@@ -1,4 +1,4 @@
-.mylogo{
+.mylogo {
     position: absolute;
     top: 10px;
     left: 20px;
@@ -6,23 +6,31 @@
     height: 100px;
     z-index: 10;
     margin: 0 auto;
-  }
-.userprofile{
-        margin-top: 1.8rem;
-        background-image: linear-gradient(to right, rgba(103, 103, 103, 0.43), rgba(156, 4, 133, 0.59));
-        border-radius: 1rem;
-        display: flex;
-        align-items: center;
-        padding: 0.75rem;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-      }
-.roundprofile{
-    
-        width: 2.5rem;
-        height: 2.5rem;
-        background-color: rgba(255, 255, 255, 0.53);
-        border-radius: 9999px;
-        overflow: hidden;
-        flex-shrink: 0;
-      
+}
+.userprofile {
+    margin-top: 1.8rem;
+    background-image: linear-gradient(
+        to right,
+        rgba(103, 103, 103, 0.43),
+        rgba(156, 4, 133, 0.59)
+    );
+    border-radius: 1rem;
+    display: flex;
+    align-items: center;
+    padding: 0.75rem;
+    box-shadow:
+        0 4px 6px -1px rgba(0, 0, 0, 0.1),
+        0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+.roundprofile {
+    width: 2.5rem;
+    height: 2.5rem;
+    background-color: rgba(255, 255, 255, 0.53);
+    border-radius: 9999px;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.emoji-mart-custom .emoji-mart-category-label {
+    @apply bg-[#230a36] text-white;
 }

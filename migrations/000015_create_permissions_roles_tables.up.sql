@@ -17,8 +17,8 @@ CREATE TABLE IF NOT EXISTS role_permissions (
 );
 
 CREATE TABLE IF NOT EXISTS user_roles (
-    user_id bigint REFERENCES users,
+    user_id bigint REFERENCES users ON DELETE CASCADE,
     community_id bigint REFERENCES communities ON DELETE CASCADE,
     role_id bigint REFERENCES community_roles ON DELETE CASCADE,
-    PRIMARY KEY(user_id, community_id)
+    PRIMARY KEY(user_id, community_id, role_id)
 );

@@ -8,7 +8,6 @@ import {
     FaUsers,
     FaComments,
     FaVideo,
-    FaBell,
     FaCog,
     FaSignOutAlt,
     FaPlus,
@@ -41,6 +40,22 @@ const Feed = () => {
     const [hasMore, setHasMore] = useState(true);
     const [isFetching, setIsFetching] = useState(false);
     const scrollRef = useRef(null);
+
+    const joinCommunity = async (community) => {
+        console.log(community.handle)
+        await apiCall(
+            `/v1/community/${community.community_handle}`,
+            "POST",
+            null,
+            {},
+            "include",
+            false,
+            (response) => {
+                console.log(response);
+                goTo("communities")
+            },
+        )
+    }
 
     const handleSearch = async (query) => {
         setSearchQuery(query);
@@ -78,6 +93,13 @@ const Feed = () => {
             setIsSearching(false);
         }
     };
+
+
+    const handleRemove = (id) => {
+        // console.log(post.id)
+        // console.log()
+        setPosts(prev => prev.filter(post => post.post_id !== id))
+    }
 
     const fetchPosts = async (lastId = null) => {
         if (loading || !hasMore || isFetching) return;
@@ -195,11 +217,21 @@ const Feed = () => {
                             />
                         </div>
                     </button>
-                    <div className="userprofile">
-                        <button
-                            onClick={() => navigate(`/profile/${username}`)}
-                        >
-                            <div className="roundprofile">
+                    <div
+                        className="userprofile cursor-pointer"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/profile/${username}`);
+                        }}
+                    >
+                        <button>
+                            <div
+                                className="roundprofile"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigate(`/profile/${username}`);
+                                }}
+                            >
                                 <img
                                     src={profilePath}
                                     alt="profile"
@@ -207,7 +239,13 @@ const Feed = () => {
                                 />
                             </div>
                         </button>
-                        <div className="flex-grow mx-3">
+                        <div
+                            className="flex-grow mx-3"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/profile/${username}`);
+                            }}
+                        >
                             <button
                                 className="w-full text-left pt-1"
                                 onClick={() => navigate(`/profile/${username}`)}
@@ -224,7 +262,13 @@ const Feed = () => {
                             className="flex items-center px-2 py-1 text-white text-sm shrink-0 transition-transform duration-200 hover:scale-[1.02]"
                             onClick={() => goTo("completeProfile")}
                         >
-                            <span className="bg-gradient-to-r from-[#d946ef] to-[#9333ea] bg-clip-text text-transparent">
+                            <span
+                                className="bg-gradient-to-r from-[#d946ef] to-[#9333ea] bg-clip-text text-transparent"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    goTo("completeProfile");
+                                }}
+                            >
                                 Edit
                             </span>
                             <svg
@@ -276,11 +320,10 @@ const Feed = () => {
                         ].map((item, index) => (
                             <div
                                 key={index}
-                                className={`flex items-center h-12 rounded-2xl px-4 transition-all duration-300 cursor-pointer ${
-                                    item.selected
-                                        ? "bg-[#9b9b9b6b] text-white"
-                                        : "text-gray-400 hover:bg-[#9b9b9b6b] hover:text-white"
-                                }`}
+                                className={`flex items-center h-12 rounded-2xl px-4 transition-all duration-300 cursor-pointer ${item.selected
+                                    ? "bg-[#9b9b9b6b] text-white"
+                                    : "text-gray-400 hover:bg-[#9b9b9b6b] hover:text-white"
+                                    }`}
                             >
                                 {item.icon}
                                 <button
@@ -324,7 +367,9 @@ const Feed = () => {
                             <div className="md:hidden flex items-center mr-3">
                                 <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
                                     <button
-                                        onClick={() => goTo("completeProfile")}
+                                        onClick={() =>
+                                            navigate(`/profile/${username}`)
+                                        }
                                     >
                                         <img
                                             src={profilePath}
@@ -408,7 +453,7 @@ const Feed = () => {
                 >
                     <div className="space-y-6">
                         {posts.map((post) => (
-                            <Card
+                            <Card onRemove={handleRemove}
                                 key={post.post_id}
                                 user={post.user}
                                 post_id={post.post_id}
@@ -445,15 +490,16 @@ const Feed = () => {
 
                 <div className="flex flex-col items-center justify-between h-[calc(100vh-5rem)] px-4 pb-6">
                     <div className="my-4 w-full h-80 bg-[#1a072cbf] rounded-2xl shadow-md overflow-y-auto scrollbar-hide">
-                        <div className="p-4 border-b border-gray-700">
-                            <h2 className="text-white text-sm font-semibold ">
+
+                        <div className="flex justify-center sticky top-0 z-10 p-4 bg-[#1a072c] border-b border-0 border-gray-700">
+                            <h2 className="text-white text-sm font-semibold">
                                 Popular Communities
                             </h2>
                         </div>
-                        {communities.map((community) => (
-                            <div
+                        {communities?.map((community) => (
+                            <div onClick={() => joinCommunity(community)}
                                 key={community.community_id}
-                                className="flex items-center p-4 border-b border-gray-700 hover:bg-[#2a143dbf] transition-colors"
+                                className="flex items-center p-4 border-b border-gray-700 hover:bg-[#2a143dbf] transition-colors cursor-pointer"
                             >
                                 <img
                                     src={getMediaPath(community.profile_path)}

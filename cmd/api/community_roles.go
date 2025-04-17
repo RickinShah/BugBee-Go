@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/RickinShah/BugBee/internal/data"
@@ -21,6 +22,7 @@ func (app *application) addCommunityRoleHandler(w http.ResponseWriter, r *http.R
 		Name        string   `json:"name"`
 		Permissions []string `json:"permissions"`
 	}
+	input.Name = strings.ToLower(input.Name)
 	err = app.readJson(w, r, &input)
 	if err != nil {
 		app.badRequestResponse(w, r, err)
@@ -43,8 +45,6 @@ func (app *application) addCommunityRoleHandler(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	app.logger.PrintInfo(input.Permissions[0], nil)
-	app.logger.PrintInfo(input.Permissions[1], nil)
 	permissionIDs, err := app.models.Permissions.GetIDByCode(input.Permissions)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)

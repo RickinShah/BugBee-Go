@@ -8,11 +8,11 @@ import logo from "../../assets/logo.png";
 const VideoCall = () => {
     const [meetingCode, setMeetingCode] = useState("");
     const { goTo } = useNavigation();
-     const [user, setUser] = useState(() =>
-       JSON.parse(localStorage.getItem("user")),
-     );
-    
-  
+    const navigate = useNavigate();
+    const [user, setUser] = useState(() =>
+        JSON?.parse(localStorage.getItem("user")),
+    );
+
     const handleStartCall = () => {
         // const config = config;
         // Logic to start a call
@@ -83,13 +83,20 @@ const VideoCall = () => {
                         <i className="fas fa-arrow-left"></i>
                     </button>
 
-                    <div className="vc-logo">
-                        <img src="BBlogo.svg" alt="Logo" width="100%" height="100%" />
+                    <div className="vc-logo ml-2 mt-2 lg:ml-0 lg-mt-0">
+                        <img
+                            src="BBlogo.svg"
+                            alt="Logo"
+                            width="100%"
+                            height="100%"
+                        />
                     </div>
 
                     <h2 className="vc">Video Conference</h2>
                 </div>
-                <div className="header-right">
+                <div
+                    className={`header-right ${window.innerWidth >= 768 ? "" : "fixed right-3 mt-0"}`}
+                >
                     <button
                         className="icon-button"
                         onClick={() => goTo("settings")}
@@ -102,14 +109,22 @@ const VideoCall = () => {
             <div className="dashboard-content">
                 <div className="user-card">
                     <div className="user-info">
-                        <div className="w-12 h-12 bg-[#ffffff86] rounded-full overflow-hidden flex-shrink-0">
+                        <div className="w-12 h-12 bg-[#ffffff86] rounded-full overflow-hidden flex-shrink-0 cursor-pointer">
                             <img
                                 src={user.profile_path || "default-avatar.png"}
                                 alt="profile"
                                 className="w-full h-full object-cover"
+                                onClick={() =>
+                                    navigate(`/profile/${user.username}`)
+                                }
                             />
                         </div>
-                        <div className="user-details">
+                        <div
+                            className="user-details cursor-pointer"
+                            onClick={() =>
+                                navigate(`/profile/${user.username}`)
+                            }
+                        >
                             <h3>{user.name || "User"}</h3>
                             <p>@{user.username || "username"}</p>
                         </div>
@@ -133,12 +148,12 @@ const VideoCall = () => {
                             >
                                 <i className="fas fa-video"></i> New Meeting
                             </button>
-                            or
+                            <span className="m-auto lg:m-0">or</span>
                             <div className="join-meeting">
                                 <div className="input-container">
                                     <input
                                         type="text"
-                                        placeholder="enter a code or link"
+                                        placeholder="enter a code"
                                         value={meetingCode}
                                         onChange={(e) =>
                                             setMeetingCode(e.target.value)

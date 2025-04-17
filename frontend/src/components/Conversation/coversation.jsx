@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import "./conversation.css";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { getMediaPath } from "../../utils/api";
+import { getDefaultProfilePath, getMediaPath } from "../../utils/api";
 
 const Conversation = (props) => {
     const [friendItem, setFriendItem] = useState([]);
@@ -29,6 +29,13 @@ const Conversation = (props) => {
         }
     }, [props.members, props.lastMessage, props.unread]);
 
+
+    const name = friendItem[0]?.name ? friendItem[0].name : "Deleted User";
+    const username = friendItem[0]?.username ? friendItem[0]?.username : "deleted_user";
+
+    const profileSrc = friendItem[0]?.profile_path
+        ? getMediaPath(friendItem[0]?.profile_path)
+        : getDefaultProfilePath();
     const handleOnClick = () => {
         // Reset the notification when the conversation is clicked
         setHasNewMessage(false);
@@ -53,18 +60,18 @@ const Conversation = (props) => {
             <div className="conv-profile-img">
                 <img
                     className="profile-img-conv"
-                    src={getMediaPath(friendItem[0]?.profile_path)}
+                    src={profileSrc}
                     alt="display"
                 />
             </div>
             <div className="conv-name">
-                <div className="conv-profile-name">{friendItem[0]?.name}</div>
+                <div className="conv-profile-name">{username}</div>
                 <div className="conv-last-message">
-                {lastMessage.split("").slice(0, 15).join("") + (lastMessage.split("").length > 15 ? "..." : "")}
-                           
+                    {lastMessage.split("").slice(0, 23).join("") + (lastMessage.split("").length > 23 ? "..." : "")}
+
                 </div>
 
-                
+
             </div>
             {hasNewMessage && <div className="new-message-dot"></div>}
 

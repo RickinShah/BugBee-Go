@@ -16,8 +16,13 @@ import socket from "../../socket";
 import useNavigation from "../../utils/navigate";
 import logo from "../../assets/logo.png";
 import { apiCall, appHost, getMediaPath } from "../../utils/api";
-import { FaHome, FaUsers, FaEnvelope, FaVideo, FaSignOutAlt } from 'react-icons/fa';
-
+import {
+    FaHome,
+    FaUsers,
+    FaEnvelope,
+    FaVideo,
+    FaSignOutAlt,
+} from "react-icons/fa";
 
 const Dashboard = ({ setLoginFunc }) => {
     const [selectedUserDetails, setSelectedUserDetails] = useState(null);
@@ -30,6 +35,7 @@ const Dashboard = ({ setLoginFunc }) => {
     const [userProfile, setUserProfile] = useState(null);
     const [loading, setLoading] = useState(false);
     const ref = useRef();
+    const navigate = useNavigate();
 
     function timeout(delay) {
         return new Promise((res) => setTimeout(res, delay));
@@ -367,13 +373,22 @@ const Dashboard = ({ setLoginFunc }) => {
 
     return (
         <div className="dashboard">
-            <div className="dashboard-logo" onClick={() => goTo("feed")}>
+            <div
+                className="dashboard-logo cursor-pointer"
+                onClick={() => goTo("feed")}
+            >
                 <img src={logo} alt="Logo" width="100%" height="100%" />
             </div>
-            <div className="dashboard-card">
+            <div className="dashboard-card cursor-default">
                 {/* New Sidebar */}
                 <div className="dashboard-sidebar">
-                    <div className="sidebar-profile">
+                    <div
+                        className="sidebar-profile"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/profile/${userProfile.username}`);
+                        }}
+                    >
                         {userProfile && (
                             <img
                                 src={userProfile.profile_path}
@@ -383,10 +398,13 @@ const Dashboard = ({ setLoginFunc }) => {
                     </div>
                     <div className="sidebar-icons">
                         <div className="sidebar-icon">
-                            < FaHome size={24} onClick={handleOpenFeed} />
+                            <FaHome size={24} onClick={handleOpenFeed} />
                         </div>
                         <div className="sidebar-icon">
-                            <FaUsers size={24} onClick={handleOpenCommunities} />
+                            <FaUsers
+                                size={24}
+                                onClick={handleOpenCommunities}
+                            />
                         </div>
                         <div className="sidebar-icon-selected">
                             <FaEnvelope size={24} />

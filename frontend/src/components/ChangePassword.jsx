@@ -3,7 +3,7 @@ import { handleFormChange } from "../utils/form";
 import * as yup from "yup";
 import { validateConfirmPassword, validatePassword } from "../validators/user";
 import { validationError } from "../utils/errors";
-import { getValueFromURL, apiCall } from "../utils/api";
+import { apiCall } from "../utils/api";
 import useNavigation from "../utils/navigate";
 import { ArrowLeft } from "lucide-react";
 
@@ -12,13 +12,12 @@ const ChangePassword = () => {
 
     const onSuccess = () => {
         alert(
-            "Account created! Check your email for the activation link to verify your account.",
+            "Password Updated Successfully!",
         );
-        goTo("login");
+        goTo("settings");
     };
 
     const [formData, setFormData] = useState({
-        reg_id: getValueFromURL("reg_id"),
         old_password: "",
         password: "",
         confirm_password: "",
@@ -27,26 +26,25 @@ const ChangePassword = () => {
     const handleChange = (e) => handleFormChange(e, setFormData);
 
     const validateNewPassword = yup.object({
-        old_paasword: validatePassword,
+        old_password: validatePassword,
         password: validatePassword,
         confirm_password: validateConfirmPassword,
     });
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        let submissionData = { ...formData };
 
         try {
-            await validateNewPassword.validate(submissionData, {
+            await validateNewPassword.validate(formData, {
                 abortEarly: true,
             });
 
             await apiCall(
-                "/v1/users",
-                "POST",
-                submissionData,
+                "/v1/users/password",
+                "PATCH",
+                formData,
                 {},
-                null,
+                "include",
                 false,
                 onSuccess,
                 null,
