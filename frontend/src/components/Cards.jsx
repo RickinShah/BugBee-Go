@@ -214,7 +214,6 @@ const Card = ({ user, post_id, content, stats, files, vote_type, onRemove }) => 
     const handleDeletePost = (e) => {
         e.stopPropagation();
         if (confirm("Are you sure you want to delete this post?")) {
-
             apiCall(
                 `/v1/posts/${postId}`,
                 "DELETE",
@@ -223,8 +222,11 @@ const Card = ({ user, post_id, content, stats, files, vote_type, onRemove }) => 
                 "include",
                 false,
                 (response) => {
+                    // Handle successful deletion (e.g., refresh the page or remove from UI)
                     console.log("Post deleted successfully");
                     onRemove(postId)
+                    // You might want to trigger a refresh of the parent component
+                    // or use a callback function passed as prop to remove this card from the UI
                 },
                 (error) => {
                     console.error("Error deleting post:", error);

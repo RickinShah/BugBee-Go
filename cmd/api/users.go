@@ -559,6 +559,17 @@ func (app *application) updateProfileHandler(w http.ResponseWriter, r *http.Requ
 	}
 }
 
+func (app *application) getUserData(w http.ResponseWriter, r *http.Request) {
+	user := app.contextGetUser(r)
+	user.SetMarshalType(2)
+
+	err := app.writeJson(w, http.StatusOK, envelope{"user": user}, nil)
+
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+}
+
 func (app *application) getUserHandler(w http.ResponseWriter, r *http.Request) {
 	username, err := app.readStringPath("username", r)
 	if err != nil {

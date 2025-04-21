@@ -12,15 +12,15 @@ import { FaCog } from "react-icons/fa";
 
 const CompleteProfile = () => {
     const { goTo } = useNavigation();
+    const [user] = useState(() => JSON.parse(localStorage.getItem("user")))
 
     const [profilePath, setProfilePath] = useState(() =>
         localStorage.getItem("profile_path"),
     );
     const [name] = useState(() => localStorage.getItem("name"));
-    const [user] = useState(() => JSON.parse(localStorage.getItem("user")));
     // const [username] = useState(() => localStorage.getItem("username"));
     const [formData, setFormData] = useState({
-        bio: user.bio,
+        bio: user?.bio,
         name: name,
     });
     const [image, setImage] = useState(null);

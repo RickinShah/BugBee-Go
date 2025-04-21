@@ -1,6 +1,7 @@
 const config = {
-    // host: "localhost",
     host: "localhost",
+    // host: "192.168.29.150",
+    // host: "either-cents-til-preston.trycloudflare.com",
     protocol: "https",
     port: "",
 };

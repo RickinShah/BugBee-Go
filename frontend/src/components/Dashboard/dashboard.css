@@ -6,6 +6,7 @@
   justify-content: center;
   align-items: center;
   overflow: hidden;
+  
 }
 .dashboard-logo {
   position: absolute;
@@ -16,6 +17,8 @@
   z-index: 10;
 }
 
+
+
 /* Main container with black background */
 .dashboard-card {
   width: 98%;
@@ -25,6 +28,7 @@
   gap: 16px;
   position: relative;
   top: 10px;
+  
 }
 
 /* Sidebar styling */
@@ -274,4 +278,66 @@
 .noChatSelected svg {
   margin-bottom: 20px;
   color: #098bc8;
+}
+/* Add these at the end of dashboard.css */
+
+@media (max-width: 768px) {
+  .dashboard {
+    height: 100vh;
+    background: #15145d;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    padding-bottom: 69px; /* Add this to reserve space for the bar */
+  }
+  
+  .dashboard-card {
+    width: 100%;
+    height: 92vh;
+    border-radius: 12px;
+    display: flex;
+    gap: 16px;
+    position: relative;
+    top: 4px;
+    
+  }
+  .conv-block {
+    width: 100%;
+  
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: #708690 #111;
+  }
+  
+  .dashboard-conversation,
+  .dashboard-chats,
+  .noChatSelected {
+    flex: 1;
+    width: 100%;
+    border-radius: 0px;
+    box-shadow: none;
+  }
+  
+  .dashboard-logo {
+    display: none;
+  }
+  
+  
+  .dashboard-title-block {
+    font-size: 22px;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+  }
+  
+  .searchBox {
+    height: 36px;
+  }
+  
+  .searchIcon {
+    width: 36px;
+    height: 36px;
+  }
 }

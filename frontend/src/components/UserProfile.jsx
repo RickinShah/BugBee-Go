@@ -8,9 +8,11 @@ import useNavigation from "../utils/navigate.jsx";
 import {
     FaHome,
     FaEnvelope,
+    FaSearch,
     FaUsers,
     FaComments,
     FaVideo,
+    FaBell,
     FaCog,
     FaSignOutAlt,
     FaPlus,
@@ -140,10 +142,11 @@ const UserProfile = () => {
                         ].map((item, index) => (
                             <div
                                 key={index}
-                                className={`flex items-center h-12 rounded-2xl px-4 transition-all duration-300 cursor-pointer ${item.selected
-                                    ? "bg-[#9b9b9b6b] text-white"
-                                    : "text-gray-400 hover:bg-[#9b9b9b6b] hover:text-white"
-                                    }`}
+                                className={`flex items-center h-12 rounded-2xl px-4 transition-all duration-300 cursor-pointer ${
+                                    item.selected
+                                        ? "bg-[#9b9b9b6b] text-white"
+                                        : "text-gray-400 hover:bg-[#9b9b9b6b] hover:text-white"
+                                }`}
                             >
                                 {item.icon}
                                 <button
@@ -176,41 +179,24 @@ const UserProfile = () => {
                 </div>
             </div>
 
-            <div className="mylogo cursor-pointer">
-                <img
-                    src="../src/assets/logo.png"
-                    alt="home"
-                    width="100%"
-                    height="100%"
-                    onClick={() => goTo("feed")}
-                />
-            </div>
-
             {/* Main Content - Instagram Inspired */}
-            <div className="my-5 lg:my-0 w-full md:w-3/5 md:ml-[30%] md:mr-[10%] flex flex-col">
-                <div className="h-full w-full overflow-auto scrollbar-hide   p-8">
+            <div className="w-full md:w-3/5 md:ml-[30%] md:mr-[10%] flex flex-col">
+                <div className="h-full w-full overflow-auto scrollbar-hide p-2 md:p-8">
                     {/* Profile Info Section */}
-                    <div className="bg-[#1a072cbf] mb-0.5 p-6 rounded-lg">
+                    <div className="bg-[#1a072cbf] mb-0.5 p-4 md:p-6 rounded-lg">
                         {/* Profile Section */}
                         <div className="flex flex-row items-start md:items-center">
                             {/* Profile Picture */}
-                            <div className="flex w-24 h-24 md:w-40 md:h-40 rounded-full border-2 border-gray-300 overflow-hidden flex-shrink-0">
+                            <div className="flex w-20 h-20 md:w-40 md:h-40 rounded-full border-2 border-gray-300 overflow-hidden flex-shrink-0">
                                 <img
                                     src={getMediaPath(fetchedUser.profile_path)}
                                     alt="Profile"
                                     className="h-full w-full object-cover"
                                 />
                             </div>
-                            {/* <div className="md:hidden w-24 h-24 md:w-40 md:h-40 rounded-full border-2 border-gray-300 overflow-hidden flex-shrink-0 mb-6 md:mb-0 m-auto">
-                                <img
-                                    src={getMediaPath(fetchedUser.profile_path)}
-                                    alt="Profile"
-                                    className="h-full w-full object-cover"
-                                />
-                            </div> */}
 
-                            <div className="ml-6 mt-2 md:mt-0 md:ml-10 flex flex-col">
-                                <h1 className="text-2xl md:text-3xl font-semibold mb-0">
+                            <div className="ml-4 md:ml-10 flex flex-col">
+                                <h1 className="text-xl md:text-3xl font-semibold mb-0">
                                     {fetchedUser.name}
                                 </h1>
                                 <p className="text-gray-400 mb-2">
@@ -223,13 +209,13 @@ const UserProfile = () => {
                         </div>
 
                         <div>
-                            <p className="flex mt-2 md:hidden text-white text-sm md:text-base mb-2 max-w-lg">
+                            <p className="flex mt-2 md:hidden text-white text-sm mb-2">
                                 {fetchedUser.bio || "No bio yet."}
                             </p>
                         </div>
                         {/* Stats Section */}
                         <div
-                            className="border border-gray-700 py-3 mt-4 md:mt-4 rounded-lg"
+                            className="border border-gray-700 py-3 mt-4 rounded-lg"
                             style={{
                                 boxShadow:
                                     "inset 0 4px 12px rgba(255, 255, 255, 0.12), inset 0 -4px 12px rgba(255, 255, 255, 0.12)",
@@ -247,8 +233,7 @@ const UserProfile = () => {
                     </div>
 
                     {/* Posts Grid */}
-
-                    {userPosts && (<div className="grid grid-cols-3 gap-1 md:gap-1 bg-[#1a072cbf]  p-1.5 md:p-1.5 rounded-lg">
+                    <div className="grid grid-cols-3 gap-0.5 md:gap-1 bg-[#1a072cbf] p-1 md:p-1.5 rounded-lg">
                         {userPosts &&
                             userPosts.map((post, index) => (
                                 <button
@@ -303,10 +288,10 @@ const UserProfile = () => {
                                 </button>
                             ))}
                         {userPosts && userPosts.length === 0 && (
-                            <div className="col-span-3 py-20 flex flex-col items-center justify-center text-center">
+                            <div className="col-span-3 py-12 md:py-20 flex flex-col items-center justify-center text-center">
                                 <svg
                                     xmlns="http://www.w3.org/2000/svg"
-                                    className="h-16 w-16 text-gray-500 mb-4"
+                                    className="h-12 w-12 md:h-16 md:w-16 text-gray-500 mb-4"
                                     fill="none"
                                     viewBox="0 0 24 24"
                                     stroke="currentColor"
@@ -318,13 +303,12 @@ const UserProfile = () => {
                                         d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
                                     />
                                 </svg>
-                                <p className="text-gray-400 text-xl">
+                                <p className="text-gray-400 text-lg md:text-xl">
                                     No posts yet
                                 </p>
                             </div>
                         )}
                     </div>
-                    )}
                 </div>
             </div>
             <div className="md:hidden fixed bottom-0 left-0 right-0 bg-[#242380]/95 p-2 flex justify-around items-center shadow-lg">
@@ -336,7 +320,7 @@ const UserProfile = () => {
                         },
                     },
                     {
-                        icon: <FaComments className="w-7 h-7" />,
+                        icon: <FaEnvelope className="w-7 h-7" />,
                         action: () => {
                             goTo("chat");
                         },
@@ -350,7 +334,7 @@ const UserProfile = () => {
                         action: () => goTo("communities"),
                     },
                     {
-                        icon: <FaPlus className="w-7 h-7" />,
+                        icon: <FaPlus className="w-7 h-7 text-[#e81bbb]" />,
                         action: () => goTo("postUpload"),
                     },
                     {

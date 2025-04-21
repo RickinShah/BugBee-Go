@@ -42,15 +42,23 @@ body {
 }
 
 /* Header */
+/* Header - Fix for settings icon */
 .dashboard-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 20px 30px;
-    z-index: 10; /* Increased z-index to ensure it's above other elements */
+    z-index: 10;
     flex-wrap: wrap;
-    position: relative; /* Added to ensure z-index works properly */
+    position: relative;
     top: 10px;
+    width: 100%;
+}
+
+.header-right {
+    display: flex;
+    gap: 15px;
+    z-index: 15;
 }
 
 .header-left {
@@ -65,7 +73,7 @@ body {
 .vc-logo {
     position: relative;
     left: -65px;
-    top: -20px;
+    top: -28px;
     width: 100px;
     height: 100px;
     cursor: pointer;
@@ -92,6 +100,7 @@ body {
 .icon-button,
 .back-button {
     background: rgba(255, 255, 255, 0.1);
+    position: static;
     border: none;
     color: white;
     width: 40px;
@@ -103,7 +112,7 @@ body {
     cursor: pointer;
     transition: all 0.3s ease;
     position: relative; /* Added to ensure hover effects work */
-    z-index: 20; /* Higher z-index to ensure it's clickable */
+    z-index: 10; /* Higher z-index to ensure it's clickable */
 }
 
 /* Made the hover effect more prominent */
@@ -310,24 +319,25 @@ body {
 }
 
 /* Responsive Queries */
-@media (max-width: 1024px) {
-    .headline {
-        font-size: 36px;
-        margin-bottom: 30px;
-    }
-
-    .glass-container {
-        padding: 30px;
-    }
-}
 
 @media (max-width: 768px) {
+    .vc-logo {
+        display: none;
+    }
     .dashboard-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 10px;
+        flex-direction: row; /* Keep as row to maintain layout */
         padding: 15px;
     }
+    
+    .header-left {
+        flex: 1;
+    }
+    
+    .header-right {
+        position: static; /* Keep in normal flow */
+        margin-top: 0;
+    }
+
 
     .header-left h2 {
         font-size: 16px;
@@ -408,8 +418,19 @@ body {
         font-size: 15px;
         padding: 14px;
     }
+    .vc {
+        position: relative;
+        left: -20px;
+    }
 }
 @media (max-width: 480px) {
+    .vc {
+        position: relative;
+        left: -20px;
+    }
+    .vc-logo {
+        display: none;
+    }
     .headline {
         font-size: 22px;
     }

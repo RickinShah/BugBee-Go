@@ -97,6 +97,7 @@ func (app *application) joinCommunityHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
+	go app.models.Communities.CacheJoinedCommunities(user.ID, community.Handle)
 	if err := tx.Commit(); err != nil {
 		app.serverErrorResponse(w, r, err)
 		return

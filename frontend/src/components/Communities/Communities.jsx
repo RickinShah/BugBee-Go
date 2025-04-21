@@ -11,8 +11,13 @@ import toggleChannelsButton from "../../assets/channels.png";
 import toggleMembersButton from "../../assets/members.png";
 import closeButton from "../../assets/close.png";
 import socket from "../../socket.js";
+import EmojiPicker from "emoji-picker-react";
+
 
 const Communities = () => {
+    const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+    const emojiPickerRef = useRef();
+    const inputRef = useRef();
     const [isSearching, setIsSearching] = useState(false);
     const [searchResults, setSearchResults] = useState([]);
     const [searchQuery, setSearchQuery] = useState("");
@@ -46,6 +51,23 @@ const Communities = () => {
             minute: "2-digit",
             hour12: true,
         });
+    };
+
+
+
+    // Toggle emoji picker visibility
+    const toggleEmojiPicker = () => {
+        setShowEmojiPicker(!showEmojiPicker);
+    };
+
+    // Handle emoji selection
+    const onEmojiClick = (emojiData) => {
+        setNewMessage(prevMessage => prevMessage + emojiData.emoji);
+
+        // Focus back on input after emoji selection
+        if (inputRef.current) {
+            inputRef.current.focus();
+        }
     };
 
     // Chat-related functions
@@ -336,6 +358,18 @@ const Communities = () => {
 
     useEffect(() => {
         fetchJoinedCommunities();
+    }, []);
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (emojiPickerRef.current && !emojiPickerRef.current.contains(event.target)) {
+                setShowEmojiPicker(false);
+            }
+        };
+
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
     }, []);
 
     return (
@@ -666,8 +700,9 @@ const Communities = () => {
 
                     {/* Chat Area */}
                     {isSelected && selectedChannelId ? (
-                        <div className="flex-1 flex flex-col bg-blue-950/50 rounded-xl p-4">
-                            <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-blue-700 scrollbar-track-blue-900/20 mb-4">
+                        <div className="flex-1 static overflow-y-auto flex flex-col bg-blue-950/50 rounded-xl  mb-0 p-2.5">
+
+                            <div className="flex-1 overflow-y-auto mb-2 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-blue-900 ">
                                 {messages.map((message, index) => (
                                     <div
                                         key={index}
@@ -693,18 +728,46 @@ const Communities = () => {
                                 <div ref={messagesEndRef} />
                             </div>
                             <div className="flex items-center gap-2">
-                                <input
-                                    type="text"
-                                    value={newMessage}
-                                    onChange={(e) =>
-                                        setNewMessage(e.target.value)
-                                    }
-                                    placeholder="Type a message..."
-                                    className="flex-1 h-12 bg-blue-900/40 rounded-lg text-white border border-blue-800/50 focus:outline-none focus:border-blue-600 px-4"
-                                    onKeyPress={(e) =>
-                                        e.key === "Enter" && sendMessage()
-                                    }
-                                />
+                                <div className="relative flex-1">
+                                    <input
+                                        ref={inputRef}
+                                        type="text"
+                                        value={newMessage}
+                                        onChange={(e) => setNewMessage(e.target.value)}
+                                        placeholder="Type a message..."
+                                        className="w-full h-12 bg-blue-900/40 rounded-lg text-white border border-blue-800/50 focus:outline-none focus:border-blue-600 px-4"
+                                        onKeyPress={(e) => e.key === "Enter" && sendMessage()}
+                                    />
+
+                                    {/* Emoji picker button and dropdown */}
+                                    <div className="absolute right-2 bottom-0 flex items-center h-full" ref={emojiPickerRef}>
+                                        <button
+                                            onClick={toggleEmojiPicker}
+                                            className="text-gray-300 hover:text-blue-400 transition-colors mr-2"
+                                        >
+                                            {/* Emoji icon */}
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm-3.707-8.707a1 1 0 01-1.414-1.414 4 4 0 015.656-5.656 1 1 0 111.414 1.414 2 2 0 00-2.828 2.828 1 1 0 01-1.414 1.414 4 4 0 01-1.414-1.414zM10 15a4 4 0 01-4-4c0-.552.448-1 1-1s1 .448 1 1a2 2 0 104 0c0-.552.448-1 1-1s1 .448 1 1a4 4 0 01-4 4z" clipRule="evenodd" />
+                                            </svg>
+                                        </button>
+
+                                        {showEmojiPicker && (
+                                            <div className="fixed bottom-16 left-0 right-0 md:absolute md:bottom-14 md:right-0 md:left-auto z-50">
+                                                <div className="flex justify-center md:justify-end">
+                                                    <EmojiPicker
+                                                        onEmojiClick={onEmojiClick}
+                                                        autoFocusSearch={false}
+                                                        theme="dark"
+                                                        width={window.innerWidth < 768 ? "90%" : "350px"}
+                                                        height="320px"
+                                                    />
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Send button */}
                                 <button
                                     onClick={sendMessage}
                                     className="h-12 w-12 flex items-center justify-center bg-blue-700 hover:bg-blue-600 rounded-lg transition-all duration-200"

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./videoCall.css";
 import useNavigation from "../../utils/navigate";
@@ -14,10 +14,7 @@ const VideoCall = () => {
     );
 
     const handleStartCall = () => {
-        // const config = config;
-        // Logic to start a call
         console.log("Starting new meeting");
-        // You would typically redirect to the actual call page or change state
         window.location.href = `https://${vcHost}/join?room=${generateRandomRoom()}&roomPassword=0&name=${user.username}&avatar=${user.profile_path}&audio=0&video=0&screen=0&hide=0&notify=1&duration=unlimited`;
     };
 
@@ -37,19 +34,16 @@ const VideoCall = () => {
     const handleJoinMeeting = () => {
         if (meetingCode.trim()) {
             console.log(`Joining meeting with code: ${meetingCode}`);
-            // You would typically redirect to the actual call page or change state
             window.location.href = `https://${vcHost}/join?room=${meetingCode}&roomPassword=0&name=${user.username}&avatar=0&audio=0&video=0&screen=0&hide=0&notify=0&duration=unlimited`;
         }
     };
 
     const handleBackToDashboard = () => {
-        // Navigate back to the dashboard
         try {
             goTo("feed");
             console.log("Navigating back to dashboard");
         } catch (error) {
             console.error("Navigation error:", error);
-            // Fallback navigation if goTo fails
             window.location.href = "/feed";
         }
     };
@@ -94,9 +88,7 @@ const VideoCall = () => {
 
                     <h2 className="vc">Video Conference</h2>
                 </div>
-                <div
-                    className={`header-right ${window.innerWidth >= 768 ? "" : "fixed right-3 mt-0"}`}
-                >
+                <div className="header-right">
                     <button
                         className="icon-button"
                         onClick={() => goTo("settings")}

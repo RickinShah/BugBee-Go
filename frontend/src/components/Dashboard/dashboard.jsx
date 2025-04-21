@@ -6,7 +6,7 @@ import LogoutIcon from "@mui/icons-material/Logout";
 import HomeIcon from "@mui/icons-material/Home";
 import ExploreIcon from "@mui/icons-material/Explore";
 import NotificationsIcon from "@mui/icons-material/Notifications";
-import VideoCallIcon from "@mui/icons-material/VideoCall"; // Changed from BookmarkIcon
+import VideoCallIcon from "@mui/icons-material/VideoCall";
 import Conversation from "../Conversation/coversation";
 import Chats from "../Chats/chats";
 import ForumIcon from "@mui/icons-material/Forum";
@@ -22,6 +22,8 @@ import {
     FaEnvelope,
     FaVideo,
     FaSignOutAlt,
+    FaCog,
+    FaPlus,
 } from "react-icons/fa";
 
 const Dashboard = ({ setLoginFunc }) => {
@@ -34,6 +36,8 @@ const Dashboard = ({ setLoginFunc }) => {
     const [unreadMessages, setUnreadMessages] = useState({});
     const [userProfile, setUserProfile] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [isMobileView, setIsMobileView] = useState(false);
+    const [showChatOnMobile, setShowChatOnMobile] = useState(false);
     const ref = useRef();
     const navigate = useNavigate();
 
@@ -51,6 +55,21 @@ const Dashboard = ({ setLoginFunc }) => {
         }
     }, []);
 
+    useEffect(() => {
+        const handleResize = () => {
+            setIsMobileView(window.innerWidth <= 768);
+        };
+
+        // Set initial value
+        handleResize();
+
+        // Add event listener
+        window.addEventListener('resize', handleResize);
+
+        // Clean up
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
     const handleOpenAiChat = () => {
         // Navigate to AI chat route in a new tab
         window.open("/ai-chat", "_blank");
@@ -64,7 +83,6 @@ const Dashboard = ({ setLoginFunc }) => {
         goTo("communities");
     };
 
-    // Updated navigation handler for video call with correct route
     const handleOpenVideoCall = () => {
         goTo("vc");
     };
@@ -74,12 +92,21 @@ const Dashboard = ({ setLoginFunc }) => {
         setSelectedId(id);
         socket.emit("joinConversation", id);
 
+        // On mobile, show the chat view
+        if (isMobileView) {
+            setShowChatOnMobile(true);
+        }
+
         // Mark as read when selecting a conversation
         if (unreadMessages[id]) {
             const updatedUnread = { ...unreadMessages };
             delete updatedUnread[id];
             setUnreadMessages(updatedUnread);
         }
+    };
+
+    const handleBackToConversations = () => {
+        setShowChatOnMobile(false);
     };
 
     const handleClickOutside = (event) => {
@@ -91,12 +118,10 @@ const Dashboard = ({ setLoginFunc }) => {
 
     const fetchConversation = async () => {
         try {
-            console.log(appHost);
             const response = await axios.get(
                 `https://${appHost}/chat/api/conversation/get-conversation`,
                 { withCredentials: true },
             );
-            console.log(response);
             setConversation(response.data.conversations);
 
             // Fetch last message for each conversation
@@ -188,7 +213,6 @@ const Dashboard = ({ setLoginFunc }) => {
                 "include",
                 false,
                 (response) => {
-                    // const ownId = userProfile?.username;
                     const filteredUsers = response.users.filter((user) => {
                         user.profile_path = getMediaPath(user.profile_path);
                         // Skip filtering if no conversations yet
@@ -264,13 +288,9 @@ const Dashboard = ({ setLoginFunc }) => {
                 { withCredentials: true },
             );
             localStorage.clear();
-            // localStorage.removeItem("userInfo");
-            // localStorage.removeItem("isLogin");
-            // setLoginFunc(false);
             goTo("login");
         } catch (err) {
             console.log(err);
-            // Even if there's an error, clear local storage and redirect
             localStorage.removeItem("userInfo");
             localStorage.removeItem("isLogin");
             setLoginFunc(false);
@@ -279,18 +299,14 @@ const Dashboard = ({ setLoginFunc }) => {
     };
 
     const handleCreateConv = async (id) => {
-        // Get the current user's ID
         const ownId = userProfile?.username;
 
-        // Check if conversation already exists with this user
         let existingConversation = null;
 
         for (const conv of conversation) {
-            // Check if this conversation contains the searched user
             const hasSearchedUser = conv.members.some(
                 (member) => member.username === id,
             );
-            // Check if this conversation also contains the current user
             const hasCurrentUser = conv.members.some(
                 (member) => member.username === ownId,
             );
@@ -302,7 +318,6 @@ const Dashboard = ({ setLoginFunc }) => {
         }
 
         if (existingConversation) {
-            // Select the existing conversation
             const friendItem = existingConversation.members.filter(
                 (member) => member.username !== ownId,
             );
@@ -310,17 +325,14 @@ const Dashboard = ({ setLoginFunc }) => {
             setQueryParam("");
             setSearchedData([]);
         } else {
-            // Create new conversation
             try {
                 const response = await axios.post(
                     `https://${appHost}/chat/api/conversation/add-conversation`,
                     { recieverId: id },
                     { withCredentials: true },
                 );
-                // Wait for conversation to be created and fetch updated list
                 await fetchConversation();
 
-                // Find the new conversation to select it
                 const newConv = response.data.savedConversation;
                 if (newConv) {
                     const friendItem = newConv.members.filter(
@@ -343,7 +355,6 @@ const Dashboard = ({ setLoginFunc }) => {
         const searchExistingConversations = () => {
             const ownId = userProfile?._id;
 
-            // Search existing conversations first
             for (const conv of conversation) {
                 const friend = conv.members.find(
                     (member) => member._id !== ownId,
@@ -356,16 +367,14 @@ const Dashboard = ({ setLoginFunc }) => {
                         .includes(queryParam.toLowerCase()) ||
                         friend.mobileNumber.includes(queryParam))
                 ) {
-                    // Found matching user in existing conversations
                     handleSelectedUser(conv._id, [friend]);
                     setQueryParam("");
                     return true;
                 }
             }
-            return false; // No match found
+            return false;
         };
 
-        // If we didn't find a match in existing conversations, do API search
         if (!searchExistingConversations()) {
             fetchUserBySearch();
         }
@@ -380,145 +389,145 @@ const Dashboard = ({ setLoginFunc }) => {
                 <img src={logo} alt="Logo" width="100%" height="100%" />
             </div>
             <div className="dashboard-card cursor-default">
-                {/* New Sidebar */}
-                <div className="dashboard-sidebar">
-                    <div
-                        className="sidebar-profile"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/profile/${userProfile.username}`);
-                        }}
-                    >
-                        {userProfile && (
-                            <img
-                                src={userProfile.profile_path}
-                                alt="My Profile"
-                            />
-                        )}
-                    </div>
-                    <div className="sidebar-icons">
-                        <div className="sidebar-icon">
-                            <FaHome size={24} onClick={handleOpenFeed} />
-                        </div>
-                        <div className="sidebar-icon">
-                            <FaUsers
-                                size={24}
-                                onClick={handleOpenCommunities}
-                            />
-                        </div>
-                        <div className="sidebar-icon-selected">
-                            <FaEnvelope size={24} />
-                        </div>
-                        {/* Changed BookmarkIcon to VideoCallIcon with click handler */}
+                {!isMobileView && (
+                    <div className="dashboard-sidebar">
                         <div
-                            className="sidebar-icon"
-                            onClick={handleOpenVideoCall}
+                            className="sidebar-profile"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/profile/${userProfile.username}`);
+                            }}
                         >
-                            <FaVideo size={24} />
+                            {userProfile && (
+                                <img
+                                    src={userProfile.profile_path}
+                                    alt="My Profile"
+                                />
+                            )}
                         </div>
-                    </div>
-                    <div className="sidebar-logout" onClick={handleLogout}>
-                        <FaSignOutAlt size={28} />
-                    </div>
-                </div>
-
-                {/* Conversation List */}
-                <div className="dashboard-conversation">
-                    <div className="ai-icon" onClick={handleOpenAiChat}>
-                        <div className="ai-circle"></div>
-                    </div>
-                    <div className="dashboard-conv-block">
-                        <div className="dashboard-title-block">
-                            <div className="bold">Messages</div>
-                        </div>
-                        <div className="searchBoxDiv">
-                            <input
-                                value={queryParam}
-                                onChange={(event) => {
-                                    setQueryParam(event.target.value);
-                                }}
-                                onKeyPress={(e) => {
-                                    if (e.key === "Enter") {
-                                        handleSearchSubmit();
-                                    }
-                                }}
-                                type="text"
-                                placeholder="Search"
-                                className="searchBox"
-                            />
-                            <button
-                                type="submit"
-                                className="searchIcon"
-                                onClick={handleSearchSubmit}
+                        <div className="sidebar-icons">
+                            <div className="sidebar-icon">
+                                <FaHome size={24} onClick={handleOpenFeed} />
+                            </div>
+                            <div className="sidebar-icon">
+                                <FaUsers
+                                    size={24}
+                                    onClick={handleOpenCommunities}
+                                />
+                            </div>
+                            <div className="sidebar-icon-selected">
+                                <FaEnvelope size={24} />
+                            </div>
+                            <div
+                                className="sidebar-icon"
+                                onClick={handleOpenVideoCall}
                             >
-                                <SearchIcon />
-                            </button>
+                                <FaVideo size={24} />
+                            </div>
+                        </div>
+                        <div className="sidebar-logout" onClick={handleLogout}>
+                            <FaSignOutAlt size={28} />
+                        </div>
+                    </div>
+                )}
 
-                            {searchData.length ? (
-                                <div ref={ref} className="searched-box">
-                                    {searchData.map((item, index) => {
-                                        return (
-                                            <div
-                                                className="search-item"
-                                                key={index}
-                                                onClick={() =>
-                                                    handleCreateConv(
-                                                        item.username,
-                                                    )
-                                                }
-                                            >
-                                                <img
-                                                    className="search-item-profile"
-                                                    src={item.profile_path}
-                                                    alt="profile"
-                                                />
-                                                <div>{item.name}</div>
-                                                <div className="search-item-mobile">
-                                                    {item.username}
+                {(!isMobileView || (isMobileView && !showChatOnMobile)) && (
+                    <div className="dashboard-conversation">
+                        <div className="ai-icon" onClick={handleOpenAiChat}>
+                            <div className="ai-circle"></div>
+                        </div>
+                        <div className="dashboard-conv-block">
+                            <div className="dashboard-title-block">
+                                <div className="bold">Messages</div>
+                            </div>
+                            <div className="searchBoxDiv">
+                                <input
+                                    value={queryParam}
+                                    onChange={(event) => {
+                                        setQueryParam(event.target.value);
+                                    }}
+                                    onKeyPress={(e) => {
+                                        if (e.key === "Enter") {
+                                            handleSearchSubmit();
+                                        }
+                                    }}
+                                    type="text"
+                                    placeholder="Search"
+                                    className="searchBox"
+                                />
+                                <button
+                                    type="submit"
+                                    className="searchIcon"
+                                    onClick={handleSearchSubmit}
+                                >
+                                    <SearchIcon />
+                                </button>
+
+                                {searchData.length ? (
+                                    <div ref={ref} className="searched-box">
+                                        {searchData.map((item, index) => {
+                                            return (
+                                                <div
+                                                    className="search-item"
+                                                    key={index}
+                                                    onClick={() =>
+                                                        handleCreateConv(
+                                                            item.username,
+                                                        )
+                                                    }
+                                                >
+                                                    <img
+                                                        className="search-item-profile"
+                                                        src={item.profile_path}
+                                                        alt="profile"
+                                                    />
+                                                    <div>{item.name}</div>
+                                                    <div className="search-item-mobile">
+                                                        {item.username}
+                                                    </div>
                                                 </div>
+                                            );
+                                        })}
+                                    </div>
+                                ) : queryParam.length !== 0 &&
+                                    searchData.length === 0 ? (
+                                    <div ref={ref} className="searched-box">
+                                        <div className="search-item">
+                                            <div>
+                                                {loading
+                                                    ? "Loading..."
+                                                    : "No Data Found"}
                                             </div>
-                                        );
-                                    })}
-                                </div>
-                            ) : queryParam.length !== 0 &&
-                                searchData.length === 0 ? (
-                                <div ref={ref} className="searched-box">
-                                    <div className="search-item">
-                                        <div>
-                                            {loading
-                                                ? "Loading..."
-                                                : "No Data Found"}
                                         </div>
                                     </div>
-                                </div>
-                            ) : null}
-                        </div>
-                        <div className="conv-block">
-                            {conversation.map((item, index) => {
-                                return (
-                                    <Conversation
-                                        key={index}
-                                        active={item._id === selectedId}
-                                        handleSelectedUser={handleSelectedUser}
-                                        handleDeleteConversation={
-                                            handleDeleteConversation
-                                        }
-                                        item={item}
-                                        id={item._id}
-                                        members={item.members}
-                                        lastMessage={
-                                            conversationMessages[item._id]
-                                        }
-                                        unread={unreadMessages[item._id]}
-                                    />
-                                );
-                            })}
+                                ) : null}
+                            </div>
+                            <div className="conv-block">
+                                {conversation.map((item, index) => {
+                                    return (
+                                        <Conversation
+                                            key={index}
+                                            active={item._id === selectedId}
+                                            handleSelectedUser={handleSelectedUser}
+                                            handleDeleteConversation={
+                                                handleDeleteConversation
+                                            }
+                                            item={item}
+                                            id={item._id}
+                                            members={item.members}
+                                            lastMessage={
+                                                conversationMessages[item._id]
+                                            }
+                                            unread={unreadMessages[item._id]}
+                                        />
+                                    );
+                                })}
+                            </div>
                         </div>
                     </div>
-                </div>
+                )}
 
-                {/* Chat Area or Empty State */}
-                {selectedUserDetails ? (
+                {selectedUserDetails && (!isMobileView || (isMobileView && showChatOnMobile)) ? (
                     <Chats
                         selectedId={selectedId}
                         selectedUserDetails={selectedUserDetails}
@@ -528,14 +537,67 @@ const Dashboard = ({ setLoginFunc }) => {
                                 [selectedId]: message,
                             }));
                         }}
+                        isMobileView={isMobileView}
+                        onBackClick={handleBackToConversations}
                     />
                 ) : (
-                    <div className="noChatSelected">
-                        <ForumIcon sx={{ fontSize: "72px" }} />
-                        <div>No Chats Selected</div>
-                    </div>
+                    !isMobileView && (
+                        <div className="noChatSelected">
+                            <ForumIcon sx={{ fontSize: "72px" }} />
+                            <div>No Chats Selected</div>
+                        </div>
+                    )
                 )}
             </div>
+            {/* Mobile Navigation */}
+            <div className={`md:hidden fixed bottom-0 left-0 right-0 bg-[#242380]/95 p-2 flex justify-around items-center shadow-lg ${showChatOnMobile ? 'hidden' : ''}`}>
+    {[
+        {
+            icon: <FaHome className="w-7 h-7" />,
+            action: () => {
+                goTo("feed");
+            },
+        },
+        {
+            icon: <FaEnvelope className="w-7 h-7" />,
+            action: () => {
+                goTo("chat");
+            },
+        },
+        {
+            icon: <FaVideo className="w-7 h-7" />,
+            action: () => goTo("vc"),
+        },
+        {
+            icon: <FaUsers className="w-7 h-7" />,
+            action: () => goTo("communities"),
+        },
+        {
+            icon: <FaPlus className="w-7 h-7 text-[#e81bbb]" />,
+            action: () => goTo("postUpload"),
+        }
+        ,
+        {
+            icon: <FaCog className="w-6 h-6" />,
+            action: () => goTo("settings"),
+        },
+    ].map((item, index) => (
+        <button
+            key={index}
+            onClick={item.action}
+            className="p-2 hover:text-gray-300 transition-colors"
+        >
+            {item.icon}
+        </button>
+    ))}
+</div>
+
+
+
+
+
+
+
         </div>
     );
 };

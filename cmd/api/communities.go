@@ -315,7 +315,7 @@ func (app *application) getCommunitiesHandler(w http.ResponseWriter, r *http.Req
 
 	qs := r.URL.Query()
 	input.Sort = app.readString(qs, "sort", "-member_count")
-	input.PageSize = app.readInt(qs, "page_size", 5, v)
+	input.PageSize = app.readInt(qs, "page_size", 10, v)
 	input.LastID = int64(app.readInt(qs, "last_id", 0, v))
 
 	input.Filters.SortSafeList = []string{"community_pid", "member_count", "-member_count", "-community_pid"}
@@ -383,7 +383,7 @@ func (app *application) getCommunityHandler(w http.ResponseWriter, r *http.Reque
 func (app *application) getJoinedCommunitiesHandler(w http.ResponseWriter, r *http.Request) {
 	user := app.contextGetUser(r)
 
-	communities, err := app.models.CommunityMembers.GetAllCommunities(user.ID)
+	communities, err := app.models.Communities.GetAllCommunities(user.ID)
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):

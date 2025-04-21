@@ -3,6 +3,7 @@ import "./chats.css";
 import SendIcon from "@mui/icons-material/Send";
 import ImageIcon from "@mui/icons-material/Image";
 import EmojiEmotionsIcon from "@mui/icons-material/EmojiEmotions";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import socket from "../../socket";
@@ -53,6 +54,9 @@ const Chats = (props) => {
     const fileInputRef = useRef();
     const emojiPickerRef = useRef();
     const inputRef = useRef();
+
+    // Get mobile view props
+    const { isMobileView, onBackClick } = props;
 
     const fetchMessages = async () => {
         try {
@@ -259,6 +263,20 @@ const Chats = (props) => {
     return (
         <div className="dashboard-chats">
             <div className="chatNameBlock">
+                {isMobileView && (
+                    <div className="backer" onClick={onBackClick}>
+                        <ArrowBackIcon sx={{
+
+                            fontSize: "24px",
+                            color: "#fff",
+                            marginRight: "1px",
+                            background: "transparent"
+
+                        }} />
+
+
+                    </div>
+                )}
                 <div className="chat-profile-img">
                     <img
                         className="dp"
@@ -350,8 +368,8 @@ const Chats = (props) => {
                         <EmojiEmotionsIcon
                             onClick={toggleEmojiPicker}
                             sx={{
-                                fontSize: "32px",
-                                margin: "10px",
+                                fontSize: isMobileView ? "28px" : "32px",
+                                margin: isMobileView ? "8px" : "10px",
                                 cursor: "pointer",
                                 color: "#098bc8",
                             }}
@@ -376,8 +394,8 @@ const Chats = (props) => {
                     <ImageIcon
                         onClick={handleImageClick}
                         sx={{
-                            fontSize: "32px",
-                            margin: "10px",
+                            fontSize: isMobileView ? "28px" : "32px",
+                            margin: isMobileView ? "8px" : "10px",
                             cursor: "pointer",
                             color: "#098bc8",
                         }}
@@ -385,8 +403,8 @@ const Chats = (props) => {
                     <SendIcon
                         onClick={handleSendMessage}
                         sx={{
-                            fontSize: "32px",
-                            margin: "10px",
+                            fontSize: isMobileView ? "28px" : "32px",
+                            margin: isMobileView ? "8px" : "10px",
                             cursor: "pointer",
                             color: "#098bc8",
                         }}

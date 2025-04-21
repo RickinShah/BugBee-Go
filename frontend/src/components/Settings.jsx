@@ -5,6 +5,7 @@ import { apiCall, getMediaPath } from "../utils/api";
 import { useState } from "react";
 import { handleFormChange } from "../utils/form";
 import { validationError } from "../utils/errors";
+import { FaSignOutAlt } from "react-icons/fa";
 
 const Settings = () => {
     const { goTo } = useNavigation();
@@ -203,6 +204,24 @@ const Settings = () => {
                     >
                         Delete Account
                     </button>
+                    <button
+                                            onClick={() => {
+                                                localStorage.clear();
+                                                apiCall(
+                                                    `/v1/users/logout`,
+                                                    "POST",
+                                                    null,
+                                                    {},
+                                                    "include",
+                                                    false,
+                                                    () => goTo("login"),
+                                                    null,
+                                                );
+                                            }}
+                                            className="bg-gradient-to-b from-[#ff599e] to-[#96003e] w-full h-11 rounded-xl font-semibold text-base hover:from-[#ff85b3] hover:to-[#b00052] transition-all duration-300 flex items-center justify-center shadow-md"
+                                        >
+                                            <FaSignOutAlt className="mr-2" /> Log Out
+                                        </button>
                 </div>
             </div>
         </div>

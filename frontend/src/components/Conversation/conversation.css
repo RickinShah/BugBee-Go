@@ -92,3 +92,29 @@
 .bold{
   font-weight: 700;
 }
+/* Add these at the end of conversation.css */
+
+@media (max-width: 768px) {
+  .conv {
+    height: 70px;
+    padding: 1px 10px;
+  }
+  
+  .conv-profile-img {
+    width: 45px;
+    height: 45px;
+  }
+  
+  .conv-profile-name {
+    font-size: 16px;
+  }
+  
+  .conv-last-message {
+    font-size: 13px;
+  }
+  
+  .delete-conversation {
+    width: 25px;
+    height: 25px;
+  }
+}

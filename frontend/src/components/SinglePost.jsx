@@ -38,11 +38,7 @@ const SinglePost = () => {
     const [newComment, setNewComment] = useState("");
     const [commentCount, setCommentCount] = useState(0);
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-
-    const handleRemove = (id) => {
-        setPosts(prev => prev.filter(post => post.post_id !== id));
-        goTo("feed");
-    }
+    const isMobile = window.innerWidth < 768; // Check for mobile view
 
     const fetchCommunities = () => {
         try {
@@ -168,7 +164,10 @@ const SinglePost = () => {
 
     useEffect(() => {
         fetchPosts();
-        window.innerWidth >= 768 ? fetchComments() : null;
+        // Only fetch comments on non-mobile screens
+        if (!isMobile) {
+            fetchComments();
+        }
     }, []);
 
     return (
@@ -262,10 +261,11 @@ const SinglePost = () => {
                         ].map((item, index) => (
                             <div
                                 key={index}
-                                className={`flex items-center h-12 rounded-2xl px-4 transition-all duration-300 cursor-pointer ${item.selected
-                                    ? "bg-[#9b9b9b6b] text-white"
-                                    : "text-gray-400 hover:bg-[#9b9b9b6b] hover:text-white"
-                                    }`}
+                                className={`flex items-center h-12 rounded-2xl px-4 transition-all duration-300 cursor-pointer ${
+                                    item.selected
+                                        ? "bg-[#9b9b9b6b] text-white"
+                                        : "text-gray-400 hover:bg-[#9b9b9b6b] hover:text-white"
+                                }`}
                             >
                                 {item.icon}
                                 <button
@@ -298,27 +298,18 @@ const SinglePost = () => {
                 </div>
             </div>
 
-            <div className="mylogo cursor-pointer">
-                <img
-                    src="../src/assets/logo.png"
-                    alt="home"
-                    width="100%"
-                    height="100%"
-                    onClick={() => goTo("feed")}
-                />
-            </div>
-            {/* Main Content Area - MODIFIED: Made postcard larger by adjusting width ratios */}
+            {/* Main Content Area */}
             <div className="w-full md:w-4/5 md:ml-[20%] flex flex-col">
                 {/* Scrollable Content */}
                 <div
                     ref={scrollRef}
-                    className="flex-1 px-4 md:px-6 pt-12 md:pt-16 pb-20 overflow-y-auto scrollbar-hide bg-[#15145d]"
+                    className="flex-1 px-4 md:px-6 pt-4 md:pt-16 pb-20 overflow-y-auto scrollbar-hide bg-[#15145d]"
                     style={{ maxHeight: "calc(100vh - 0.5rem)" }}
                 >
-                    {/* Updated layout with expanded post card */}
+                    {/* Layout with responsive adjustments */}
                     <div className="flex flex-col lg:flex-row items-start justify-center lg:space-x-6 pt-2 md:pt-5">
-                        {/* Post Card Column - MODIFIED: Increased width */}
-                        <div className="lg:w-3/4 w-full relative bottom-6">
+                        {/* Post Card Column - Full width on mobile */}
+                        <div className={`${isMobile ? 'w-full' : 'lg:w-3/4 w-full'} relative mb-4`}>
                             {posts.map((post) => (
                                 <Card
                                     key={post.post_id}
@@ -327,8 +318,7 @@ const SinglePost = () => {
                                     content={post.content}
                                     stats={post.stats}
                                     files={post.files}
-                                    onRemove={handleRemove}
-                                    className="w-full" // Added full width to card
+                                    className="w-full"
                                 />
                             ))}
                             {loading && (
@@ -337,9 +327,21 @@ const SinglePost = () => {
                                 </div>
                             )}
                         </div>
-
-                        {/* Comments Column - MODIFIED: Reduced width */}
-                        {window.innerWidth >= 640 && (
+                        
+                        {/* Only show settings icon on desktop */}
+                        {!isMobile && (
+                            <div className="h-20 relative bottom-20 left-72 flex justify-end items-center p-4">
+                                <button
+                                    className="p-2 bg-[#9b9b9b6b] rounded-full hover:bg-[#75ccf2c0] transition-all duration-300 ml-2 shadow-md"
+                                    onClick={() => goTo("settings")}
+                                >
+                                    <FaCog className="w-5 h-5 transition-all" />
+                                </button>
+                            </div>
+                        )}
+                        
+                        {/* Comments Column - Only show on desktop (lg screens) */}
+                        {!isMobile && (
                             <div className="w-full lg:w-1/4 bg-gradient-to-br from-80% from-[#4b207a70] to-[#8c02a170] rounded-lg shadow-md p-4 relative right-10 bottom-1">
                                 <h3 className="text-xl font-semibold mb-4 text-white border-b border-gray-700 pb-2">
                                     Comments ({commentCount})
@@ -462,9 +464,6 @@ const SinglePost = () => {
                                                     </p>
                                                     <div className="flex items-center space-x-4 mt-1 text-xs text-gray-400">
                                                         <span className="cursor-pointer hover:text-gray-300">
-                                                            Like
-                                                        </span>
-                                                        <span className="cursor-pointer hover:text-gray-300">
                                                             Reply
                                                         </span>
                                                     </div>
@@ -479,7 +478,7 @@ const SinglePost = () => {
                 </div>
             </div>
 
-            {/* Mobile Navigation */}
+            {/* Mobile Navigation - Unchanged as requested */}
             <div className="md:hidden fixed bottom-0 left-0 right-0 bg-[#242380]/95 p-2 flex justify-around items-center shadow-lg">
                 {[
                     {
@@ -489,7 +488,7 @@ const SinglePost = () => {
                         },
                     },
                     {
-                        icon: <FaComments className="w-7 h-7" />,
+                        icon: <FaEnvelope className="w-7 h-7" />,
                         action: () => {
                             goTo("chat");
                         },
@@ -503,7 +502,7 @@ const SinglePost = () => {
                         action: () => goTo("communities"),
                     },
                     {
-                        icon: <FaPlus className="w-7 h-7" />,
+                        icon: <FaPlus className="w-7 h-7 text-[#e81bbb] " />,
                         action: () => goTo("postUpload"),
                     },
                     {

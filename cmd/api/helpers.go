@@ -64,7 +64,8 @@ func (app *application) readIntParam(name string, r *http.Request) (int, error) 
 type envelope map[string]any
 
 func (app *application) writeJson(w http.ResponseWriter, status int, data envelope, headers http.Header) error {
-	js, err := json.MarshalIndent(data, "", "\t")
+	js, err := json.Marshal(data)
+	// js, err := json.MarshalIndent(data, "", "\t")
 
 	if err != nil {
 		return err

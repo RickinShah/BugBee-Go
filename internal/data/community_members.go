@@ -102,58 +102,6 @@ func (m CommunityMemberModel) Delete(userID, communityID int64) error {
 	return nil
 }
 
-func (m CommunityMemberModel) GetAllCommunities(userID int64) ([]*Community, error) {
-	query := `
-		SELECT c.community_pid, c.creator_id, c.handle, c.name, c.created_at, c.updated_at, c.profile_path, c.is_official, c.member_count, c.version
-		FROM community_members cm
-		LEFT JOIN communities c
-		ON cm.community_id = c.community_pid
-		WHERE cm.user_id = $1
-		ORDER BY handle ASC
-	`
-
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
-
-	rows, err := m.DB.QueryContext(ctx, query, userID)
-	if err != nil {
-		switch {
-		case errors.Is(err, sql.ErrNoRows):
-			return nil, ErrRecordNotFound
-		default:
-			return nil, err
-		}
-	}
-
-	var communities []*Community
-	for rows.Next() {
-		var community Community
-
-		if err := rows.Scan(
-			&community.ID,
-			&community.CreatorID,
-			&community.Handle,
-			&community.Name,
-			&community.CreatedAt,
-			&community.UpdatedAt,
-			&community.ProfilePath,
-			&community.IsOfficial,
-			&community.MemberCount,
-			&community.Version,
-		); err != nil {
-			return nil, err
-		}
-
-		communities = append(communities, &community)
-	}
-
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-
-	return communities, err
-}
-
 func (m CommunityMemberModel) InsertTx(tx *sql.Tx, cm *CommunityMember) error {
 	query := `
 		INSERT INTO community_members (user_id, community_id)

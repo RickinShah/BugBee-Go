@@ -1,12 +1,16 @@
 /** @type {import('tailwindcss').Config} */
+import textStroke from 'tailwindcss-text-stroke';
+import scrollbarHide from 'tailwind-scrollbar-hide';
+import scrollbar from 'tailwind-scrollbar';
 
-const defaultTheme = require("tailwindcss/defaultTheme");
+import defaultTheme from 'tailwindcss/defaultTheme';
+
 export default {
   content: ["./src/**/*.{js,jsx}"],
   theme: {
     extend: {
       fontFamily : {
-        body: ['Libre Baskerville']
+        body: ['Libre Baskerville', ...defaultTheme.fontFamily.sans]
       },
       animation: {
         
@@ -30,8 +34,9 @@ export default {
     },
   },
   plugins: [
-    require('tailwindcss-text-stroke'),
-    require('tailwind-scrollbar-hide'),
+    textStroke,
+    scrollbarHide,
+    scrollbar,
   ],
 }
 

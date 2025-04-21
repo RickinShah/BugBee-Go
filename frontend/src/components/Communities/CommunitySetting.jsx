@@ -285,7 +285,7 @@ const CommunitySetting = () => {
                 <div className="w-full flex justify-center mt-4 px-4">
                     <div className="w-full max-w-3xl grid grid-cols-3 gap-2">
                         {[
-                            { name: "Edit Community", onClick: handleOverview },
+                            { name: "Edit", onClick: handleOverview },
                             { name: "Roles", onClick: handleRole },
                             { name: "Bans", onClick: handleBan },
                         ].map((item, index) => (

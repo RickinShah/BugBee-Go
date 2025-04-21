@@ -41,7 +41,6 @@
   font-size: 22px;
   color: #fff;
   font-weight: 620;
- 
 }
 
 .chats-block {
@@ -173,7 +172,7 @@
   margin: 15px 0;
   text-align: center;
 }
-  
+
 .date-content {
   background-color: #5e6567;
   color: #ccc;
@@ -266,7 +265,6 @@
 }
 
 .emoji-picker-dropdown .EmojiPickerReact {
-  border: 2px solid #098bc8;
   --epr-bg-color: #111;
   --epr-category-label-bg-color: #222;
   --epr-hover-bg-color: #333;
@@ -280,10 +278,238 @@
 
 /* Animation for emoji picker */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .emoji-picker-dropdown {
   animation: fadeIn 0.2s ease-out;
+}
+
+/* Base mobile styles for all phones */
+@media (max-width: 768px) {
+  .dashboard-chats {
+    flex: 1;
+    border-radius: 0; /* Remove border radius */
+    box-shadow: none;
+    height: 100dvh; /* Use dynamic viewport height */
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 100; /* Ensure it's above other elements */
+    display: flex;
+    flex-direction: column;
+  }
+
+  .chatNameBlock {
+    height: 60px;
+    padding: 10px 15px;
+    display: flex;
+    align-items: center;
+    border-radius: 0; /* Remove border radius */
+    z-index: 101; /* Ensure header is above chats */
+  }
+
+  .chat-profile-img {
+    width: 40px;
+    height: 40px;
+    margin-right: 15px;
+  }
+
+  .chat-name {
+    font-size: 18px;
+  }
+
+  .chats-block {
+    flex-grow: 1;
+    padding: 15px;
+    padding-bottom: calc(
+      70px + env(safe-area-inset-bottom)
+    ); /* Account for message box and safe area */
+    height: auto; /* Let it grow naturally */
+    overflow-y: auto;
+    z-index: 100; /* Ensure chats are below header but above message box */
+  }
+
+  .message-box {
+    height: 60px;
+    padding: 8px 15px;
+    padding-bottom: calc(
+      8px + env(safe-area-inset-bottom)
+    ); /* Add safe area inset */
+    border-radius: 0; /* Remove border radius */
+    position: fixed; /* Use fixed to stay above keyboard */
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: #111;
+    z-index: 102; /* Ensure it's above chats */
+    display: flex;
+    align-items: center;
+  }
+
+  .messageBox {
+    height: 40px;
+    padding: 8px 15px;
+    font-size: 14px; /* Slightly smaller for better fit */
+  }
+
+  .message-image {
+    max-width: 200px;
+  }
+
+  .message-container {
+    max-width: 85%;
+  }
+
+  .message-actions {
+    gap: 5px;
+  }
+
+  .backer {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    left: -9px;
+    position: relative;
+  }
+
+  /* Emoji picker adjustments */
+  .emoji-picker-container {
+    position: static; /* Prevent positioning issues */
+  }
+
+  .emoji-picker-dropdown {
+    position: fixed; /* Use fixed to stay in viewport */
+    bottom: calc(
+      70px + env(safe-area-inset-bottom)
+    ); /* Position above message box */
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    max-width: 320px;
+    z-index: 1000; /* Above all elements */
+    right: auto;
+  }
+
+  .emoji-picker-dropdown .EmojiPickerReact {
+    --epr-emoji-size: 20px;
+    --epr-category-navigation-button-size: 20px;
+    height: 300px;
+    max-height: 50vh;
+  }
+
+  .emoji-picker-dropdown .EmojiPickerReact .epr-body {
+    height: auto;
+    max-height: 250px;
+  }
+
+  .emoji-picker-dropdown::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: -1;
+  }
+}
+
+/* Small phones (e.g., iPhone SE, Galaxy A03) - viewport width <= 360px */
+@media (max-width: 360px) {
+  .chatNameBlock {
+    height: 50px;
+    padding: 8px 10px;
+  }
+
+  .chat-profile-img {
+    width: 35px;
+    height: 35px;
+    margin-right: 10px;
+  }
+
+  .chat-name {
+    font-size: 16px;
+  }
+
+  .chats-block {
+    padding: 10px;
+    padding-bottom: calc(60px + env(safe-area-inset-bottom));
+  }
+
+  .message-box {
+    height: 50px;
+    padding: 6px 10px;
+    padding-bottom: calc(6px + env(safe-area-inset-bottom));
+  }
+
+  .messageBox {
+    height: 35px;
+    padding: 6px 10px;
+    font-size: 13px;
+  }
+
+  .message-image {
+    max-width: 150px;
+  }
+
+  .message-actions {
+    gap: 3px;
+  }
+
+  .emoji-picker-dropdown {
+    max-width: 280px;
+  }
+}
+
+/* Large phones (e.g., iPhone 14 Pro Max, Galaxy S23 Ultra) - viewport width >= 430px */
+@media (min-width: 430px) and (max-width: 768px) {
+  .chatNameBlock {
+    height: 65px;
+    padding: 12px 20px;
+  }
+
+  .chat-profile-img {
+    width: 45px;
+    height: 45px;
+    margin-right: 20px;
+  }
+
+  .chat-name {
+    font-size: 20px;
+  }
+
+  .chats-block {
+    padding: 20px;
+    padding-bottom: calc(80px + env(safe-area-inset-bottom));
+  }
+
+  .message-box {
+    height: 65px;
+    padding: 10px 20px;
+    padding-bottom: calc(10px + env(safe-area-inset-bottom));
+  }
+
+  .messageBox {
+    height: 45px;
+    padding: 10px 20px;
+    font-size: 15px;
+  }
+
+  .message-image {
+    max-width: 250px;
+  }
+
+  .emoji-picker-dropdown {
+    max-width: 360px;
+  }
 }

@@ -41,6 +41,10 @@ const Feed = () => {
     const [isFetching, setIsFetching] = useState(false);
     const scrollRef = useRef(null);
 
+    const handleRemove = (id) => {
+        setPosts(prev => prev.filter(post => post.post_id !== id))
+    }
+
     const joinCommunity = async (community) => {
         console.log(community.handle)
         await apiCall(
@@ -94,13 +98,6 @@ const Feed = () => {
         }
     };
 
-
-    const handleRemove = (id) => {
-        // console.log(post.id)
-        // console.log()
-        setPosts(prev => prev.filter(post => post.post_id !== id))
-    }
-
     const fetchPosts = async (lastId = null) => {
         if (loading || !hasMore || isFetching) return;
 
@@ -125,7 +122,7 @@ const Feed = () => {
                     setPosts((prevPosts) =>
                         lastId ? [...prevPosts, ...newPosts] : newPosts,
                     );
-                    setHasMore(newPosts.length === 5);
+                    setHasMore(newPosts.length >= 1);
                 },
                 (error) => {
                     console.error("Fetch posts error:", error);
@@ -489,38 +486,42 @@ const Feed = () => {
                 </div>
 
                 <div className="flex flex-col items-center justify-between h-[calc(100vh-5rem)] px-4 pb-6">
-                    <div className="my-4 w-full h-80 bg-[#1a072cbf] rounded-2xl shadow-md overflow-y-auto scrollbar-hide">
-
-                        <div className="flex justify-center sticky top-0 z-10 p-4 bg-[#1a072c] border-b border-0 border-gray-700">
+                    <div className="my-4 w-full h-80 bg-[#1a072cbf] rounded-2xl shadow-md overflow-hidden">
+                        {/* Fixed header with proper curves and alignment */}
+                        <div className="sticky top-0 flex items-center justify-center p-4 bg-[#1a072c] rounded-t-2xl border-b border-gray-700 w-full">
                             <h2 className="text-white text-sm font-semibold">
                                 Popular Communities
                             </h2>
                         </div>
-                        {communities?.map((community) => (
-                            <div onClick={() => joinCommunity(community)}
-                                key={community.community_id}
-                                className="flex items-center p-4 border-b border-gray-700 hover:bg-[#2a143dbf] transition-colors cursor-pointer"
-                            >
-                                <img
-                                    src={getMediaPath(community.profile_path)}
-                                    alt={`${community.name}'s profile`}
-                                    className="w-9 h-9 rounded-full mr-4 object-cover"
-                                    onError={(e) => {
-                                        e.target.src = getMediaPath(
-                                            "/bugbee/profiles/default.jpg",
-                                        );
-                                    }}
-                                />
-                                <div className="flex flex-col">
-                                    <span className="text-white font-semibold text-sm">
-                                        {community.name}
-                                    </span>
-                                    <span className="text-gray-400 text-xs">
-                                        @{community.community_handle}
-                                    </span>
+
+                        {/* Scrollable content area */}
+                        <div className="h-[calc(100%-56px)] overflow-y-auto scrollbar-hide">
+                            {communities?.map((community) => (
+                                <div onClick={() => joinCommunity(community)}
+                                    key={community.community_id}
+                                    className="flex items-center p-4 border-b border-gray-700 hover:bg-[#2a143dbf] transition-colors cursor-pointer"
+                                >
+                                    <img
+                                        src={getMediaPath(community.profile_path)}
+                                        alt={`${community.name}'s profile`}
+                                        className="w-9 h-9 rounded-full mr-4 object-cover"
+                                        onError={(e) => {
+                                            e.target.src = getMediaPath(
+                                                "/bugbee/profiles/default.jpg",
+                                            );
+                                        }}
+                                    />
+                                    <div className="flex flex-col">
+                                        <span className="text-white font-semibold text-sm">
+                                            {community.name}
+                                        </span>
+                                        <span className="text-gray-400 text-xs">
+                                            @{community.community_handle}
+                                        </span>
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
+                            ))}
+                        </div>
                     </div>
                     <button
                         className="bg-gradient-to-b from-[#7793f7] to-[#2f59f3] w-full h-11 rounded-xl font-semibold text-base hover:from-[#a2b8ff] hover:to-[#4a74ff]  transition-all duration-300 flex items-center justify-center shadow-md"
@@ -541,7 +542,7 @@ const Feed = () => {
                         },
                     },
                     {
-                        icon: <FaComments className="w-7 h-7" />,
+                        icon: <FaEnvelope className="w-7 h-7" />,
                         action: () => {
                             goTo("chat");
                         },
@@ -555,9 +556,10 @@ const Feed = () => {
                         action: () => goTo("communities"),
                     },
                     {
-                        icon: <FaPlus className="w-7 h-7" />,
+                        icon: <FaPlus className="w-7 h-7 text-[#e81bbb]" />,
                         action: () => goTo("postUpload"),
-                    },
+                    }
+                    ,
                     {
                         icon: <FaCog className="w-6 h-6" />,
                         action: () => goTo("settings"),

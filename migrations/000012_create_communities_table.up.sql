@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS communities (
     name citext NOT NULL CHECK (LENGTH(TRIM(name)) <= 50),
     description text CHECK (LENGTH(TRIM(description)) <= 300),
     is_official boolean NOT NULL DEFAULT FALSE,
+    member_count INT NOT NULL DEFAULT 0,
     profile_path text,
     created_at timestamp(0) with time zone NOT NULL DEFAULT now(),
     updated_at timestamp(0) with time zone NOT NULL DEFAULT now(),

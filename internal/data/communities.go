@@ -6,7 +6,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/RickinShah/BugBee/internal/validator"
@@ -53,9 +55,9 @@ func (c *Community) MarshalJSON() ([]byte, error) {
 		} else {
 			community["profile_path"] = c.ProfilePath
 		}
-		community["member_count"] = c.MemberCount
 	}
 	if c.marshalType == Frontend || c.marshalType == Full {
+		community["member_count"] = c.MemberCount
 		if c.CreatorID != nil {
 			community["creator_id"] = strconv.FormatInt(*c.CreatorID, 10)
 		}
@@ -119,6 +121,8 @@ func (m CommunityModel) Insert(tx *sql.Tx, community *Community) error {
 			return err
 		}
 	}
+	go m.CacheJoinedCommunities(*community.CreatorID, community.Handle)
+	go m.CacheSingleCommunity(community)
 	return nil
 }
 
@@ -326,6 +330,48 @@ func (m CommunityModel) GetByHandle(handle string) (*Community, error) {
 	return &community, err
 }
 
+func (m CommunityModel) Get(id int64) (*Community, error) {
+	query := `
+		SELECT community_pid, handle, name, description, created_at, updated_at, profile_path, is_official, member_count, version
+		FROM communities
+		WHERE community_pid = $1
+	`
+	community := Community{}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	args := []any{id}
+
+	err := m.DB.QueryRowContext(ctx, query, args...).Scan(
+		&community.ID,
+		&community.Handle,
+		&community.Name,
+		&community.Description,
+		&community.CreatedAt,
+		&community.UpdatedAt,
+		&community.ProfilePath,
+		&community.IsOfficial,
+		&community.MemberCount,
+		&community.Version,
+	)
+
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, ErrRecordNotFound
+		default:
+			return nil, err
+		}
+	}
+
+	go func(community Community) {
+		CacheSet(m.Redis, m.generateCacheKey(community.Handle), &community, CommunityCacheDuration)
+	}(community)
+
+	return &community, err
+}
+
 func (m CommunityModel) Delete(id int64) error {
 	query := `
 		DELETE FROM communities WHERE community_pid = $1
@@ -354,6 +400,11 @@ func (m CommunityModel) Delete(id int64) error {
 }
 
 func (m CommunityModel) GetAll(filters Filters) ([]*Community, error) {
+	cachedCommunities, err := m.GetPopularCommunities(filters)
+	if err == nil && cachedCommunities != nil {
+		return cachedCommunities, nil
+	}
+
 	query := fmt.Sprintf(`
 		SELECT community_pid, creator_id, handle, name, created_at, updated_at, profile_path, is_official, member_count, version
 		FROM communities
@@ -393,6 +444,7 @@ func (m CommunityModel) GetAll(filters Filters) ([]*Community, error) {
 		); err != nil {
 			return nil, err
 		}
+		go m.CacheCommunities(&community)
 		communities = append(communities, &community)
 	}
 
@@ -400,6 +452,231 @@ func (m CommunityModel) GetAll(filters Filters) ([]*Community, error) {
 		return nil, err
 	}
 	return communities, nil
+}
+
+func (m CommunityModel) CacheCommunities(community *Community) {
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
+
+	score := float64(community.MemberCount)
+
+	community.SetMarshalType(Minimal)
+	communityJSON, err := json.Marshal(community)
+	if err != nil {
+		logger.PrintError(err, map[string]string{"JSON": "Can't convert community to JSON"})
+	}
+
+	err = m.Redis.ZAdd(ctx, "communities:popular", &redis.Z{Score: score, Member: communityJSON}).Err()
+	if err != nil {
+		logger.PrintError(err, map[string]string{"Redis": "Can't insert post in cache"})
+	}
+}
+
+func (m CommunityModel) GetAllCommunities(userID int64) ([]*Community, error) {
+	cachedCommunities, err := m.GetCachedJoinedCommunities(userID)
+	if err == nil && cachedCommunities != nil {
+		return cachedCommunities, nil
+	}
+	query := `
+		SELECT c.community_pid, c.creator_id, c.handle, c.name, c.created_at, c.updated_at, c.profile_path, c.is_official, c.member_count, c.version
+		FROM community_members cm
+		LEFT JOIN communities c
+		ON cm.community_id = c.community_pid
+		WHERE cm.user_id = $1
+		ORDER BY handle ASC
+	`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	rows, err := m.DB.QueryContext(ctx, query, userID)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, ErrRecordNotFound
+		default:
+			return nil, err
+		}
+	}
+
+	var communities []*Community
+	for rows.Next() {
+		var community Community
+
+		if err := rows.Scan(
+			&community.ID,
+			&community.CreatorID,
+			&community.Handle,
+			&community.Name,
+			&community.CreatedAt,
+			&community.UpdatedAt,
+			&community.ProfilePath,
+			&community.IsOfficial,
+			&community.MemberCount,
+			&community.Version,
+		); err != nil {
+			return nil, err
+		}
+
+		go m.CacheJoinedCommunities(userID, community.Handle)
+		communities = append(communities, &community)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return communities, err
+}
+
+func (m CommunityModel) CacheJoinedCommunities(userID int64, handle string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
+
+	cacheKey := m.cacheKeyForJoinedCommunity(userID)
+	memberKey := m.generateCacheKey(handle)
+	if err := m.Redis.ZAdd(ctx, cacheKey, &redis.Z{Score: 0, Member: memberKey}).Err(); err != nil {
+		logger.PrintError(err, map[string]string{"joined_community": "unable to set cache"})
+		return err
+	}
+	return nil
+}
+
+func (m CommunityModel) GetCachedJoinedCommunities(userID int64) ([]*Community, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
+
+	cacheKey := m.cacheKeyForJoinedCommunity(userID)
+
+	results, err := m.Redis.ZRangeByLex(ctx, cacheKey, &redis.ZRangeBy{Min: "-", Max: "+"}).Result()
+	if err != nil {
+		logger.PrintError(err, map[string]string{"community": "get smembers redis"})
+		return nil, err
+	}
+	communities, err := m.communitiesGetPipeline(ctx, results)
+	if err != nil {
+		logger.PrintError(err, map[string]string{"community": "pipelining error redis"})
+		return nil, err
+	}
+	return communities, nil
+}
+
+func (m CommunityModel) GetPopularCommunities(filters Filters) ([]*Community, error) {
+	var communities []*Community
+
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
+
+	var max string
+	var min string
+
+	if filters.sortDirection() == "ASC" {
+		max = "-inf"
+		min = strconv.FormatInt(math.MaxInt, 10)
+	} else {
+		max = strconv.FormatInt(math.MaxInt, 10)
+		min = "-inf"
+	}
+
+	results, err := m.Redis.ZRevRangeByScore(ctx, "communities:popular", &redis.ZRangeBy{
+		Max:    max,
+		Min:    min,
+		Offset: 0,
+		Count:  int64(filters.PageSize),
+	}).Result()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, raw := range results {
+		var community Community
+		if err := json.Unmarshal([]byte(raw), &community); err == nil {
+			communities = append(communities, &community)
+		}
+	}
+
+	return communities, nil
+}
+
+func (m CommunityModel) CacheSingleCommunity(community *Community) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
+
+	cacheKey := m.generateCacheKey(community.Handle)
+
+	communityJSON, err := json.Marshal(community)
+	if err != nil {
+		logger.PrintError(err, map[string]string{"community": "marshal error"})
+		return err
+	}
+
+	if err := m.Redis.Set(ctx, cacheKey, communityJSON, CommunityCacheDuration).Err(); err != nil {
+		logger.PrintError(err, map[string]string{"community": "unable to set cache"})
+		return err
+	}
+
+	return nil
+}
+
+func (m CommunityModel) communitiesGetPipeline(ctx context.Context, results []string) ([]*Community, error) {
+	pipe := m.Redis.Pipeline()
+	cmds := make([]*redis.StringCmd, len(results))
+	var communities []*Community
+	var missingCommunityHandles []string
+
+	for i, key := range results {
+		cmds[i] = pipe.Get(ctx, key)
+	}
+
+	_, err := pipe.Exec(ctx)
+	if err != nil && err != redis.Nil {
+		return nil, err
+	}
+
+	for i, cmd := range cmds {
+		var community Community
+		communityJSON, err := cmd.Result()
+		if err != nil {
+			handle, err := m.extractCommunityHandle(results[i])
+			if err != nil {
+				return nil, err
+			}
+			missingCommunityHandles = append(missingCommunityHandles, handle)
+			continue
+		}
+		if err = json.Unmarshal([]byte(communityJSON), &community); err != nil {
+			return nil, err
+		}
+		communities = append(communities, &community)
+	}
+
+	if len(missingCommunityHandles) > 0 {
+		go m.cacheCommunity(missingCommunityHandles)
+		return nil, errors.New("not cached")
+	}
+	return communities, nil
+}
+
+func (m CommunityModel) cacheCommunity(communityIDs []string) {
+	for _, communityID := range communityIDs {
+		_, err := m.GetByHandle(communityID)
+		if err != nil {
+			logger.PrintError(err, map[string]string{"community": "caching error"})
+		}
+	}
+}
+
+func (m CommunityModel) extractCommunityHandle(key string) (string, error) {
+	parts := strings.Split(key, ":")
+	if len(parts) != 2 {
+		return "", errors.New("invalid cache key")
+	}
+
+	return parts[1], nil
+}
+
+func (m CommunityModel) cacheKeyForJoinedCommunity(userID int64) string {
+	return "user:" + strconv.FormatInt(userID, 10) + ":joined_communities"
 }
 
 func (m CommunityModel) generateCacheKey(handle string) string {

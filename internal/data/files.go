@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"image/jpeg"
 	"io"
 	"mime/multipart"
@@ -169,6 +168,10 @@ func GetFilePath(basePath string, ID int64, extension string) (string, error) {
 }
 
 func (m FileModel) GetSingle(postIDs []int64) ([]*File, error) {
+	cachedFiles, err := m.GetSingleFileCache(postIDs)
+	if err == nil && cachedFiles != nil {
+		return cachedFiles, nil
+	}
 	query := `
 		SELECT DISTINCT ON (post_id) file_pid, post_id, path, type, size, is_nsfw, created_at
 		FROM files
@@ -217,14 +220,14 @@ func (m FileModel) GetSingle(postIDs []int64) ([]*File, error) {
 }
 
 func (m FileModel) Get(postID int64) ([]*File, error) {
-	// filesJSON, err := CacheGet(m.Redis, m.generateCacheKey(postID))
-	// if nil == err {
-	// 	var files []*File
-	// 	err := json.Unmarshal([]byte(filesJSON), &files)
-	// 	if nil == err {
-	// 		return files, nil
-	// 	}
-	// }
+	filesJSON, err := CacheGet(m.Redis, m.generateCacheKey(postID))
+	if nil == err {
+		var files []*File
+		err := json.Unmarshal([]byte(filesJSON), &files)
+		if nil == err {
+			return files, nil
+		}
+	}
 	query := `
 		SELECT file_pid, post_id, path, type, size, is_nsfw, created_at
 		FROM files
@@ -271,6 +274,7 @@ func (m FileModel) Get(postID int64) ([]*File, error) {
 		for i := range files {
 			files[i].SetIncludeAll(true)
 		}
+
 		CacheSet(m.Redis, m.generateCacheKey(postID), &files, fileCacheDuration)
 	}(postID, files)
 	return files, nil
@@ -313,8 +317,7 @@ func (m FileModel) UpdateNSFW(file File) error {
 		}
 	}
 
-	cacheKey := m.generateCacheKey(file.ID)
-	fmt.Print(cacheKey)
+	cacheKey := m.generateCacheKey(file.PostID)
 
 	m.Redis.Del(context.Background(), cacheKey)
 	return nil
@@ -346,7 +349,90 @@ func (m FileModel) UpdatePath(tx *sql.Tx, file File) error {
 }
 
 func (m FileModel) generateCacheKey(postID int64) string {
-	return "files:" + strconv.FormatInt(postID, 10)
+	return "posts:" + strconv.FormatInt(postID, 10) + ":files"
+}
+
+func (m FileModel) generateSingleFileCacheKey(postID int64) string {
+	return "posts:" + strconv.FormatInt(postID, 10) + ":first_file"
+}
+
+func (m FileModel) GetSingleFileCache(postIDs []int64) ([]*File, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
+	var postFile []*File
+	var missingPostFiles []int64
+	cmds := make([]*redis.StringCmd, len(postIDs))
+
+	pipe := m.Redis.Pipeline()
+
+	for i, postID := range postIDs {
+		key := m.generateCacheKey(postID)
+		cmds[i] = pipe.Get(ctx, key)
+	}
+
+	_, err := pipe.Exec(ctx)
+	if err != nil && err != redis.Nil {
+		return nil, err
+	}
+
+	for i, cmd := range cmds {
+		var files []*File
+		filesJSON, err := cmd.Result()
+		if err != nil {
+			missingPostFiles = append(missingPostFiles, postIDs[i])
+			continue
+		}
+		if err = json.Unmarshal([]byte(filesJSON), &files); err != nil {
+			return nil, err
+		}
+		postFile = append(postFile, files[0])
+	}
+
+	if len(missingPostFiles) > 0 {
+		go m.cacheFiles(missingPostFiles)
+		return nil, errors.New("missing files in cache")
+	}
+	return postFile, nil
+}
+
+func (m FileModel) cacheFiles(postIDs []int64) {
+	for _, postID := range postIDs {
+		_, err := m.Get(postID)
+
+		if err != nil {
+			logger.PrintError(err, map[string]string{"files": "caching error"})
+		}
+	}
+}
+
+func (m FileModel) GetFileCache(postID int64) ([]*File, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
+
+	cacheKey := m.generateCacheKey(postID)
+	filesJSON, err := m.Redis.Get(ctx, cacheKey).Result()
+	if err != nil {
+		logger.PrintError(err, map[string]string{"files": "cache get error"})
+		return nil, err
+	}
+
+	var files []*File
+
+	if err := json.Unmarshal([]byte(filesJSON), &files); err != nil {
+		logger.PrintError(err, map[string]string{"files": "unmarshal error"})
+		return nil, err
+	}
+
+	return files, nil
+}
+
+func (m FileModel) extractPostID(key string) (string, error) {
+	parts := strings.Split(key, ":")
+	if len(parts) != 2 {
+		return "", errors.New("invalid cache key")
+	}
+
+	return parts[1], nil
 }
 
 func toPostgresIntArray(ids []int64) string {

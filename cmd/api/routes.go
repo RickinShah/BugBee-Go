@@ -19,6 +19,7 @@ func (app *application) routes() http.Handler {
 	router.HandleFunc("PATCH /v1/register/username", app.registerUsernameHandler)
 	router.HandleFunc("POST /v1/profile", app.updateProfileHandler)
 	router.HandleFunc("GET /v1/users/{username}", app.getUserHandler)
+	router.HandleFunc("GET /v1/user", app.getUserData)
 	router.HandleFunc("GET /v1/users", app.searchUserHandler)
 	router.HandleFunc("DELETE /v1/users", app.requireAuthenticatedUser(app.deleteUserHandler))
 	router.HandleFunc("POST /v1/users/logout", app.logoutHandler)
