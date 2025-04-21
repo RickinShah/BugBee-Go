@@ -91,11 +91,11 @@ func main() {
 	flag.StringVar(&cfg.smtp.password, "smtp-password", "", "SMTP password")
 	flag.StringVar(&cfg.smtp.sender, "smtp-sender", "BugBee <no-reply@gmail.com>", "SMTP sender")
 
-	flag.StringVar(&cfg.redis.address, "redis-address", "localhost:6379", "Cache server address")
+	flag.StringVar(&cfg.redis.address, "redis-address", "redis://localhost:6379", "Cache server address")
 	flag.StringVar(&cfg.redis.password, "redis-password", "", "Cache server password")
 	flag.IntVar(&cfg.redis.db, "cache-db", 0, "Cache server db")
 	flag.StringVar(&cfg.host, "host", "localhost", "API server host")
-	flag.StringVar(&cfg.protocol, "protocol", "https", "API server http protocol")
+	flag.StringVar(&cfg.protocol, "protocol", "http", "API server http protocol")
 
 	flag.String("encryption-key", "", "Encryption key")
 
@@ -170,11 +170,8 @@ func openDb(cfg config) (*sql.DB, error) {
 }
 
 func openRedis(cfg config) (*redis.Client, error) {
-	client := redis.NewClient(&redis.Options{
-		Addr:     cfg.redis.address,
-		Password: cfg.redis.password,
-		DB:       cfg.redis.db,
-	})
+	opt, _ := redis.ParseURL(cfg.redis.address)
+	client := redis.NewClient(opt)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
