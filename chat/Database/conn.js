@@ -1,11 +1,7 @@
 const { Pool } = require("pg");
 
 const pool = new Pool({
-    user: "bugbee",
-    host: "localhost",
-    database: "bugbee",
-    password: "1234",
-    port: 5432,
+    connectionString: process.env.BUGBEE_DB_DSN
 });
 
 pool.connect()

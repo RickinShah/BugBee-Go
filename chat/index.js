@@ -7,6 +7,7 @@ const http = require("http");
 const { Server } = require("socket.io");
 const path = require("path");
 const server = http.createServer(app);
+require('dotenv').config();
 
 const allowedOrigins = [
     "http://localhost:5173",
