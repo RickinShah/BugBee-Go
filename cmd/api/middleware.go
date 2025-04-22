@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -170,9 +171,9 @@ func (app *application) requireActivatedUser(next http.HandlerFunc) http.Handler
 
 func (app *application) enableCORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		clientURL := app.config.client.protocol + "://" + app.config.client.host + ":" + strconv.Itoa(app.config.client.port)
 		allowedOrigins := map[string]bool{
-			"http://localhost:5173": true,
-			"https://localhost":     true,
+			clientURL: true,
 		}
 
 		origin := r.Header.Get("Origin")
