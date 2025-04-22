@@ -6,7 +6,7 @@ const config = {
 
 export const appHost = config.host;
 // export const appHost = "bugbee-go-1.onrender.com"
-// export const vcHost = "localhost:3010";
+export const vcHost = "localhost:3010";
 
 const showErrorNotification = (message) => {
     // Remove existing notification if any
