@@ -266,15 +266,9 @@ func updateComments(ctx context.Context, key string, m data.Models) error {
 }
 
 func processNSFW(ctx context.Context, file data.File, m data.Models) error {
-	serverProtocol := flag.Lookup("protocol").Value.String()
-	serverHost := flag.Lookup("host").Value.String()
-	// serverPort, err := strconv.ParseInt(flag.Lookup("port").Value.String(), 10, 64)
-	// if err != nil {
-	// 	logger.PrintError(err, nil)
-	// 	return err
-	// }
+	supabaseURL := flag.Lookup("supabase-url").Value.String()
+	imageURL := fmt.Sprintf("%s/storage/v1/object/public/bugbee%s", supabaseURL, file.Path)
 
-	imageURL := fmt.Sprintf("%s://%s:%d/media%s", serverProtocol, serverHost, 443, file.Path)
 	apiURL := "http://localhost:8001/api/posts/check-nsfw?image_url=" + imageURL
 
 	req, err := http.NewRequest("GET", apiURL, nil)

@@ -3,8 +3,11 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
+	"log"
 	"net/http"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -99,7 +102,11 @@ func (app *application) createPostHandler(w http.ResponseWriter, r *http.Request
 				app.serverErrorResponse(w, r, err)
 				return
 			}
-			err = data.SaveFile(multipartFile, file.Path)
+			// err = data.SaveFile(multipartFile, file.Path)
+			// multipartFile.Seek(0, io.SeekStart)
+
+			err = data.UploadFile("bugbee", multipartFile, file.Path, file.Type)
+			log.Print(err)
 
 			fileJSON, err := file.MarshalJSON()
 			if err != nil {
@@ -198,6 +205,16 @@ func (app *application) deletePostHandler(w http.ResponseWriter, r *http.Request
 
 	user := app.contextGetUser(r)
 
+	files, err := app.models.Files.Get(id)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			break
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+	}
+
 	err = app.models.Posts.Delete(id, user.ID)
 	if err != nil {
 		switch {
@@ -207,6 +224,10 @@ func (app *application) deletePostHandler(w http.ResponseWriter, r *http.Request
 			app.serverErrorResponse(w, r, err)
 		}
 		return
+	}
+	for _, file := range files {
+		err = data.DeleteFile("bugbee", file.Path)
+		app.logger.PrintError(fmt.Errorf("failed to delete post: %w"+err.Error()), map[string]string{"file_id": strconv.FormatInt(file.ID, 10)})
 	}
 
 	err = app.writeJson(w, http.StatusOK, envelope{"message": "post deleted successfully"}, nil)

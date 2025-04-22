@@ -55,6 +55,10 @@ type config struct {
 		password string
 		db       int
 	}
+	supabase struct {
+		url    string
+		apiKey string
+	}
 }
 
 type application struct {
@@ -73,8 +77,8 @@ func main() {
 	flag.StringVar(&cfg.client.protocol, "client-protocol", "https", "Frontend client port")
 	flag.IntVar(&cfg.client.port, "client-port", 443, "Frontend client port")
 	flag.StringVar(&cfg.env, "env", "development", "Environment (development|staging|production)")
-	flag.StringVar(&cfg.storage.postBasePath, "post-directory", "/bugbee/posts", "Post base directory")
-	flag.StringVar(&cfg.storage.profileBasePath, "profile-directory", "/bugbee/profiles", "Profiles directory")
+	flag.StringVar(&cfg.storage.postBasePath, "post-directory", "/posts", "Post base directory")
+	flag.StringVar(&cfg.storage.profileBasePath, "profile-directory", "/profiles", "Profiles directory")
 
 	flag.StringVar(&cfg.db.dsn, "db-dsn", "postgres://bugbee:bugbee@localhost/bugbee?sslmode=disable", "PostgreSQL DSN")
 	flag.IntVar(&cfg.db.maxOpenConns, "db-max-open-conns", 25, "PostgreSQL max open connections")
@@ -95,7 +99,10 @@ func main() {
 	flag.StringVar(&cfg.redis.password, "redis-password", "", "Cache server password")
 	flag.IntVar(&cfg.redis.db, "cache-db", 0, "Cache server db")
 	flag.StringVar(&cfg.host, "host", "localhost", "API server host")
-	flag.StringVar(&cfg.protocol, "protocol", "http", "API server http protocol")
+	flag.StringVar(&cfg.protocol, "protocol", "https", "API server http protocol")
+
+	flag.StringVar(&cfg.supabase.url, "supabase-url", "", "Supabase url")
+	flag.StringVar(&cfg.supabase.apiKey, "supabase-api-key", "", "Supabase API key")
 
 	flag.String("encryption-key", "", "Encryption key")
 

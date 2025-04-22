@@ -71,7 +71,7 @@ func (u *User) MarshalJSON() ([]byte, error) {
 		user["username"] = u.Username
 		user["name"] = u.Name
 		if u.ProfilePath == nil {
-			user["profile_path"] = "/bugbee/profiles/default.png"
+			user["profile_path"] = "/profiles/default.png"
 		} else {
 			user["profile_path"] = u.ProfilePath
 		}

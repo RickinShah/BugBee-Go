@@ -526,7 +526,8 @@ func (app *application) updateProfileHandler(w http.ResponseWriter, r *http.Requ
 
 		user.ProfilePath = &path
 
-		err = data.SaveFile(file, path)
+		err = data.UploadFile("bugbee", file, path, "image/jpeg")
+		// err = data.SaveFile(file, path)
 		if err != nil {
 			app.serverErrorResponse(w, r, err)
 			return

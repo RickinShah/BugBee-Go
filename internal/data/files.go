@@ -5,8 +5,11 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"flag"
+	"fmt"
 	"image/jpeg"
 	"io"
+	"log"
 	"mime/multipart"
 	"net/http"
 	"os"
@@ -122,6 +125,63 @@ func SaveFile(file multipart.File, path string) error {
 	return err
 }
 
+func DeleteFile(bucket string, fileName string) error {
+	supabaseURL := flag.Lookup("supabase-url").Value.String()
+	apiKey := flag.Lookup("supabase-api-key").Value.String()
+	url := fmt.Sprintf("%s/storage/v1/object/%s%s", supabaseURL, bucket, fileName)
+	req, err := http.NewRequest("DELETE", url, nil)
+	if err != nil {
+		log.Print(err)
+		return err
+	}
+
+	req.Header.Set("Authorization", "Bearer "+apiKey)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	log.Print(resp.StatusCode)
+	if resp.StatusCode != http.StatusOK || resp.StatusCode != http.StatusNoContent {
+		body, _ := io.ReadAll(resp.Body)
+		return errors.New(string(body))
+	}
+
+	return nil
+}
+
+func UploadFile(bucket string, file multipart.File, fileName string, contentType string) error {
+	supabaseURL := flag.Lookup("supabase-url").Value.String()
+	apiKey := flag.Lookup("supabase-api-key").Value.String()
+
+	url := fmt.Sprintf("%s/storage/v1/object/%s/%s", supabaseURL, bucket, fileName)
+	req, err := http.NewRequest("POST", url, file)
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("Authorization", "Bearer "+apiKey)
+	req.Header.Set("Content-Type", contentType)
+	req.Header.Set("x-upsert", "true")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+		body, _ := io.ReadAll(resp.Body)
+		return errors.New(string(body))
+	}
+
+	return nil
+}
+
 func GetFileContentType(file multipart.File) (string, error) {
 	buffer := make([]byte, 512)
 	_, err := file.Read(buffer)
@@ -160,10 +220,10 @@ func GetFilePath(basePath string, ID int64, extension string) (string, error) {
 	dirStructure := splitFilenameIntoDirs(fileIDStr, noOfParts, partLength)
 	fullDirPath := filepath.Join(basePath, dirStructure)
 
-	err := os.MkdirAll(fullDirPath, os.ModePerm)
-	if err != nil {
-		return "", err
-	}
+	// err := os.MkdirAll(fullDirPath, os.ModePerm)
+	// if err != nil {
+	// 	return "", err
+	// }
 	return filepath.Join(fullDirPath, fileIDStr+extension), nil
 }
 
