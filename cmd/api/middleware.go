@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -171,7 +172,7 @@ func (app *application) requireActivatedUser(next http.HandlerFunc) http.Handler
 
 func (app *application) enableCORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		clientURL := app.config.client.protocol + "://" + app.config.client.host + ":" + strconv.Itoa(app.config.client.port)
+		clientURL := app.config.client.protocol + "://" + app.config.client.host
 		allowedOrigins := map[string]bool{
 			clientURL: true,
 		}
