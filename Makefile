@@ -51,7 +51,7 @@ run/app: build/frontend run/api
 .PHONY: run/api
 run/api: build/api services/up
 	@echo -e "\e[33m=> Running Backend...\e[0m"
-	@./bin/api -db-dsn=${BUGBEE_DB_DSN} -smtp-username=${SMTP_USERNAME} -smtp-password=${SMTP_PASSWORD} -encryption-key=${ENCRYPTION_KEY} -smtp-sender=${SMTP_SENDER} -client-host=${CLIENT_HOST} -host=${SERVER_HOST} -client-port=${CLIENT_PORT} -client-protocol=${CLIENT_PROTOCOL}
+	@./bin/api -db-dsn=${BUGBEE_DB_DSN} -smtp-username=${SMTP_USERNAME} -smtp-password=${SMTP_PASSWORD} -encryption-key=${ENCRYPTION_KEY} -smtp-sender=${SMTP_SENDER} -client-host=${CLIENT_HOST} -host=${SERVER_HOST} -client-port=${CLIENT_PORT} -client-protocol=${CLIENT_PROTOCOL} -redis-address=${REDIS_ADDRESS}
 
 .PHONY: run/vc
 run/vc:
