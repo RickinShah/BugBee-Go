@@ -551,46 +551,46 @@ const Dashboard = ({ setLoginFunc }) => {
             </div>
             {/* Mobile Navigation */}
             <div className={`md:hidden fixed bottom-0 left-0 right-0 bg-[#242380]/95 p-2 flex justify-around items-center shadow-lg ${showChatOnMobile ? 'hidden' : ''}`}>
-    {[
-        {
-            icon: <FaHome className="w-7 h-7" />,
-            action: () => {
-                goTo("feed");
-            },
-        },
-        {
-            icon: <FaEnvelope className="w-7 h-7" />,
-            action: () => {
-                goTo("chat");
-            },
-        },
-        {
-            icon: <FaVideo className="w-7 h-7" />,
-            action: () => goTo("vc"),
-        },
-        {
-            icon: <FaUsers className="w-7 h-7" />,
-            action: () => goTo("communities"),
-        },
-        {
-            icon: <FaPlus className="w-7 h-7 text-[#e81bbb]" />,
-            action: () => goTo("postUpload"),
-        }
-        ,
-        {
-            icon: <FaCog className="w-6 h-6" />,
-            action: () => goTo("settings"),
-        },
-    ].map((item, index) => (
-        <button
-            key={index}
-            onClick={item.action}
-            className="p-2 hover:text-gray-300 transition-colors"
-        >
-            {item.icon}
-        </button>
-    ))}
-</div>
+                {[
+                    {
+                        icon: <FaHome className="w-7 h-7" />,
+                        action: () => {
+                            goTo("feed");
+                        },
+                    },
+                    {
+                        icon: <FaEnvelope className="w-7 h-7" />,
+                        action: () => {
+                            goTo("chat");
+                        },
+                    },
+                    {
+                        icon: <FaVideo className="w-7 h-7" />,
+                        action: () => goTo("vc"),
+                    },
+                    {
+                        icon: <FaUsers className="w-7 h-7" />,
+                        action: () => goTo("communities"),
+                    },
+                    {
+                        icon: <FaPlus className="w-7 h-7 text-[#e81bbb]" />,
+                        action: () => goTo("postUpload"),
+                    }
+                    ,
+                    {
+                        icon: <FaCog className="w-6 h-6" />,
+                        action: () => goTo("settings"),
+                    },
+                ].map((item, index) => (
+                    <button
+                        key={index}
+                        onClick={item.action}
+                        className="p-2 hover:text-gray-300 transition-colors"
+                    >
+                        {item.icon}
+                    </button>
+                ))}
+            </div>
 
 
 

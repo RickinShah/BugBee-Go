@@ -1,13 +1,12 @@
 const config = {
-    host: "localhost",
-    // host: "192.168.29.150",
-    // host: "either-cents-til-preston.trycloudflare.com",
+    host: "bugbee.onrender.com",
     protocol: "https",
     port: "",
 };
 
 export const appHost = config.host;
-export const vcHost = "localhost:3010";
+// export const appHost = "bugbee-go-1.onrender.com"
+// export const vcHost = "localhost:3010";
 
 const showErrorNotification = (message) => {
     // Remove existing notification if any
@@ -89,7 +88,7 @@ export const apiCall = async (
     onSuccess,
     onError = null,
 ) => {
-    const baseUrl = `${config.protocol}://${config.host}:${config.port}/api`;
+    const baseUrl = `${config.protocol}://${config.host}:${config.port}`;
 
     try {
         const fetchOptions = {
@@ -121,7 +120,6 @@ export const apiCall = async (
         }
     } catch (error) {
         // console.error("API Error: ", error);
-
         const errorHandler = onError || onErrorDefault;
         errorHandler(error);
     }
@@ -176,11 +174,13 @@ export const chatApiCall = async (
 };
 
 export const getMediaPath = (dirPath) => {
-    return `${config.protocol}://${config.host}:${config.port}/media${dirPath}`;
+    return "https://gdczpdxnljndildarnaj.supabase.co/storage/v1/object/public/bugbee" + dirPath;
+    // return `${config.protocol}://${config.host}:${config.port}/media${dirPath}`;
 };
 
 export const getDefaultProfilePath = () => {
-    return `${config.protocol}://${config.host}:${config.port}/media/bugbee/profiles/default.png`;
+    // return `${config.protocol}://${config.host}:${config.port}/media/bugbee/profiles/default.png`;
+    return "https://gdczpdxnljndildarnaj.supabase.co/storage/v1/object/public/bugbee/profiles/default.png";
 };
 
 export const copyToClipboard = (currentPostId) => {
