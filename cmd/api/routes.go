@@ -73,6 +73,8 @@ func (app *application) routes() http.Handler {
 	router.HandleFunc("POST /v1/posts/{post_id}/comments/{comment_id}/vote", app.createCommentVoteHandler)
 	router.HandleFunc("GET /v1/posts/{post_id}/comments", app.getComments)
 
+	router.HandleFunc("GET /v1/media", app.mediaHandler)
+
 	// Follower & Following
 	// router.HandleFunc("POST /v1/users/{username}/follow", app.followUserHandler)
 	// router.HandleFunc("DELETE /v1/users/{username}/follow", app.unfollowUserHandler)
