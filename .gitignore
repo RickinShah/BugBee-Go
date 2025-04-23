@@ -8,3 +8,4 @@ fastapi/nsfw-detector-model/
 chat/uploads
 fastapi/.venv
 fastapi/__pycache__/
+fastapi/onnx_model

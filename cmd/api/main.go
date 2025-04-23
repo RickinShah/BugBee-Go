@@ -24,11 +24,12 @@ type config struct {
 		host     string
 		protocol string
 	}
-	port     int
-	env      string
-	host     string
-	protocol string
-	storage  struct {
+	port        int
+	env         string
+	host        string
+	protocol    string
+	nsfwBaseURL string
+	storage     struct {
 		postBasePath    string
 		profileBasePath string
 	}
@@ -79,6 +80,7 @@ func main() {
 	flag.StringVar(&cfg.env, "env", "development", "Environment (development|staging|production)")
 	flag.StringVar(&cfg.storage.postBasePath, "post-directory", "/posts", "Post base directory")
 	flag.StringVar(&cfg.storage.profileBasePath, "profile-directory", "/profiles", "Profiles directory")
+	flag.StringVar(&cfg.nsfwBaseURL, "nsfw-base-url", "http://localhost:8000", "NSFW Detector Base URL")
 
 	flag.StringVar(&cfg.db.dsn, "db-dsn", "postgres://bugbee:bugbee@localhost/bugbee?sslmode=disable", "PostgreSQL DSN")
 	flag.IntVar(&cfg.db.maxOpenConns, "db-max-open-conns", 25, "PostgreSQL max open connections")
