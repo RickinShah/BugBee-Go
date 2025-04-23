@@ -79,6 +79,10 @@ def fetch_image(image_url, cookies=None):
     else:
         raise Exception(f"Failed to download image from {image_url}")
 
+@app.get("/")
+def root():
+    return {"message": "NSFW API is running!"}
+
 @app.get("/api/posts/check-nsfw")
 async def check_nsfw(image_url: str, request: Request):
     # Force garbage collection before processing
