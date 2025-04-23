@@ -1,7 +1,7 @@
 import { io } from "socket.io-client";
-import { appHost } from "./utils/api.js";
+import { chatHost } from "./utils/api.js";
 
-const socket = io(`wss://${appHost}`, {
+const socket = io(`wss://${chatHost}`, {
     path: "/socket.io",
     transports: ["websocket"],
     reconnectionAttempts: 10,

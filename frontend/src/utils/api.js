@@ -1,10 +1,11 @@
 const config = {
-    host: "bugbee.onrender.com",
-    protocol: "https",
-    port: "",
+    host: "localhost",
+    protocol: "http",
+    port: "4000",
 };
 
-export const appHost = config.host;
+export const chatURL = "https://bugbee-go-1.onrender.com";
+export const chatHost = "bugbee-go-1.onrender.com"
 // export const appHost = "bugbee-go-1.onrender.com"
 export const vcHost = "localhost:3010";
 

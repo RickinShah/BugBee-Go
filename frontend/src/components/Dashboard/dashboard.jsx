@@ -15,7 +15,7 @@ import axios from "axios";
 import socket from "../../socket";
 import useNavigation from "../../utils/navigate";
 import logo from "../../assets/logo.png";
-import { apiCall, appHost, getMediaPath } from "../../utils/api";
+import { apiCall, chatURL, getMediaPath } from "../../utils/api";
 import {
     FaHome,
     FaUsers,
@@ -119,7 +119,7 @@ const Dashboard = ({ setLoginFunc }) => {
     const fetchConversation = async () => {
         try {
             const response = await axios.get(
-                `https://${appHost}/chat/api/conversation/get-conversation`,
+                `${chatURL}/api/conversation/get-conversation`,
                 { withCredentials: true },
             );
             setConversation(response.data.conversations);
@@ -128,7 +128,7 @@ const Dashboard = ({ setLoginFunc }) => {
             response.data.conversations.forEach(async (conv) => {
                 try {
                     const msgResponse = await axios.get(
-                        `https://${appHost}/chat/api/chat/get-message-chat/${conv._id}`,
+                        `${chatURL}/api/chat/get-message-chat/${conv._id}`,
                         { withCredentials: true },
                     );
 
@@ -283,7 +283,7 @@ const Dashboard = ({ setLoginFunc }) => {
     const handleLogout = async () => {
         try {
             await axios.post(
-                `https://${appHost}/api/v1/users/logout`,
+                `${chatURL}/api/v1/users/logout`,
                 {},
                 { withCredentials: true },
             );
@@ -327,7 +327,7 @@ const Dashboard = ({ setLoginFunc }) => {
         } else {
             try {
                 const response = await axios.post(
-                    `https://${appHost}/chat/api/conversation/add-conversation`,
+                    `${chatURL}/chat/api/conversation/add-conversation`,
                     { recieverId: id },
                     { withCredentials: true },
                 );

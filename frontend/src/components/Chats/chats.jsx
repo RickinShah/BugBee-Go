@@ -7,8 +7,7 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import socket from "../../socket";
-import { getDefaultProfilePath, getMediaPath } from "../../utils/api";
-import { appHost } from "../../utils/api";
+import { chatURL, getDefaultProfilePath, getMediaPath } from "../../utils/api";
 import EmojiPicker from "emoji-picker-react";
 
 // Helper function to format dates and times
@@ -61,7 +60,7 @@ const Chats = (props) => {
     const fetchMessages = async () => {
         try {
             const response = await axios.get(
-                `https://${appHost}/chat/api/chat/get-message-chat/${props.selectedId}`,
+                `${chatURL}/api/chat/get-message-chat/${props.selectedId}`,
                 { withCredentials: true },
             );
 
@@ -107,7 +106,7 @@ const Chats = (props) => {
             }
 
             const response = await axios.post(
-                `https://${appHost}/chat/api/chat/post-message-chat`,
+                `${chatURL}/api/chat/post-message-chat`,
                 formData,
                 {
                     withCredentials: true,
@@ -319,7 +318,7 @@ const Chats = (props) => {
                                     {item.imageUrl && (
                                         <div className="message-image-container">
                                             <img
-                                                src={`https://${appHost}/chat/image/${item.imageUrl}`}
+                                                src={`${chatURL}/chat/image/${item.imageUrl}`}
                                                 alt="Message image"
                                                 className="message-image"
                                             />
