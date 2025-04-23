@@ -1,8 +1,8 @@
 transformers
 pillow
-tf-keras
-tensorflow
 fastapi
 requests
 uvicorn
 torch
+onnxruntime
+numpy
