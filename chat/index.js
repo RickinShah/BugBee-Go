@@ -2,7 +2,7 @@ const express = require("express");
 const app = express();
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
-const PORT = 8000;
+const PORT = process.env.PORT || 8000;
 const http = require("http");
 const { Server } = require("socket.io");
 const path = require("path");
@@ -10,9 +10,7 @@ const server = http.createServer(app);
 require('dotenv').config();
 
 const allowedOrigins = [
-    "http://localhost:5173",
-    "https://localhost",
-    "http://localhost",
+    `${process.env.CLIENT_PROTOCOL}://${process.env.CLIENT_HOST}`
 ];
 
 const io = new Server(server, {

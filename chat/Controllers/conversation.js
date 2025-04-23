@@ -56,7 +56,7 @@ exports.getConversation = async (req, res) => {
                         '_id', u.user_pid,
                         'name', COALESCE(u.name, 'Deleted User'),
                         'username', COALESCE(u.username, 'deleted_user'),
-                        'profile_path', COALESCE(u.profile_path, '/bugbee/profiles/default.png')
+                        'profile_path', COALESCE(u.profile_path, '/profiles/default.png')
                     )) AS members
                 FROM conversations c
                 JOIN conversation_members cm ON c.conversation_pid = cm.conversation_id

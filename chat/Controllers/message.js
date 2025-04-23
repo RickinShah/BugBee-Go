@@ -61,7 +61,7 @@ exports.sendMessage = async (req, res) => {
                 name: req.user.name,
                 username: req.user.username,
                 profile_path:
-                    req.user.profilePath || "/bugbee/profiles/default.png",
+                    req.user.profilePath || "/profiles/default.png",
             },
             conversation: conversation,
             message: content || "",
@@ -102,7 +102,7 @@ exports.getMessage = async (req, res) => {
                 name: row.name || "Deleted User",
                 username: row.username || "deleted_user",
                 profile_path:
-                    row.profile_path || "/bugbee/profiles/default.png",
+                    row.profile_path || "/profiles/default.png",
             },
         }));
 
