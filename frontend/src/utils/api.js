@@ -1,7 +1,7 @@
 const config = {
-    host: "localhost",
-    protocol: "http",
-    port: "4000",
+    host: "thebugbee.vercel.app",
+    protocol: "https",
+    port: "",
 };
 
 export const chatURL = "https://bugbee-go-1.onrender.com";
