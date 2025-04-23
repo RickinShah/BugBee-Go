@@ -63,14 +63,13 @@ func (app *application) createAuthenticationHandler(w http.ResponseWriter, r *ht
 	}
 
 	cookie := http.Cookie{
-		Name:        "auth_token",
-		Value:       token.Plaintext,
-		Expires:     token.Expiry.UTC(),
-		HttpOnly:    true,
-		SameSite:    http.SameSiteNoneMode,
-		Secure:      true,
-		Path:        "/",
-		Partitioned: true,
+		Name:     "auth_token",
+		Value:    token.Plaintext,
+		Expires:  token.Expiry.UTC(),
+		HttpOnly: true,
+		SameSite: http.SameSiteNoneMode,
+		Secure:   true,
+		Path:     "/",
 	}
 
 	http.SetCookie(w, &cookie)
