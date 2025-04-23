@@ -1,5 +1,5 @@
 const config = {
-    host: "thebugbee.vercel.app",
+    host: "bugbee.onrender.com",
     protocol: "https",
     port: "",
 };
