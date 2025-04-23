@@ -6,3 +6,4 @@ uvicorn
 torch
 onnxruntime
 numpy
+onnx
