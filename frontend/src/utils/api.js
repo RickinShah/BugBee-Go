@@ -1,6 +1,6 @@
 const config = {
     host: "bugbee.onrender.com",
-    protocol: "http",
+    protocol: "https",
     port: "",
 };
 
@@ -57,6 +57,9 @@ export const onErrorDefault = (error) => {
         }
     }
     console.log(message);
+    if (message == "") {
+        return
+    }
     showErrorNotification(message);
 };
 
