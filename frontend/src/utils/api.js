@@ -7,7 +7,7 @@ const config = {
 export const chatURL = "https://bugbee-go-1.onrender.com";
 export const chatHost = "bugbee-go-1.onrender.com"
 // export const appHost = "bugbee-go-1.onrender.com"
-export const vcHost = "localhost:3010";
+export const vcHost = "bugbee-vc.onrender.com";
 
 const showErrorNotification = (message) => {
     // Remove existing notification if any
@@ -62,19 +62,6 @@ export const onErrorDefault = (error) => {
     }
     showErrorNotification(message);
 };
-
-// export const onErrorDefault = (error) => {
-//     for (let key in error) {
-//         if (typeof error[key] === "object" && error[key] !== null) {
-//             // console.log("${key}:", error[key]);
-//             for (let subKey in error[key]) {
-//                 alert(`${subKey}: ${error[key][subKey]}`);
-//             }
-//         } else {
-//             alert(`${key}: ${error[key]}`);
-//         }
-//     }
-// };
 
 export const getValueFromURL = (name) => {
     const queryString = window.location.search;
