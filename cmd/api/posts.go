@@ -16,7 +16,7 @@ import (
 )
 
 func (app *application) createPostHandler(w http.ResponseWriter, r *http.Request) {
-	err := r.ParseMultipartForm(1000 << 20)
+	err := r.ParseMultipartForm(500 << 20)
 	if err != nil {
 		app.badRequestResponse(w, r, err)
 		return

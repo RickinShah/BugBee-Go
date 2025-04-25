@@ -36,6 +36,7 @@ type Models struct {
 	UserRoles        UserRoleModel
 	Channels         ChannelModel
 	Conversations    ConversationModel
+	Messages         MessageModel
 }
 
 func NewModels(db *sql.DB, redis *redis.Client) Models {
@@ -59,5 +60,6 @@ func NewModels(db *sql.DB, redis *redis.Client) Models {
 		UserRoles:        UserRoleModel{DB: db, Redis: redis},
 		Channels:         ChannelModel{DB: db, Redis: redis},
 		Conversations:    ConversationModel{DB: db, Redis: redis},
+		Messages:         MessageModel{DB: db, Redis: redis},
 	}
 }

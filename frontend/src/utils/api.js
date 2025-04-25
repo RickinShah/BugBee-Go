@@ -1,7 +1,7 @@
 const config = {
     host: "bugbee.onrender.com",
-    protocol: "https",
-    port: "",
+    protocol: "http",
+    port: "4000",
 };
 
 export const chatURL = "https://bugbee-go-1.onrender.com";
@@ -112,7 +112,10 @@ export const apiCall = async (
 
         if (response.ok) {
             onSuccess(responseData);
-        } else {
+        } else if (response.status == 404) {
+            onSuccess(responseData);
+        }
+        else {
             const errorHandler = onError || onErrorDefault;
             if (onError != null) {
                 errorHandler(response);

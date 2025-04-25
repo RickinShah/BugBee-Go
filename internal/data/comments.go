@@ -165,7 +165,16 @@ func (m CommentModel) GetAll(postID int64) ([]*Comment, error) {
 	if err != nil {
 		return nil, err
 	}
-	rows, err := stmt.Query(args...)
+	rows, err := stmt.QueryContext(ctx, args...)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, ErrRecordNotFound
+		default:
+			return nil, err
+		}
+	}
+	defer rows.Close()
 
 	var comments []*Comment
 	for rows.Next() {

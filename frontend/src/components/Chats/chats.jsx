@@ -7,7 +7,7 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import socket from "../../socket";
-import { chatURL, getDefaultProfilePath, getMediaPath } from "../../utils/api";
+import { apiCall, chatURL, getDefaultProfilePath, getMediaPath } from "../../utils/api";
 import EmojiPicker from "emoji-picker-react";
 
 // Helper function to format dates and times
@@ -59,31 +59,36 @@ const Chats = (props) => {
 
     const fetchMessages = async () => {
         try {
-            const response = await axios.get(
-                `${chatURL}/api/chat/get-message-chat/${props.selectedId}`,
-                { withCredentials: true },
-            );
+            await apiCall(
+                `/v1/chats/${props.selectedId}`,
+                "GET",
+                null,
+                {},
+                "include",
+                false,
+                (response) => {
+                    const messagesWithDisplayProps = response.messages.map(
+                        (msg) => ({
+                            ...msg,
+                            displayTime: formatMessageTime(msg.createdAt || new Date()),
+                        }),
+                    );
 
-            // Enhance messages with display time property
-            const messagesWithDisplayProps = response.data.message.map(
-                (msg) => ({
-                    ...msg,
-                    displayTime: formatMessageTime(msg.createdAt || new Date()),
-                }),
-            );
+                    setChats(messagesWithDisplayProps);
 
-            setChats(messagesWithDisplayProps);
+                    // Update last message in parent component
+                    if (messagesWithDisplayProps.length > 0) {
+                        const lastMsg =
+                            messagesWithDisplayProps[
+                            messagesWithDisplayProps.length - 1
+                            ];
+                        if (props.updateLastMessage) {
+                            props.updateLastMessage(lastMsg.message);
+                        }
 
-            // Update last message in parent component
-            if (messagesWithDisplayProps.length > 0) {
-                const lastMsg =
-                    messagesWithDisplayProps[
-                    messagesWithDisplayProps.length - 1
-                    ];
-                if (props.updateLastMessage) {
-                    props.updateLastMessage(lastMsg.message);
+                    }
                 }
-            }
+            )
         } catch (err) {
             console.log(err);
         }
@@ -105,28 +110,28 @@ const Chats = (props) => {
                 formData.append("image", imageFile);
             }
 
-            const response = await axios.post(
-                `${chatURL}/api/chat/post-message-chat`,
+            await apiCall(
+                "/v1/chats",
+                "POST",
                 formData,
-                {
-                    withCredentials: true,
-                    headers: {
-                        "Content-Type": "multipart/form-data",
-                    },
+                {},
+                "include",
+                true,
+                (response) => {
+                    socket.emit("sendMessage", props.selectedId, response.message);
+                    console.log(response.message)
+                    setImageFile(null);
+                    setImagePreview(null);
+                    setContent("");
+
+                    // Update the last message in parent component
+                    const displayText = imageFile ? "📷 Image" : content;
+                    if (props.updateLastMessage) {
+                        props.updateLastMessage(displayText);
+                    }
                 },
-            );
+            )
 
-            socket.emit("sendMessage", props.selectedId, response.data);
-            console.log(response.data)
-            setContent("");
-            setImageFile(null);
-            setImagePreview(null);
-
-            // Update the last message in parent component
-            const displayText = imageFile ? "📷 Image" : content;
-            if (props.updateLastMessage) {
-                props.updateLastMessage(displayText);
-            }
         } catch (err) {
             console.log(err);
         }
@@ -318,7 +323,7 @@ const Chats = (props) => {
                                     {item.imageUrl && (
                                         <div className="message-image-container">
                                             <img
-                                                src={`${chatURL}/chat/image/${item.imageUrl}`}
+                                                src={getMediaPath(item.imageUrl)}
                                                 alt="Message image"
                                                 className="message-image"
                                             />

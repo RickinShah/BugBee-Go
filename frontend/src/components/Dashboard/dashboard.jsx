@@ -118,37 +118,45 @@ const Dashboard = ({ setLoginFunc }) => {
 
     const fetchConversation = async () => {
         try {
-            const response = await axios.get(
-                `${chatURL}/api/conversation/get-conversation`,
-                { withCredentials: true },
-            );
-            setConversation(response.data.conversations);
 
-            // Fetch last message for each conversation
-            response.data.conversations.forEach(async (conv) => {
-                try {
-                    const msgResponse = await axios.get(
-                        `${chatURL}/api/chat/get-message-chat/${conv._id}`,
-                        { withCredentials: true },
-                    );
+            apiCall(
+                "/v1/conversations",
+                "GET",
+                null,
+                {},
+                "include",
+                false,
+                (response) => {
+                    setConversation(response.conversations)
+                    console.log(response.conversations)
 
-                    if (
-                        msgResponse.data.message &&
-                        msgResponse.data.message.length > 0
-                    ) {
-                        const lastMsg =
-                            msgResponse.data.message[
-                            msgResponse.data.message.length - 1
-                            ];
-                        setConversationMessages((prev) => ({
-                            ...prev,
-                            [conv._id]: lastMsg.message,
-                        }));
-                    }
-                } catch (err) {
-                    console.log(err);
-                }
-            });
+                    // response.conversations.forEach(async (conv) => {
+                    //     try {
+                    //         const msgResponse = await axios.get(
+                    //             `${chatURL}/api/chat/get-message-chat/${conv._id}`,
+                    //             { withCredentials: true },
+                    //         );
+                    //
+                    //         if (
+                    //             msgResponse.data.message &&
+                    //             msgResponse.data.message.length > 0
+                    //         ) {
+                    //             const lastMsg =
+                    //                 msgResponse.data.message[
+                    //                 msgResponse.data.message.length - 1
+                    //                 ];
+                    //             setConversationMessages((prev) => ({
+                    //                 ...prev,
+                    //                 [conv._id]: lastMsg.message,
+                    //             }));
+                    //         }
+                    //     } catch (err) {
+                    //         console.log(err);
+                    //     }
+                    // });
+                },
+            )
+
         } catch (err) {
             console.log(err);
         }
@@ -215,10 +223,8 @@ const Dashboard = ({ setLoginFunc }) => {
                 (response) => {
                     const filteredUsers = response.users.filter((user) => {
                         user.profile_path = getMediaPath(user.profile_path);
-                        // Skip filtering if no conversations yet
                         if (!conversation.length) return true;
 
-                        // Check if user is already in any conversation
                         return !conversation.some((conv) =>
                             conv.members.some(
                                 (member) => member.username === user.username,
@@ -326,23 +332,38 @@ const Dashboard = ({ setLoginFunc }) => {
             setSearchedData([]);
         } else {
             try {
-                const response = await axios.post(
-                    `${chatURL}/chat/api/conversation/add-conversation`,
-                    { recieverId: id },
-                    { withCredentials: true },
-                );
-                await fetchConversation();
 
-                const newConv = response.data.savedConversation;
-                if (newConv) {
-                    const friendItem = newConv.members.filter(
-                        (member) => member._id !== ownId,
-                    );
-                    handleSelectedUser(newConv._id, friendItem);
-                }
+                const data = {
+                    username: id
+                };
+                await apiCall(
+                    "/v1/conversations",
+                    "POST",
+                    data,
+                    {},
+                    "include",
+                    false,
+                    (response) => {
+                        fetchConversation();
 
-                setQueryParam("");
-                setSearchedData([]);
+                        const newConv = response.newConversation;
+                        if (newConv) {
+                            const friendItem = newConv.members.filter(
+                                (member) => member._id !== ownId,
+                            );
+                            handleSelectedUser(newConv._id, friendItem);
+                        }
+
+                        setQueryParam("");
+                        setSearchedData([]);
+                    }
+                )
+
+                // const response = await axios.post(
+                //     `${chatURL}/chat/api/conversation/add-conversation`,
+                //     { recieverId: id },
+                //     { withCredentials: true },
+                // );
             } catch (err) {
                 console.log(err);
             }

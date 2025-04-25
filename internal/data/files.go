@@ -20,6 +20,7 @@ import (
 
 	"github.com/RickinShah/BugBee/internal/validator"
 	"github.com/go-redis/redis/v8"
+	"github.com/sony/sonyflake"
 )
 
 var AllowedFileTypes = map[string]bool{
@@ -40,6 +41,8 @@ var AllowedFileTypes = map[string]bool{
 	"audio/x-m4a":      true,
 	// "application/pdf": true,
 }
+
+var sf = sonyflake.NewSonyflake(sonyflake.Settings{})
 
 const NSFWQueue = "nsfw_detector:queue"
 
@@ -501,4 +504,39 @@ func toPostgresIntArray(ids []int64) string {
 		str[i] = strconv.FormatInt(id, 10)
 	}
 	return "{" + strings.Join(str, ",") + "}"
+}
+
+func GenerateFileName(basePath string, ext string) (string, error) {
+	id, err := sf.NextID()
+	if err != nil {
+		return "", err
+	}
+
+	fileIDStr := strconv.FormatUint(id, 10)
+	noOfParts := 4
+	partLength := 2
+	dirStructure := splitFilenameIntoDirs(fileIDStr, noOfParts, partLength)
+	fullDirPath := filepath.Join(basePath, dirStructure)
+
+	return filepath.Join(fullDirPath, fileIDStr+ext), nil
+}
+
+func UploadSingleFile(basePath string, fileHeader *multipart.FileHeader) (string, error) {
+	ext := filepath.Ext(fileHeader.Filename)
+
+	fileName, err := GenerateFileName(basePath, ext)
+	if err != nil {
+		return "", err
+	}
+
+	file, err := fileHeader.Open()
+	if err != nil {
+		return "", err
+	}
+	defer file.Close()
+	mimeType, err := GetFileContentType(file)
+	if err = UploadFile("bugbee", file, fileName, mimeType); err != nil {
+		return "", err
+	}
+	return fileName, nil
 }

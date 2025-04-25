@@ -70,7 +70,7 @@ func (app *application) createAuthenticationHandler(w http.ResponseWriter, r *ht
 		SameSite:    http.SameSiteNoneMode,
 		Secure:      true,
 		Path:        "/",
-		// Partitioned: true,
+		Partitioned: true,
 	}
 
 	http.SetCookie(w, &cookie)

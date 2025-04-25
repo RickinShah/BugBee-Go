@@ -13,7 +13,7 @@ import (
 
 	"github.com/RickinShah/BugBee/internal/data"
 	"github.com/RickinShah/BugBee/internal/mailer"
-	_ "github.com/lib/pq"
+	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
 const version = "1.0.0"
@@ -151,7 +151,7 @@ func main() {
 }
 
 func openDb(cfg config) (*sql.DB, error) {
-	db, err := sql.Open("postgres", cfg.db.dsn)
+	db, err := sql.Open("pgx", cfg.db.dsn)
 	if err != nil {
 		return nil, err
 	}

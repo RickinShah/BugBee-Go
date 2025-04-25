@@ -55,7 +55,6 @@ const Card = ({ user, post_id, content, stats, files, vote_type, onRemove }) => 
 
     const handleVote = (vote) => {
         const data = { vote_type: vote };
-        console.log("Voted" + vote);
         apiCall(
             `/v1/posts/${postId}/votes`,
             "POST",
@@ -131,7 +130,6 @@ const Card = ({ user, post_id, content, stats, files, vote_type, onRemove }) => 
             false,
             (response) => {
                 const comments = response.comments;
-                console.log(comments);
                 setCommentCount(comments.length);
                 setCommentData(
                     comments.map((comment) => ({
@@ -250,7 +248,6 @@ const Card = ({ user, post_id, content, stats, files, vote_type, onRemove }) => 
 
         const mediaPath = getMediaPath(currentFile.path);
 
-        console.log(currentFile.is_nsfw);
         const mediaClasses = `rounded-md max-w-full max-h-[60vh] object-contain ${isPortrait ? "max-w-[50%] sm:max-w-[60%]" : ""
             } ${currentFile.is_nsfw && !loggedUser?.show_nsfw ? 'blur-md' : ""}`; // Reduce width for portrait
 
