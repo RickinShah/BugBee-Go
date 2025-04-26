@@ -12,7 +12,7 @@ const ResetPassword = () => {
     const { goTo } = useNavigation();
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
     const buttonRef = useRef(null)
     const handleKeyDown = (event) => {
         if (event.key === "Enter") {

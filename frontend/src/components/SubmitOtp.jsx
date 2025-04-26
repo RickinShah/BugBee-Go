@@ -5,6 +5,7 @@ import { validationError } from "../utils/errors";
 import useNavigation from "../utils/navigate";
 import { validateOTP } from "../validators/user";
 import { useRef } from "react";
+import { Visibility, VisibilityOff } from "@mui/icons-material";
 
 const SubmitOtp = () => {
     const { goTo } = useNavigation();
@@ -12,6 +13,7 @@ const SubmitOtp = () => {
         username: getValueFromURL("username"),
         otp: "",
     });
+    const [showOtp, setShowOtp] = useState(false);
     const [loading, setLoading] = useState(false)
     const buttonRef = useRef(null)
     const handleKeyDown = (event) => {
@@ -61,15 +63,24 @@ const SubmitOtp = () => {
             </div>
 
             <div className="w-full max-w-md bg-white bg-opacity-10 p-6 rounded-xl shadow-lg mt-6">
-                <input
-                    type="text"
-                    name="otp"
-                    onKeyDown={handleKeyDown}
-                    onChange={handleChange}
-                    value={formData.otp}
-                    placeholder="OTP"
-                    className="w-full px-4 py-2 text-white bg-[#ffffff49] rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500"
-                />
+                <div className="relative mt-4">
+                    <input
+                        type={showOtp ? "text" : "password"}
+                        name="otp"
+                        value={formData.otp}
+                        onKeyDown={handleKeyDown}
+                        onChange={handleChange}
+                        placeholder="One-Time Password"
+                        className="w-full text-white px-4 py-2 bg-[#ffffff49] rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 pr-10"
+                    />
+                    <button
+                        type="button"
+                        onClick={() => setShowOtp((prev) => !prev)}
+                        className="absolute top-1/2 right-3 transform -translate-y-1/2 text-pink-300 text-sm"
+                    >
+                        {showOtp ? <VisibilityOff fontSize="2" /> : <Visibility fontSize="2" />}
+                    </button>
+                </div>
 
                 <button
                     onClick={handleSubmit}
