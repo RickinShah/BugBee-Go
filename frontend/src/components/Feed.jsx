@@ -15,6 +15,7 @@ import {
 import useNavigation from "../utils/navigate.jsx";
 import { apiCall, getMediaPath } from "../utils/api.js";
 import { useNavigate } from "react-router-dom";
+import logo from "../assets/logo.png"
 
 // Utility to debounce a function
 const debounce = (func, delay) => {
@@ -207,7 +208,7 @@ const Feed = () => {
                     <button onClick={() => goTo("feed")}>
                         <div className="mylogo">
                             <img
-                                src="../assets/logo.png"
+                                src={logo}
                                 alt="home"
                                 width="100%"
                                 height="100%"
