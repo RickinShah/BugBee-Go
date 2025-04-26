@@ -207,7 +207,7 @@ const Feed = () => {
                     <button onClick={() => goTo("feed")}>
                         <div className="mylogo">
                             <img
-                                src="../src/assets/logo.png"
+                                src="../assets/logo.png"
                                 alt="home"
                                 width="100%"
                                 height="100%"
