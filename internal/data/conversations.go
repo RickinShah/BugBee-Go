@@ -41,7 +41,7 @@ func (m ConversationModel) Insert(senderID int64, receiverID int64) (*Conversati
 	}
 
 	query = `
-		INSERT INTO conversation_members (conversation_id, sender_id) VALUES ($1, $2), ($1, $3)
+		INSERT INTO conversation_members (conversation_id, user_id) VALUES ($1, $2), ($1, $3)
 	`
 
 	args := []any{conversation.ID, senderID, receiverID}
