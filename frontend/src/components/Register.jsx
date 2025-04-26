@@ -10,6 +10,7 @@ const Register = () => {
     const [formData, setFormData] = useState({
         email: "",
     });
+    const [loading, setLoading] = useState(false);
 
     const onSuccess = (response) => {
         goTo("registerUsername", { reg_id: response.reg_id });
@@ -19,6 +20,7 @@ const Register = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setLoading(true);
         const submissionData = { ...formData };
 
         try {
@@ -39,6 +41,7 @@ const Register = () => {
         } catch (error) {
             validationError(error.errors);
         }
+        setLoading(false);
     };
 
     return (
@@ -67,11 +70,19 @@ const Register = () => {
                     placeholder="Email Address"
                     className="w-full px-4 py-2 text-white bg-[#ffffff49] rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500"
                 />
+
                 <button
                     onClick={handleSubmit}
+                    disabled={loading}
                     className="w-full py-2 mt-5 rounded-lg bg-[#ff24cf] text-gray-100 hover:bg-[#ff24d046] hover:text-gray-400 text-lg font-bold duration-300"
                 >
-                    Next
+                    {loading ? (
+                        <div className="flex items-center justify-center">
+                            <div className="h-5 w-5 border-4 border-gray-200 border-t-transparent rounded-full animate-spin"></div>
+                        </div>
+                    ) : (
+                        "Next"
+                    )}
                 </button>
             </div>
         </div>

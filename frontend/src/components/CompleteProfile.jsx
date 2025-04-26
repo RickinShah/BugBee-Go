@@ -12,7 +12,9 @@ import { FaCog } from "react-icons/fa";
 
 const CompleteProfile = () => {
     const { goTo } = useNavigation();
-    const [user] = useState(() => JSON.parse(localStorage.getItem("user")))
+    // const [user] = useState(() => JSON.parse(localStorage.getItem("user")))
+    const [user] = useState({})
+    const [loading, setLoading] = useState(false);
 
     const [profilePath, setProfilePath] = useState(() =>
         localStorage.getItem("profile_path"),
@@ -88,6 +90,7 @@ const CompleteProfile = () => {
     });
 
     const handleSubmit = async (e) => {
+        setLoading(true)
         e.preventDefault();
         if (showCropper) {
             validationError(["either crop or remove the profile picture"]);
@@ -132,6 +135,7 @@ const CompleteProfile = () => {
         } catch (error) {
             validationError(error.errors);
         }
+        setLoading(false)
     };
 
     return (
@@ -291,13 +295,22 @@ const CompleteProfile = () => {
                 </div>
 
                 {/* Submit Button Centered */}
+
                 <div className="flex justify-center mt-4">
-                    <button
-                        onClick={handleSubmit}
+
+                <button
+                    onClick={handleSubmit}
+                    disabled={loading}
                         className="w-40 sm:w-48 h-12 rounded-xl bg-[#ff24cf] text-gray-200 hover:bg-[#ff24d046] hover:text-gray-400 text-lg font-bold duration-300"
-                    >
-                        Submit
-                    </button>
+                >
+                    {loading ? (
+                        <div className="flex items-center justify-center">
+                            <div className="h-5 w-5 border-4 border-gray-200 border-t-transparent rounded-full animate-spin"></div>
+                        </div>
+                    ) : (
+                        "Submit"
+                    )}
+                </button>
                 </div>
             </div>
             <button

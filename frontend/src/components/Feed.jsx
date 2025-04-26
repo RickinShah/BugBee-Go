@@ -40,13 +40,13 @@ const Feed = () => {
     const [hasMore, setHasMore] = useState(true);
     const [isFetching, setIsFetching] = useState(false);
     const scrollRef = useRef(null);
+    const [logoutLoading, setLogoutLoading] = useState(false);
 
     const handleRemove = (id) => {
         setPosts(prev => prev.filter(post => post.post_id !== id))
     }
 
     const joinCommunity = async (community) => {
-        console.log(community.handle)
         await apiCall(
             `/v1/community/${community.community_handle}`,
             "POST",
@@ -332,9 +332,12 @@ const Feed = () => {
                             </div>
                         ))}
                     </div>
+
                     <button
                         onClick={() => {
+                            setLogoutLoading(true);
                             localStorage.clear();
+                            console.log(logoutLoading)
                             apiCall(
                                 `/v1/users/logout`,
                                 "POST",
@@ -345,11 +348,21 @@ const Feed = () => {
                                 () => goTo("login"),
                                 null,
                             );
+                            setLogoutLoading(false);
                         }}
+                        disabled={logoutLoading}
+
                         className="bg-gradient-to-b from-[#ff599e] to-[#96003e] w-full h-11 rounded-xl font-semibold text-base hover:from-[#ff85b3] hover:to-[#b00052] transition-all duration-300 flex items-center justify-center shadow-md"
                     >
-                        <FaSignOutAlt className="mr-2" /> Log Out
+                        {logoutLoading ? (
+                            <div className="flex items-center justify-center">
+                                <div className="h-5 w-5 border-4 border-gray-200 border-t-transparent rounded-full animate-spin"></div>
+                            </div>
+                        ) : (
+                            "Log Out"
+                        )}
                     </button>
+
                 </div>
             </div>
 

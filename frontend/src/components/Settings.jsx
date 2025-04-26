@@ -12,6 +12,9 @@ const Settings = () => {
     const [username] = useState(() => localStorage.getItem("username"));
     const [user, setUser] = useState({});
     const [deleteAccountModal, setDeleteAccountModal] = useState(false);
+    const [applyLoading, setApplyLoading] = useState(false);
+    const [deleteLoading, setDeleteLoading] = useState(false);
+    const [logoutLoading, setLogoutLoading] = useState(false);
 
     const fetchUser = async () => {
         await apiCall(
@@ -39,6 +42,7 @@ const Settings = () => {
     const handleChange = (e) => handleFormChange(e, setFormData);
 
     const deleteAccount = async () => {
+        setDeleteLoading(true);
         try {
             await apiCall(
                 `/v1/users`,
@@ -56,9 +60,11 @@ const Settings = () => {
         } catch (error) {
             validationError(error);
         }
+        setDeleteLoading(false);
     };
 
     const submitData = async () => {
+        setApplyLoading(true);
         try {
             await apiCall(
                 `/v1/users`,
@@ -82,6 +88,8 @@ const Settings = () => {
             console.log(error);
             validationError(error);
         }
+
+        setApplyLoading(false);
     };
 
     useEffect(() => {
@@ -96,16 +104,25 @@ const Settings = () => {
                             Are you sure?
                         </h2>
                         <div className="flex justify-end gap-4">
-                            <button
-                                onClick={() => deleteAccount()}
+                <button
+                    onClick={deleteAccount}
+                    disabled={deleteLoading}
                                 className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-500/50"
-                            >
-                                Yes
-                            </button>
+                >
+                    {deleteLoading ? (
+                        <div className="flex items-center justify-center">
+                            <div className="h-5 w-5 border-4 border-gray-200 border-t-transparent rounded-full animate-spin"></div>
+                        </div>
+                    ) : (
+                        "Yes"
+                    )}
+                </button>
+
                             <button
                                 onClick={() => {
                                     setDeleteAccountModal(false);
                                 }}
+                                disabled={deleteLoading}
                                 className="px-4 py-2 bg-blue-900 rounded hover:bg-blue-900/50"
                             >
                                 No
@@ -175,10 +192,17 @@ const Settings = () => {
 
                 {/* Apply Button */}
                 <button
+                    onClick={submitData}
+                    disabled={applyLoading}
                     className="w-full h-12 bg-[#ff24d0cb] text-gray-200 hover:bg-[#7a0f6385] hover:text-gray-400 font-semibold rounded-xl shadow-md transition mb-6 text-sm sm:text-base"
-                    onClick={() => submitData()}
                 >
-                    Apply Changes
+                    {applyLoading ? (
+                        <div className="flex items-center justify-center">
+                            <div className="h-5 w-5 border-4 border-gray-200 border-t-transparent rounded-full animate-spin"></div>
+                        </div>
+                    ) : (
+                        "Apply Changes"
+                    )}
                 </button>
 
                 {/* Bottom Buttons */}
@@ -204,24 +228,38 @@ const Settings = () => {
                     >
                         Delete Account
                     </button>
+
+                <button
+                        onClick={() => {
+                            setLogoutLoading(true)
+                            localStorage.clear();
+                            apiCall(
+                                `/v1/users/logout`,
+                                "POST",
+                                null,
+                                {},
+                                "include",
+                                false,
+                                () => goTo("login"),
+                                null,
+                            );
+                            setLogoutLoading(false)
+                        }}
+                    disabled={logoutLoading}
+                        className="bg-gradient-to-b from-[#ff599e] to-[#96003e] w-full h-11 rounded-xl font-semibold text-base hover:from-[#ff85b3] hover:to-[#b00052] transition-all duration-300 flex items-center justify-center shadow-md"
+                >
+                    {logoutLoading ? (
+                        <div className="flex items-center justify-center">
+                            <div className="h-5 w-5 border-4 border-gray-200 border-t-transparent rounded-full animate-spin"></div>
+                        </div>
+                    ) : (
+                        "Log Out"
+                    )}
+                </button>
+
                     <button
-                                            onClick={() => {
-                                                localStorage.clear();
-                                                apiCall(
-                                                    `/v1/users/logout`,
-                                                    "POST",
-                                                    null,
-                                                    {},
-                                                    "include",
-                                                    false,
-                                                    () => goTo("login"),
-                                                    null,
-                                                );
-                                            }}
-                                            className="bg-gradient-to-b from-[#ff599e] to-[#96003e] w-full h-11 rounded-xl font-semibold text-base hover:from-[#ff85b3] hover:to-[#b00052] transition-all duration-300 flex items-center justify-center shadow-md"
-                                        >
-                                            <FaSignOutAlt className="mr-2" /> Log Out
-                                        </button>
+                    >
+                    </button>
                 </div>
             </div>
         </div>

@@ -8,6 +8,7 @@ import useNavigation from "../utils/navigate";
 
 const RegisterPassword = () => {
     const { goTo } = useNavigation();
+    const [loading, setLoading] = useState(false);
 
     const onSuccess = () => {
         alert(
@@ -31,6 +32,7 @@ const RegisterPassword = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setLoading(true);
         let submissionData = { ...formData };
 
         try {
@@ -51,6 +53,7 @@ const RegisterPassword = () => {
         } catch (error) {
             validationError(error.errors);
         }
+        setLoading(false);
     };
 
     return (
@@ -78,11 +81,19 @@ const RegisterPassword = () => {
                     placeholder="Confirm Password"
                     className="w-full px-4 py-2 mt-4 text-white bg-[#ffffff49] rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500"
                 />
+
                 <button
                     onClick={handleSubmit}
+                    disabled={loading}
                     className="w-full py-2 mt-5 rounded-lg bg-[#ff24cf] text-gray-100 hover:bg-[#ff24d046] hover:text-gray-400 text-lg font-bold duration-300 "
                 >
-                    Create Account
+                    {loading ? (
+                        <div className="flex items-center justify-center">
+                            <div className="h-5 w-5 border-4 border-gray-200 border-t-transparent rounded-full animate-spin"></div>
+                        </div>
+                    ) : (
+                        "Create Account"
+                    )}
                 </button>
             </div>
         </div>

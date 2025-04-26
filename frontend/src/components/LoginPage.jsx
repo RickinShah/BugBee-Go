@@ -9,6 +9,7 @@ import useNavigation from "../utils/navigate";
 
 const LoginPage = () => {
     const { goTo } = useNavigation();
+    const [loading, setLoading] = useState(false);
 
     const [formData, setFormData] = useState({
         username: "",
@@ -36,8 +37,12 @@ const LoginPage = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
+        setLoading(true)
+
         try {
             await validateLogin.validate(formData, { abortEarly: true });
+
+
 
             await apiCall(
                 "/v1/tokens/authentication",
@@ -49,6 +54,7 @@ const LoginPage = () => {
                 (response) => onSuccess(response),
                 null,
             );
+            setLoading(false);
         } catch (err) {
             validationError(err.errors);
             return;
@@ -87,9 +93,16 @@ const LoginPage = () => {
                 </div>
                 <button
                     onClick={handleSubmit}
-                    className="w-full py-2 mt-5 rounded-lg bg-[#ff24cf] text-gray-200 hover:bg-[#ff24d046] hover:text-gray-400 text-lg font-bold duration-300"
+                    disabled={loading}
+                    className="w-full py-2 mt-5 rounded-lg bg-[#ff24cf] text-gray-200 hover:bg-[#ff24d046] hover:text-gray-400 text-lg font-bold duration-300 disabled:opacity-50"
                 >
-                    Login
+                    {loading ? (
+                        <div className="flex items-center justify-center">
+                            <div className="h-5 w-5 border-4 border-gray-200 border-t-transparent rounded-full animate-spin"></div>
+                        </div>
+                    ) : (
+                        "Login"
+                    )}
                 </button>
                 <div className="text-center text-gray-300 mt-4">
                     Don&apos;t have an account?{" "}

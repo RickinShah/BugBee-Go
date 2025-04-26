@@ -8,6 +8,7 @@ import useNavigation from "../utils/navigate";
 
 const RegisterUsername = () => {
     const { goTo } = useNavigation();
+    const [loading, setLoading] = useState(false);
 
     const [formData, setFormData] = useState({
         reg_id: getValueFromURL("reg_id"),
@@ -28,6 +29,7 @@ const RegisterUsername = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setLoading(true);
         let submissionData = { ...formData };
 
         submissionData = removeFieldIfEmpty(submissionData, "name");
@@ -49,6 +51,7 @@ const RegisterUsername = () => {
         } catch (error) {
             validationError(error.errors);
         }
+        setLoading(false);
     };
 
     return (
@@ -78,9 +81,16 @@ const RegisterUsername = () => {
                 />
                 <button
                     onClick={handleSubmit}
+                    disabled={loading}
                     className="w-full py-2 mt-5 rounded-lg bg-[#ff24cf] text-gray-100 hover:bg-[#ff24d046] hover:text-gray-400 text-lg font-bold duration-300"
                 >
-                    Next
+                    {loading ? (
+                        <div className="flex items-center justify-center">
+                            <div className="h-5 w-5 border-4 border-gray-200 border-t-transparent rounded-full animate-spin"></div>
+                        </div>
+                    ) : (
+                        "Next"
+                    )}
                 </button>
             </div>
         </div>

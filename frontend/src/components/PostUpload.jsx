@@ -14,6 +14,7 @@ const PostUpload = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [mediaHeight, setMediaHeight] = useState(256); // Dynamic height for media container
     const mediaContainerRef = useRef(null);
+    const [loading, setLoading] = useState(false);
     const { goTo } = useNavigation();
 
     const processImage = async (file) => {
@@ -104,6 +105,8 @@ const PostUpload = () => {
             return;
         }
 
+        setLoading(true);
+
         const formDataObj = new FormData();
         formDataObj.append("content", content);
         selectedFiles.forEach((file) => {
@@ -129,6 +132,7 @@ const PostUpload = () => {
                 error.message || "An error occurred while creating the post.",
             );
         }
+        setLoading(false);
     };
 
     const nextMedia = () => {
@@ -326,12 +330,20 @@ const PostUpload = () => {
                     )}
                 </div>
                 <div className="flex flex-col sm:flex-row justify-center mt-8 sm:mt-10 w-full space-y-4 sm:space-y-0 sm:space-x-6">
-                    <button
+
+                <button
+                    onClick={handlePost}
+                    disabled={loading}
                         className="w-full sm:w-40 md:w-48 h-12 sm:h-14 bg-[#185ce4] rounded-xl text-white text-base sm:text-lg font-semibold hover:bg-[#0051ff98] transition duration-200 shadow-md"
-                        onClick={handlePost}
-                    >
-                        Share Post
-                    </button>
+                >
+                    {loading ? (
+                        <div className="flex items-center justify-center">
+                            <div className="h-5 w-5 border-4 border-gray-200 border-t-transparent rounded-full animate-spin"></div>
+                        </div>
+                    ) : (
+                        "Share Post"
+                    )}
+                </button>
                 </div>
             </div>
 
