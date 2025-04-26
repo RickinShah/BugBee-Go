@@ -15,6 +15,12 @@ const CompleteProfile = () => {
     // const [user] = useState(() => JSON.parse(localStorage.getItem("user")))
     const [user] = useState({})
     const [loading, setLoading] = useState(false);
+    const buttonRef = useRef(null);
+    const handleKeyDown = (event) => {
+        if (event.key === "Enter") {
+            buttonRef.current.click();
+        }
+    }
 
     const [profilePath, setProfilePath] = useState(() =>
         localStorage.getItem("profile_path"),
@@ -281,12 +287,14 @@ const CompleteProfile = () => {
                             name="name"
                             value={formData.name}
                             onChange={(e) => handleFormChange(e, setFormData)}
+                            onKeyDown={handleKeyDown}
                             placeholder="Name"
                             className="text-white px-4 py-3 w-full bg-[#ffffff49] mb-4 rounded-xl resize-none focus:outline-none"
                         />
                         <textarea
                             name="bio"
                             placeholder="Write your bio..."
+                            onKeyDown={handleKeyDown}
                             value={formData.bio}
                             onChange={(e) => handleFormChange(e, setFormData)}
                             className="text-white px-4 py-3 w-full h-28 bg-[#ffffff49] rounded-xl resize-none focus:outline-none"
@@ -298,19 +306,20 @@ const CompleteProfile = () => {
 
                 <div className="flex justify-center mt-4">
 
-                <button
-                    onClick={handleSubmit}
-                    disabled={loading}
+                    <button
+                        onClick={handleSubmit}
+                        ref={buttonRef}
+                        disabled={loading}
                         className="w-40 sm:w-48 h-12 rounded-xl bg-[#ff24cf] text-gray-200 hover:bg-[#ff24d046] hover:text-gray-400 text-lg font-bold duration-300"
-                >
-                    {loading ? (
-                        <div className="flex items-center justify-center">
-                            <div className="h-5 w-5 border-4 border-gray-200 border-t-transparent rounded-full animate-spin"></div>
-                        </div>
-                    ) : (
-                        "Submit"
-                    )}
-                </button>
+                    >
+                        {loading ? (
+                            <div className="flex items-center justify-center">
+                                <div className="h-5 w-5 border-4 border-gray-200 border-t-transparent rounded-full animate-spin"></div>
+                            </div>
+                        ) : (
+                            "Submit"
+                        )}
+                    </button>
                 </div>
             </div>
             <button

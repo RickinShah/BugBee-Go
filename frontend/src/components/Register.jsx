@@ -4,6 +4,7 @@ import { validateEmail } from "../validators/user";
 import { apiCall } from "../utils/api";
 import { validationError } from "../utils/errors";
 import useNavigation from "../utils/navigate";
+import { useRef } from "react";
 
 const Register = () => {
     const { goTo } = useNavigation();
@@ -11,6 +12,13 @@ const Register = () => {
         email: "",
     });
     const [loading, setLoading] = useState(false);
+
+    const buttonRef = useRef(null)
+    const handleKeyDown = (event) => {
+        if (event.key === "Enter") {
+            buttonRef.current.click();
+        }
+    }
 
     const onSuccess = (response) => {
         goTo("registerUsername", { reg_id: response.reg_id });
@@ -66,6 +74,7 @@ const Register = () => {
                     type="text"
                     name="email"
                     onChange={handleChange}
+                    onKeyDown={handleKeyDown}
                     value={formData.email}
                     placeholder="Email Address"
                     className="w-full px-4 py-2 text-white bg-[#ffffff49] rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500"
@@ -73,6 +82,7 @@ const Register = () => {
 
                 <button
                     onClick={handleSubmit}
+                    ref={buttonRef}
                     disabled={loading}
                     className="w-full py-2 mt-5 rounded-lg bg-[#ff24cf] text-gray-100 hover:bg-[#ff24d046] hover:text-gray-400 text-lg font-bold duration-300"
                 >

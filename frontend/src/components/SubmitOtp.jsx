@@ -4,6 +4,7 @@ import { getValueFromURL, apiCall } from "../utils/api";
 import { validationError } from "../utils/errors";
 import useNavigation from "../utils/navigate";
 import { validateOTP } from "../validators/user";
+import { useRef } from "react";
 
 const SubmitOtp = () => {
     const { goTo } = useNavigation();
@@ -11,6 +12,13 @@ const SubmitOtp = () => {
         username: getValueFromURL("username"),
         otp: "",
     });
+    const [loading, setLoading] = useState(false)
+    const buttonRef = useRef(null)
+    const handleKeyDown = (event) => {
+        if (event.key === "Enter") {
+            buttonRef.current.click();
+        }
+    }
 
     const onSuccess = (response) => {
         goTo("resetPassword", {
@@ -21,6 +29,7 @@ const SubmitOtp = () => {
     const handleChange = (e) => handleFormChange(e, setFormData);
 
     const handleSubmit = async (e) => {
+        setLoading(true);
         e.preventDefault();
         const submissionData = { ...formData };
 
@@ -40,38 +49,8 @@ const SubmitOtp = () => {
         } catch (error) {
             validationError(error.errors);
         }
+        setLoading(false);
     };
-
-    // return (
-    //     <div
-    //         className="w-full h-screen bg-gradient-to-br from-[#242380] via-blue-950 bg-purple-800
-    // flex flex-col justify-center items-center"
-    //     >
-    //         <div className="flex flex-col justify-center items-center">
-    //             <div className="text-5xl text-gray-400 font-medium">
-    //                 Enter OTP
-    //             </div>
-    //         </div>
-
-    //         <div className="flex flex-col my-10">
-    //             <input
-    //                 type="text"
-    //                 name="otp"
-    //                 onChange={handleChange}
-    //                 value={formData.otp}
-    //                 placeholder="OTP"
-    //                 className="px-5 w-96 h-10 bg-[#ffffff49] rounded-xl"
-    //             />
-    //             <button
-    //                 onClick={handleSubmit}
-    //                 className="w-96 h-10 rounded-xl my-5 bg-[#ff24d046] text-gray-500 hover:bg-[#ff24cf] hover:text-gray-300 text-lg font-bold duration-700"
-    //             >
-    //                 {" "}
-    //                 Submit{" "}
-    //             </button>
-    //         </div>
-    //     </div>
-    // );
 
     return (
         <div className="w-full h-screen flex flex-col justify-center items-center bg-gradient-to-br from-[#242380] via-blue-950 to-purple-800 px-5">
@@ -85,16 +64,26 @@ const SubmitOtp = () => {
                 <input
                     type="text"
                     name="otp"
+                    onKeyDown={handleKeyDown}
                     onChange={handleChange}
                     value={formData.otp}
                     placeholder="OTP"
                     className="w-full px-4 py-2 text-white bg-[#ffffff49] rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500"
                 />
+
                 <button
                     onClick={handleSubmit}
+                    ref={buttonRef}
+                    disabled={loading}
                     className="w-full py-2 mt-5 rounded-lg bg-[#ff24d046] text-gray-500 hover:bg-[#ff24cf] hover:text-gray-300 text-lg font-bold duration-700"
                 >
-                    Submit
+                    {loading ? (
+                        <div className="flex items-center justify-center">
+                            <div className="h-5 w-5 border-4 border-gray-200 border-t-transparent rounded-full animate-spin"></div>
+                        </div>
+                    ) : (
+                        "Submit"
+                    )}
                 </button>
             </div>
         </div>

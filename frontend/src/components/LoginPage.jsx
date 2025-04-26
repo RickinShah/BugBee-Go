@@ -1,15 +1,18 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { handleFormChange, setToLocalStorage } from "../utils/form";
 import { apiCall, getMediaPath } from "../utils/api";
 import { validatePassword, validateUsernameOrEmail } from "../validators/user";
 import * as yup from "yup";
 import { validationError } from "../utils/errors";
 import useNavigation from "../utils/navigate";
+import { Visibility, VisibilityOff } from "@mui/icons-material";
 
 
 const LoginPage = () => {
     const { goTo } = useNavigation();
     const [loading, setLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
+    const buttonRef = useRef(null)
 
     const [formData, setFormData] = useState({
         username: "",
@@ -33,6 +36,12 @@ const LoginPage = () => {
         username: validateUsernameOrEmail,
         password: validatePassword,
     });
+
+    const handleKeyDown = (event) => {
+        if (event.key === "Enter") {
+            buttonRef.current.click();
+        }
+    }
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -70,19 +79,31 @@ const LoginPage = () => {
                 <input
                     type="text"
                     name="username"
+                    onKeyDown={handleKeyDown}
                     value={formData.username}
                     onChange={handleChange}
                     placeholder="Username or Email"
                     className="w-full text-white px-4 py-2 bg-[#ffffff49] rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500"
                 />
-                <input
-                    type="password"
-                    name="password"
-                    value={formData.password}
-                    onChange={handleChange}
-                    placeholder="Password"
-                    className="w-full text-white px-4 py-2 bg-[#ffffff49] rounded-lg mt-4 focus:outline-none focus:ring-2 focus:ring-pink-500"
-                />
+                <div className="relative mt-4">
+                    <input
+                        type={showPassword ? "text" : "password"}
+                        name="password"
+                        value={formData.password}
+                        onKeyDown={handleKeyDown}
+                        onChange={handleChange}
+                        placeholder="Password"
+                        className="w-full text-white px-4 py-2 bg-[#ffffff49] rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 pr-10"
+                    />
+                    <button
+                        type="button"
+                        onClick={() => setShowPassword((prev) => !prev)}
+                        className="absolute top-1/2 right-3 transform -translate-y-1/2 text-pink-300 text-sm"
+                    >
+                        {showPassword ? <VisibilityOff fontSize="2" /> : <Visibility fontSize="2" />}
+                    </button>
+                </div>
+
                 <div className="text-right mt-2">
                     <button
                         className="text-pink-400 font-semibold hover:text-pink-200 duration-700 text-sm"
@@ -93,6 +114,7 @@ const LoginPage = () => {
                 </div>
                 <button
                     onClick={handleSubmit}
+                    ref={buttonRef}
                     disabled={loading}
                     className="w-full py-2 mt-5 rounded-lg bg-[#ff24cf] text-gray-200 hover:bg-[#ff24d046] hover:text-gray-400 text-lg font-bold duration-300 disabled:opacity-50"
                 >

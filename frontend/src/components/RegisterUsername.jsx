@@ -5,10 +5,17 @@ import { validateName, validateUsername } from "../validators/user";
 import { validationError } from "../utils/errors";
 import { getValueFromURL, apiCall } from "../utils/api";
 import useNavigation from "../utils/navigate";
+import { useRef } from "react";
 
 const RegisterUsername = () => {
     const { goTo } = useNavigation();
     const [loading, setLoading] = useState(false);
+    const buttonRef = useRef(null)
+    const handleKeyDown = (event) => {
+        if (event.key === "Enter") {
+            buttonRef.current.click();
+        }
+    }
 
     const [formData, setFormData] = useState({
         reg_id: getValueFromURL("reg_id"),
@@ -67,6 +74,7 @@ const RegisterUsername = () => {
                     type="name"
                     name="name"
                     onChange={handleChange}
+                    onKeyDown={handleKeyDown}
                     value={formData.name}
                     placeholder="Name"
                     className="w-full px-4 py-2 text-white bg-[#ffffff49] rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500"
@@ -75,12 +83,14 @@ const RegisterUsername = () => {
                     type="name"
                     name="username"
                     onChange={handleChange}
+                    onKeyDown={handleKeyDown}
                     value={formData.username}
                     placeholder="Username"
                     className="w-full px-4 py-2 mt-4 text-white bg-[#ffffff49] rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500"
                 />
                 <button
                     onClick={handleSubmit}
+                    ref={buttonRef}
                     disabled={loading}
                     className="w-full py-2 mt-5 rounded-lg bg-[#ff24cf] text-gray-100 hover:bg-[#ff24d046] hover:text-gray-400 text-lg font-bold duration-300"
                 >
