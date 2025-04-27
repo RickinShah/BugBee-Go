@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"flag"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -24,6 +25,7 @@ type config struct {
 		host     string
 		protocol string
 	}
+	clients     []string
 	port        int
 	env         string
 	host        string
@@ -106,9 +108,13 @@ func main() {
 	flag.StringVar(&cfg.supabase.url, "supabase-url", "", "Supabase url")
 	flag.StringVar(&cfg.supabase.apiKey, "supabase-api-key", "", "Supabase API key")
 
+	clients := flag.String("clients", "http://localhost:5173", "Client URLs for CORS")
+
 	flag.String("encryption-key", "", "Encryption key")
 
 	flag.Parse()
+
+	cfg.clients = strings.Split(*clients, ",")
 
 	logger := jsonlog.New(os.Stdout, jsonlog.LevelInfo)
 

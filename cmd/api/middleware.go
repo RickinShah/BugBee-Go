@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -72,19 +73,6 @@ func (app *application) authenticate(next http.Handler) http.Handler {
 
 			token = headerParts[1]
 		}
-
-		// authorizationCookie, err := r.Cookie("auth_token")
-		// if err != nil {
-		// 	switch {
-		// 	case errors.Is(err, http.ErrNoCookie):
-		// 		app.contextSetUser(r, data.AnonymousUser)
-		// 		next.ServeHTTP(w, r)
-		// 		return
-		// 	default:
-		// 		app.badRequestResponse(w, r, err)
-		// 		return
-		// 	}
-		// }
 
 		if token == "" {
 			cookie := http.Cookie{
@@ -170,9 +158,13 @@ func (app *application) requireActivatedUser(next http.HandlerFunc) http.Handler
 
 func (app *application) enableCORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		clientURL := app.config.client.protocol + "://" + app.config.client.host
+		clientURL := app.config.client.protocol + "://" + app.config.client.host + ":" + strconv.FormatInt(int64(app.config.client.port), 10)
 		allowedOrigins := map[string]bool{
 			clientURL: true,
+		}
+
+		for _, client := range app.config.clients {
+			allowedOrigins[client] = true
 		}
 
 		origin := r.Header.Get("Origin")

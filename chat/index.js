@@ -9,9 +9,9 @@ const path = require("path");
 const server = http.createServer(app);
 require('dotenv').config();
 
-const allowedOrigins = [
-    `${process.env.CLIENT_PROTOCOL}://${process.env.CLIENT_HOST}`
-];
+const clients = process.env.CLIENTS
+allowedOrigins = clients.split(",")
+console.log(allowedOrigins)
 
 const io = new Server(server, {
     cors: {

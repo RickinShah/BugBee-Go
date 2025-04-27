@@ -12,3 +12,6 @@ export CLIENT_HOST=localhost
 export SERVER_HOST=localhost
 export CLIENT_PORT=443
 export CLIENT_PROTOCOL=https
+export SUPABASE_URL=
+export SUPABASE_API_KEY=
+export NSFW_BASE_URL=

@@ -12,8 +12,7 @@ import { FaCog } from "react-icons/fa";
 
 const CompleteProfile = () => {
     const { goTo } = useNavigation();
-    // const [user] = useState(() => JSON.parse(localStorage.getItem("user")))
-    const [user] = useState({})
+    const [user] = useState(() => JSON.parse(localStorage.getItem("user")))
     const [loading, setLoading] = useState(false);
     const buttonRef = useRef(null);
     const handleKeyDown = (event) => {

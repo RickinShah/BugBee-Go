@@ -87,6 +87,9 @@ func (app *application) routes() http.Handler {
 	router.HandleFunc("POST /v1/chats", app.addMessage)
 	router.HandleFunc("GET /v1/chats/{conv_id}", app.getMessages)
 
+	router.HandleFunc("POST /v1/channel/chats", app.addChannelMessage)
+	router.HandleFunc("GET /v1/channel/chats/{channel_id}", app.getChannelMessages)
+
 	//return app.recoverPanic(app.rateLimit(router))
 	return app.recoverPanic(app.enableCORS(app.authenticate(router)))
 }

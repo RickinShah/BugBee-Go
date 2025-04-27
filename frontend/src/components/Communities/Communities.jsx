@@ -73,16 +73,16 @@ const Communities = () => {
     // Chat-related functions
     const fetchMessages = async (channelId) => {
         try {
-            await chatApiCall(
-                `/channels/chat/${channelId}`,
+            await apiCall(
+                `/v1/channel/chats/${channelId}`,
                 "GET",
                 null,
                 {},
                 "include",
                 false,
                 (response) => {
-                    console.log(response.message)
-                    setMessages(response.message || []);
+                    console.log(response.messages)
+                    setMessages(response.messages || []);
                 },
             );
         } catch (err) {
@@ -93,21 +93,20 @@ const Communities = () => {
     const sendMessage = async () => {
         if (!newMessage.trim() || !selectedChannelId) return;
 
-        console.log(selectedChannelId);
-        console.log(selectedChannel.channel_id);
+
         try {
-            await chatApiCall(
-                `/channels/chat`,
+            const formData = new FormData();
+            formData.append("conversation", selectedChannelId)
+            formData.append("content", newMessage)
+            await apiCall(
+                `/v1/channel/chats`,
                 "POST",
-                {
-                    conversation: String(selectedChannelId),
-                    content: newMessage
-                },
+                formData,
                 {},
                 "include",
-                false,
+                true,
                 (response) => {
-                    console.log(response)
+                    console.log(response.message)
                     // setMessages((prev) => [...prev, response.message]);
                     socket.emit("sendMessage", selectedChannelId, response.message)
                     setNewMessage("")
