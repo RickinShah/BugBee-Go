@@ -5,6 +5,8 @@ import { useEffect } from "react";
 import { apiCall, getMediaPath } from "../utils/api.js";
 import { validationError } from "../utils/errors.js";
 import useNavigation from "../utils/navigate.jsx";
+import logo from "../assets/logo.png"
+
 import {
     FaHome,
     FaEnvelope,
@@ -58,7 +60,7 @@ const UserProfile = () => {
                     <button onClick={() => goTo("feed")}>
                         <div className="mylogo cursor-pointer">
                             <img
-                                src="../src/assets/logo.png"
+                                src={logo}
                                 alt="home"
                                 width="100%"
                                 height="100%"
