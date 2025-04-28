@@ -204,7 +204,11 @@ const UserProfile = () => {
                                     @{fetchedUser.username}
                                 </p>
                                 <p className="hidden md:flex text-white text-sm md:text-base mb-2 max-w-lg">
-                                    {fetchedUser.bio || "No bio yet."}
+                                    {fetchedUser.bio ? (
+                                        fetchedUser.bio
+                                    ) : (
+                                        <span className="text-gray-400 italic">No bio yet.</span>
+                                    )}
                                 </p>
                             </div>
                         </div>
