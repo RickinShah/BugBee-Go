@@ -442,6 +442,8 @@ func (app *application) settingsHandler(w http.ResponseWriter, r *http.Request) 
 
 	if err = app.models.Users.Update(user); err != nil {
 		switch {
+		case errors.Is(err, data.ErrDuplicateUsername):
+			app.errorResponse(w, r, http.StatusConflict, "a user with the same username already exists")
 		case errors.Is(err, data.ErrEditConflict):
 			app.editConflictResponse(w, r)
 		default:
