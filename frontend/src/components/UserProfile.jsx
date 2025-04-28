@@ -215,7 +215,11 @@ const UserProfile = () => {
 
                         <div>
                             <p className="flex mt-2 md:hidden text-white text-sm mb-2">
-                                {fetchedUser.bio || "No bio yet."}
+                                {fetchedUser.bio ? (
+                                    fetchedUser.bio
+                                ) : (
+                                    <span className="text-gray-400 italic">No bio yet.</span>
+                                )}
                             </p>
                         </div>
                         {/* Stats Section */}

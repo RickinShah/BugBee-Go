@@ -181,8 +181,8 @@ const CompleteProfile = () => {
 
                                 {/* Center overlay for 'Change' */}
                                 <div
-                                    className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0
-        group-hover:opacity-100 transition-opacity duration-300 rounded-full"
+                                    className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center 
+    opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300 rounded-full"
                                 >
                                     <span className="text-white font-bold text-sm">
                                         Change
@@ -190,18 +190,20 @@ const CompleteProfile = () => {
                                 </div>
 
                                 {/* Top-right overlay button for 'Remove' */}
-                                <button
-                                    type="button"
-                                    onClick={(e) => {
-                                        e.stopPropagation(); // Prevent triggering the 'Change' click
-                                        setProfilePath(getDefaultProfilePath());
-                                        setRemovedProfile(true);
-                                        // handleRemoveProfile(); // Your remove handler function
-                                    }}
-                                    className="absolute top-5 right-5 hover:bg-white hover:bg-opacity-10 text-white text-xs font-semibold px-2 py-1 rounded-xl opacity-0 group-hover:opacity-90 transition-opacity duration-300"
-                                >
-                                    x
-                                </button>
+                                {profilePath !== getDefaultProfilePath() && (
+                                    <button
+                                        type="button"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setProfilePath(getDefaultProfilePath());
+                                            setRemovedProfile(true);
+                                        }}
+                                        className="absolute top-5 right-5 hover:bg-white hover:bg-opacity-10 text-white text-xs font-semibold px-2 py-1 rounded-xl 
+      opacity-100 md:opacity-0 md:group-hover:opacity-90 transition-opacity duration-300"
+                                    >
+                                        x
+                                    </button>
+                                )}
                             </div>
                         )}
 
