@@ -547,6 +547,7 @@ func (m PostModel) postsGetPipeline(ctx context.Context, results []string) ([]*P
 
 func (m PostModel) cachePost(postIDs []int64) {
 	for _, postID := range postIDs {
+		time.Sleep(100 * time.Millisecond)
 		_, err := m.Get(postID)
 		if err != nil {
 			logger.PrintError(err, map[string]string{"post": "caching error"})

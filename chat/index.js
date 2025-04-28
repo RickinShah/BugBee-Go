@@ -11,7 +11,6 @@ require('dotenv').config();
 
 const clients = process.env.CLIENTS
 allowedOrigins = clients.split(",")
-console.log(allowedOrigins)
 
 const io = new Server(server, {
     cors: {

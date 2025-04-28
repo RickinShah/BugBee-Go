@@ -142,11 +142,10 @@ const UserProfile = () => {
                         ].map((item, index) => (
                             <div
                                 key={index}
-                                className={`flex items-center h-12 rounded-2xl px-4 transition-all duration-300 cursor-pointer ${
-                                    item.selected
-                                        ? "bg-[#9b9b9b6b] text-white"
-                                        : "text-gray-400 hover:bg-[#9b9b9b6b] hover:text-white"
-                                }`}
+                                className={`flex items-center h-12 rounded-2xl px-4 transition-all duration-300 cursor-pointer ${item.selected
+                                    ? "bg-[#9b9b9b6b] text-white"
+                                    : "text-gray-400 hover:bg-[#9b9b9b6b] hover:text-white"
+                                    }`}
                             >
                                 {item.icon}
                                 <button
@@ -287,7 +286,7 @@ const UserProfile = () => {
                                     )}
                                 </button>
                             ))}
-                        {userPosts && userPosts.length === 0 && (
+                        {!userPosts && (
                             <div className="col-span-3 py-12 md:py-20 flex flex-col items-center justify-center text-center">
                                 <svg
                                     xmlns="http://www.w3.org/2000/svg"
