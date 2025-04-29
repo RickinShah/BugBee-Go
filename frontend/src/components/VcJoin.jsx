@@ -13,7 +13,7 @@ const VcJoin = () => {
         if (meetingCode.trim()) {
             console.log(user.username)
             console.log(`Joining meeting with code: ${meetingCode}`);
-            window.location.href = `https://${vcHost}/join?room=${meetingCode}&roomPassword=0&name=${user.username}&avatar=0&audio=0&video=0&screen=0&hide=0&notify=0&duration=unlimited`;
+            window.location.href = `https://${vcHost}/join?room=${meetingCode}&roomPassword=0&name=${user.username}&avatar=${user.profile_path}&audio=0&video=0&screen=0&hide=0&notify=0&duration=unlimited`;
         }
     };
 
