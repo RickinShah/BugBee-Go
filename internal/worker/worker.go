@@ -19,7 +19,7 @@ import (
 
 type NSFWResponse struct {
 	NSFW int    `json:"nsfw"`
-	Err  string `json:"error", omitempty`
+	Err  string `json:"error",omitempty`
 }
 
 var logger = jsonlog.New(os.Stdout, jsonlog.LevelInfo)
@@ -54,7 +54,10 @@ func StartNSFWWorker(ctx context.Context, m data.Models, workerID int) {
 				}
 
 				if err = processNSFW(ctx, file, m); err != nil {
-					m.Posts.Redis.RPush(context.Background(), data.NSFWQueue, fileStr)
+					err := m.Posts.Redis.RPush(context.Background(), data.NSFWQueue, fileStr)
+					if err != nil {
+						logger.PrintError(err.Err(), map[string]string{"redis": "can't requeue the file in nsfw detector"})
+					}
 					time.Sleep(5 * time.Second)
 					continue
 				}

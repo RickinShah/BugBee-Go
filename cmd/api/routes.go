@@ -89,6 +89,7 @@ func (app *application) routes() http.Handler {
 
 	router.HandleFunc("POST /v1/channel/chats", app.requireActivatedUser(app.addChannelMessage))
 	router.HandleFunc("GET /v1/channel/chats/{channel_id}", app.requireActivatedUser(app.getChannelMessages))
+	router.HandleFunc("GET /v1/user/check", app.requireActivatedUser(app.checkLogin))
 
 	//return app.recoverPanic(app.rateLimit(router))
 	return app.recoverPanic(app.enableCORS(app.authenticate(router)))

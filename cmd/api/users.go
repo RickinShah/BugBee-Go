@@ -750,3 +750,8 @@ func (app *application) logoutHandler(w http.ResponseWriter, r *http.Request) {
 		app.serverErrorResponse(w, r, err)
 	}
 }
+
+func (app *application) checkLogin(w http.ResponseWriter, r *http.Request) {
+	app.writeJson(w, http.StatusOK, nil, nil)
+	return
+}

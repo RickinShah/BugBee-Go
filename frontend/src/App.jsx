@@ -19,6 +19,7 @@ import ChangePassword from "./components/ChangePassword";
 import Dashboard from "./components/Dashboard/dashboard";
 import VideoCall from "./components/VideoCall/videoCall";
 import SinglePost from "./components/SinglePost";
+import VcJoin from "./components/VcJoin"
 
 const App = () => {
     return (
@@ -84,6 +85,7 @@ const App = () => {
                         path="/posts/:postId"
                         element={<SinglePost />}
                     ></Route>
+                    <Route path="/vc/join/:roomId" element={<VcJoin />}></Route>
                 </Routes>
             </Router>
         </>
