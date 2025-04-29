@@ -227,7 +227,9 @@ func (app *application) deletePostHandler(w http.ResponseWriter, r *http.Request
 	}
 	for _, file := range files {
 		err = data.DeleteFile("bugbee", file.Path)
-		app.logger.PrintError(fmt.Errorf("failed to delete post: %w"+err.Error()), map[string]string{"file_id": strconv.FormatInt(file.ID, 10)})
+		if err != nil {
+			app.logger.PrintError(fmt.Errorf("failed to delete post: %w"+err.Error()), map[string]string{"file_id": strconv.FormatInt(file.ID, 10)})
+		}
 	}
 
 	err = app.writeJson(w, http.StatusOK, envelope{"message": "post deleted successfully"}, nil)

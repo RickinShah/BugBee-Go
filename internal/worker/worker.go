@@ -54,6 +54,8 @@ func StartNSFWWorker(ctx context.Context, m data.Models, workerID int) {
 				}
 
 				if err = processNSFW(ctx, file, m); err != nil {
+					m.Posts.Redis.RPush(context.Background(), data.NSFWQueue, fileStr)
+					time.Sleep(5 * time.Second)
 					continue
 				}
 
