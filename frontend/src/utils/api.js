@@ -1,3 +1,5 @@
+import { goTo } from "./navigation"
+
 const config = {
     host: "bugbee.onrender.com",
     protocol: "https",
@@ -6,7 +8,6 @@ const config = {
 
 export const chatURL = "https://bugbee-go-1.onrender.com";
 export const chatHost = "bugbee-go-1.onrender.com"
-// export const appHost = "bugbee-go-1.onrender.com"
 export const vcHost = "bugbee-vc.onrender.com";
 
 const showErrorNotification = (message) => {
@@ -102,7 +103,14 @@ export const apiCall = async (
 
         if (response.ok) {
             onSuccess(responseData);
-        } else if (response.status == 404) {
+        } else if (response.status == 401) {
+            localStorage.clear();
+            goTo("login");
+        } else if (response.status == 403) {
+            alert("Your account needs to be activated before you can start using the app. Please check your email for the activation link.")
+            goTo("login");
+        }
+        else if (response.status == 404) {
             onSuccess(responseData);
         }
         else {

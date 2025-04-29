@@ -327,7 +327,7 @@ func (app *application) registerEmailHandler(w http.ResponseWriter, r *http.Requ
 	}
 
 	if emailAlreadyExists {
-		err = app.writeJson(w, http.StatusForbidden, envelope{"email": "a user with this email address already exists"}, nil)
+		err = app.writeJson(w, http.StatusConflict, envelope{"email": "a user with this email address already exists"}, nil)
 		if err != nil {
 			app.serverErrorResponse(w, r, err)
 		}
@@ -384,7 +384,7 @@ func (app *application) registerUsernameHandler(w http.ResponseWriter, r *http.R
 	}
 
 	if usernameAlreadyExists {
-		err = app.writeJson(w, http.StatusForbidden, envelope{"username": "a user with this username already exists"}, nil)
+		err = app.writeJson(w, http.StatusConflict, envelope{"username": "a user with this username already exists"}, nil)
 		if err != nil {
 			app.serverErrorResponse(w, r, err)
 		}

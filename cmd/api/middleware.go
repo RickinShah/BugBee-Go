@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/RickinShah/BugBee/internal/data"
@@ -43,36 +42,19 @@ func (app *application) authenticate(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var token string
 
-		w.Header().Add("Vary", "Authorization")
-
-		authorizationHeader := r.Header.Get("Authorization")
-
-		if authorizationHeader == "" {
-			// r = app.contextSetUser(r, data.AnonymousUser)
-			// next.ServeHTTP(w, r)
-			// return
-			authorizationCookie, err := r.Cookie("auth_token")
-			if err != nil {
-				switch {
-				case errors.Is(err, http.ErrNoCookie):
-					app.contextSetUser(r, data.AnonymousUser)
-					next.ServeHTTP(w, r)
-					return
-				default:
-					app.badRequestResponse(w, r, err)
-					return
-				}
-			}
-			token = authorizationCookie.Value
-		} else {
-			headerParts := strings.Split(authorizationHeader, " ")
-			if len(headerParts) != 2 || headerParts[0] != "Bearer" {
-				app.invalidCredentialsResponse(w, r)
+		authorizationCookie, err := r.Cookie("auth_token")
+		if err != nil {
+			switch {
+			case errors.Is(err, http.ErrNoCookie):
+				r = app.contextSetUser(r, data.AnonymousUser)
+				next.ServeHTTP(w, r)
+				return
+			default:
+				app.badRequestResponse(w, r, err)
 				return
 			}
-
-			token = headerParts[1]
 		}
+		token = authorizationCookie.Value
 
 		if token == "" {
 			cookie := http.Cookie{
@@ -83,7 +65,7 @@ func (app *application) authenticate(next http.Handler) http.Handler {
 				HttpOnly: true,
 			}
 			http.SetCookie(w, &cookie)
-			app.contextSetUser(r, data.AnonymousUser)
+			r = app.contextSetUser(r, data.AnonymousUser)
 			next.ServeHTTP(w, r)
 			return
 		}
@@ -107,7 +89,8 @@ func (app *application) authenticate(next http.Handler) http.Handler {
 					HttpOnly: true,
 				}
 				http.SetCookie(w, &cookie)
-				app.invalidAuthenticationTokenResponse(w, r)
+				r = app.contextSetUser(r, data.AnonymousUser)
+				next.ServeHTTP(w, r)
 			default:
 				app.serverErrorResponse(w, r, err)
 			}

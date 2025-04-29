@@ -1,4 +1,6 @@
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { setGoTo as setGlobalGoTo } from "./navigation";
 
 const useNavigation = () => {
     const navigate = useNavigate();
@@ -29,6 +31,10 @@ const useNavigation = () => {
         const fullUrl = searchParams ? `${url}?${searchParams}` : url;
         navigate(fullUrl);
     };
+
+    useEffect(() => {
+        setGlobalGoTo(goTo);
+    }, [goTo]);
 
     // const navigateTo = (path, params = {}) => {
     //     const url = routes[path];

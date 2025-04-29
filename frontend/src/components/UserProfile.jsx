@@ -21,7 +21,7 @@ import {
 } from "react-icons/fa";
 
 const UserProfile = () => {
-    const [user] = useState(() => JSON.parse(localStorage.getItem("user")));
+    const [user, setUser] = useState({});
     const [username] = useState(useParams().username);
     const [fetchedUser, setFetchedUser] = useState({});
     const { goTo } = useNavigation();
@@ -49,6 +49,11 @@ const UserProfile = () => {
     };
 
     useEffect(() => {
+        const tempUser = localStorage.getItem("user")
+        if (tempUser === null) {
+            goTo("login");
+        }
+        setUser(JSON.parse(tempUser));
         fetchUser();
     }, []);
 

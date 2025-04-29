@@ -17,6 +17,13 @@ const PostUpload = () => {
     const [loading, setLoading] = useState(false);
     const { goTo } = useNavigation();
 
+    useEffect(() => {
+        const tempUser = localStorage.getItem("user")
+        if (tempUser === null) {
+            goTo("login");
+        }
+    }, []);
+
     const processImage = async (file) => {
         return new Promise((resolve) => {
             const img = new Image();
@@ -237,8 +244,8 @@ const PostUpload = () => {
                                         }}
                                     />
                                 ) : selectedFiles[currentIndex].type.startsWith(
-                                      "video",
-                                  ) ? (
+                                    "video",
+                                ) ? (
                                     <video
                                         src={URL.createObjectURL(
                                             selectedFiles[currentIndex],
@@ -247,8 +254,8 @@ const PostUpload = () => {
                                         className="w-full h-full object-contain rounded-xl"
                                     />
                                 ) : selectedFiles[currentIndex].type.startsWith(
-                                      "audio",
-                                  ) ? (
+                                    "audio",
+                                ) ? (
                                     <audio
                                         controls
                                         className="w-full p-3 sm:p-4 bg-white bg-opacity-10 rounded-xl"
@@ -331,19 +338,19 @@ const PostUpload = () => {
                 </div>
                 <div className="flex flex-col sm:flex-row justify-center mt-8 sm:mt-10 w-full space-y-4 sm:space-y-0 sm:space-x-6">
 
-                <button
-                    onClick={handlePost}
-                    disabled={loading}
+                    <button
+                        onClick={handlePost}
+                        disabled={loading}
                         className="w-full sm:w-40 md:w-48 h-12 sm:h-14 bg-[#185ce4] rounded-xl text-white text-base sm:text-lg font-semibold hover:bg-[#0051ff98] transition duration-200 shadow-md"
-                >
-                    {loading ? (
-                        <div className="flex items-center justify-center">
-                            <div className="h-5 w-5 border-4 border-gray-200 border-t-transparent rounded-full animate-spin"></div>
-                        </div>
-                    ) : (
-                        "Share Post"
-                    )}
-                </button>
+                    >
+                        {loading ? (
+                            <div className="flex items-center justify-center">
+                                <div className="h-5 w-5 border-4 border-gray-200 border-t-transparent rounded-full animate-spin"></div>
+                            </div>
+                        ) : (
+                            "Share Post"
+                        )}
+                    </button>
                 </div>
             </div>
 

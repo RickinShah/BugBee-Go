@@ -45,6 +45,11 @@ func (app *application) createAuthenticationHandler(w http.ResponseWriter, r *ht
 		return
 	}
 
+	if !user.Activated {
+		app.inactiveAccountResponse(w, r)
+		return
+	}
+
 	match, err := user.Password.Matches(input.Password)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)

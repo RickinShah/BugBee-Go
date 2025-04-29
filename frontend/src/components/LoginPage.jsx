@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { handleFormChange, setToLocalStorage } from "../utils/form";
 import { apiCall, getMediaPath } from "../utils/api";
 import { validatePassword, validateUsernameOrEmail } from "../validators/user";
@@ -69,6 +69,13 @@ const LoginPage = () => {
             return;
         }
     };
+
+    useEffect(() => {
+        const user = localStorage.getItem("user")
+        if (user !== null) {
+            goTo("feed");
+        }
+    }, [])
 
     return (
         <div className="w-full h-screen flex flex-col justify-center items-center bg-gradient-to-br from-[#242380] via-blue-950 to-purple-800 px-5">
