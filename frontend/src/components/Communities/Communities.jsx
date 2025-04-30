@@ -45,6 +45,7 @@ const Communities = () => {
     const [selectedChannel, setSelectedChannel] = useState({});
     const [permissions, setPermissions] = useState([]);
     const [userRoles, setUserRoles] = useState([])
+    const [channelLoading, setChannelLoading] = useState(false);
 
     const formatMessageTime = (timestamp) => {
         const date = new Date(timestamp);
@@ -314,6 +315,7 @@ const Communities = () => {
     }
 
     const createChannel = async () => {
+        setChannelLoading(true);
         if (!channelName.trim()) {
             alert("Please enter a channel name");
             return;
@@ -346,13 +348,14 @@ const Communities = () => {
                         ]);
 
                     } else {
-                        setChannels(response.channel);
+                        setChannels([response.channel]);
                     }
                 },
             );
         } catch (err) {
             validationError(err.errors);
         }
+        setChannelLoading(false);
     };
 
     const fetchMembers = async (community_handle) => {
@@ -681,11 +684,19 @@ const Communities = () => {
                                         </div>
                                     ))}
                                 </div>
+
                                 <button
-                                    className="w-full h-12 bg-blue-700 hover:bg-blue-600 text-white rounded-lg font-medium transition-all duration-200 hover:scale-105"
                                     onClick={createChannel}
+                                    disabled={channelLoading}
+                                    className="w-full h-12 bg-blue-700 hover:bg-blue-600 text-white rounded-lg font-medium transition-all duration-200 hover:scale-105"
                                 >
-                                    Create Channel
+                                    {channelLoading ? (
+                                        <div className="flex items-center justify-center">
+                                            <div className="h-5 w-5 border-4 border-gray-200 border-t-transparent rounded-full animate-spin"></div>
+                                        </div>
+                                    ) : (
+                                        "Create Channel"
+                                    )}
                                 </button>
                             </div>
                         </div>
