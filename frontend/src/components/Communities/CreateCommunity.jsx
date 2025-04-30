@@ -22,6 +22,7 @@ const CreateCommunity = () => {
     const [imageBlob, setImageBlob] = useState(null);
     const cropperRef = useRef(null);
     const profilePath = getDefaultProfilePath();
+    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
         if (image && !croppedImage) {
@@ -88,8 +89,9 @@ const CreateCommunity = () => {
         handle: validateUsername,
     });
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
+        setLoading(true);
 
         if (showCropper) {
             validationError(["either crop or remove the profile picture"]);
@@ -107,7 +109,7 @@ const CreateCommunity = () => {
                     type: "image/jpeg",
                 });
             formDataObj.append("profile_pic", file);
-            apiCall(
+            await apiCall(
                 "/v1/communities",
                 "POST",
                 formDataObj,
@@ -121,6 +123,7 @@ const CreateCommunity = () => {
         } catch (error) {
             validationError(error.errors);
         }
+        setLoading(false);
     };
 
     return (
@@ -260,9 +263,16 @@ const CreateCommunity = () => {
                 <div className="flex justify-center mt-8">
                     <button
                         onClick={handleSubmit}
+                        disabled={loading}
                         className="w-40 sm:w-48 h-12 rounded-md bg-blue-700 text-white hover:bg-blue-800 text-lg font-semibold transition-all duration-300 transform hover:scale-105"
                     >
-                        Create
+                        {loading ? (
+                            <div className="flex items-center justify-center">
+                                <div className="h-5 w-5 border-4 border-gray-200 border-t-transparent rounded-full animate-spin"></div>
+                            </div>
+                        ) : (
+                            "Create"
+                        )}
                     </button>
                 </div>
             </div>
