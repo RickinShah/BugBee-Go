@@ -187,6 +187,9 @@ const Communities = () => {
         setSelectedChannelId(channel.channel_id);
         setSelectedChannel(channel);
         fetchMessages(channel.channel_id);
+        if (window.innerWidth < 768) {
+            setToggleChannels(false)
+        }
         socket.emit("joinChannel", channel.channel_id);
         setSearchQuery(""); // Clear search when channel is selected
         setSearchResults([]);

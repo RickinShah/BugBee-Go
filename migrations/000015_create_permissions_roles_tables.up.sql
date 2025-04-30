@@ -10,6 +10,8 @@ CREATE TABLE IF NOT EXISTS permissions (
     code citext NOT NULL
 );
 
+INSERT INTO permissions(code) VALUES ('channel:create'), ('post:create'), ('ban:users'), ('community:edit');
+
 CREATE TABLE IF NOT EXISTS role_permissions (
     role_id bigint REFERENCES community_roles ON DELETE CASCADE,
     permission_id bigint REFERENCES permissions,

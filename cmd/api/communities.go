@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"log"
 	"mime/multipart"
 	"net/http"
 	"path/filepath"
@@ -199,11 +200,12 @@ func (app *application) createCommunityHandler(w http.ResponseWriter, r *http.Re
 
 func (app *application) updateCommunityHandler(w http.ResponseWriter, r *http.Request) {
 	var input struct {
-		Name       string
-		Handle     string
-		NewHandle  string
-		File       multipart.File
-		FileHeader *multipart.FileHeader
+		Name           string
+		Handle         string
+		RemovedProfile bool
+		NewHandle      string
+		File           multipart.File
+		FileHeader     *multipart.FileHeader
 	}
 	err := r.ParseMultipartForm(10 << 20)
 	if err != nil {
@@ -219,6 +221,11 @@ func (app *application) updateCommunityHandler(w http.ResponseWriter, r *http.Re
 		return
 	}
 
+	input.RemovedProfile, err = strconv.ParseBool(r.FormValue("removedProfile"))
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
 	input.File, input.FileHeader, err = r.FormFile("profile_pic")
 	noFileFound := false
 	if err != nil {
@@ -255,6 +262,11 @@ func (app *application) updateCommunityHandler(w http.ResponseWriter, r *http.Re
 		}
 		return
 	}
+	log.Print(input.RemovedProfile)
+
+	if input.RemovedProfile {
+		community.ProfilePath = nil
+	}
 
 	community.Handle = strings.ToLower(input.NewHandle)
 	community.Name = input.Name
@@ -271,19 +283,7 @@ func (app *application) updateCommunityHandler(w http.ResponseWriter, r *http.Re
 		}
 	}()
 
-	err = app.models.Communities.UpdateTx(tx, community)
-	if err != nil {
-		switch {
-		case err == data.ErrDuplicateCommunityHandle:
-			v.AddError("community handle", "a community with this handle already exists")
-			app.failedValidationResponse(w, r, v.Errors)
-		default:
-			app.serverErrorResponse(w, r, err)
-		}
-		return
-	}
-
-	if !noFileFound {
+	if !noFileFound && !input.RemovedProfile {
 		defer input.File.Close()
 
 		if data.ValidateProfilePic(v, input.File); !v.Valid() {
@@ -299,14 +299,25 @@ func (app *application) updateCommunityHandler(w http.ResponseWriter, r *http.Re
 			return
 		}
 
+		log.Print(path)
 		community.ProfilePath = &path
 
 		err = data.UploadFile("bugbee", input.File, path, "image/jpeg")
-		// err = data.SaveFile(input.File, path)
 		if err != nil {
 			app.serverErrorResponse(w, r, err)
 			return
 		}
+	}
+	err = app.models.Communities.UpdateTx(tx, community)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrDuplicateCommunityHandle):
+			v.AddError("community handle", "a community with this handle already exists")
+			app.failedValidationResponse(w, r, v.Errors)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
 	}
 	if err := tx.Commit(); err != nil {
 		app.serverErrorResponse(w, r, err)

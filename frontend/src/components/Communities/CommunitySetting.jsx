@@ -21,6 +21,7 @@ const CommunitySetting = () => {
         handle: "",
     });
     const [removedProfile, setRemovedProfile] = useState(false);
+    const [communityFormLoading, setCommunityFormLoading] = useState(false);
 
     // State for navigation toggles
     const [toggleOverview, setToggleOverview] = useState(true);
@@ -77,7 +78,8 @@ const CommunitySetting = () => {
                         handle: response.community.community_handle,
                         name: response.community.name,
                     }));
-                    setProfilePath(response.community.profile_path)
+                    setProfilePath(getMediaPath(response.community.profile_path))
+                    console.log(response.community.profile_path)
                 },
             );
         } catch (err) {
@@ -153,6 +155,45 @@ const CommunitySetting = () => {
                 : [...prev, permissionCode],
         );
     };
+
+    const handleSubmit = async (e) => {
+        setCommunityFormLoading(true);
+        e.preventDefault();
+        if (showCropper) {
+            validationError(["either crop or remove the profile picture"]);
+            return;
+        }
+        let submissionData = { ...formData };
+        try {
+
+            const formDataObj = new FormData();
+            formDataObj.append("name", submissionData.name);
+            formDataObj.append("handle", submissionData.handle);
+            formDataObj.append("removedProfile", removedProfile)
+            let file = null;
+
+            if (imageBlob)
+                file = new File([imageBlob], "profile.jpg", {
+                    type: "image/jpeg",
+                });
+            formDataObj.append("profile_pic", file);
+
+            await apiCall(
+                `/v1/communities/${communityHandle}`,
+                "PATCH",
+                formDataObj,
+                {},
+                "include",
+                true,
+                (response) => {
+                    alert(response.community)
+                }
+            )
+        } catch (err) {
+            validationError(err);
+        }
+        setCommunityFormLoading(false);
+    }
 
     // Submit new role creation
     const handleCreateRoleSubmit = async () => {
@@ -311,7 +352,7 @@ const CommunitySetting = () => {
                             <div className="mt-6 flex flex-col items-center">
                                 {!image &&
                                     !croppedImage &&
-                                    !community.profile_path && (
+                                    !profilePath && (
                                         <div
                                             className="relative w-32 h-32 sm:w-40 sm:h-40 rounded-full overflow-hidden cursor-pointer group border-4 border-white flex items-center justify-center bg-gray-300"
                                             onClick={() =>
@@ -346,7 +387,7 @@ const CommunitySetting = () => {
 
                             {!image &&
                                 !croppedImage &&
-                                community.profile_path && (
+                                profilePath && (
                                     <div
                                         className="relative w-32 h-32 sm:w-40 sm:h-40 rounded-full overflow-hidden cursor-pointer group border-4 border-white"
                                         onClick={() =>
@@ -356,9 +397,7 @@ const CommunitySetting = () => {
                                         }
                                     >
                                         <img
-                                            src={getMediaPath(
-                                                community.profile_path,
-                                            )}
+                                            src={profilePath}
                                             alt="Profile"
                                             className="w-full h-full object-cover"
                                         />
@@ -490,10 +529,20 @@ const CommunitySetting = () => {
                                         className="mt-2 w-full h-12 bg-blue-900/40 text-white text-center text-lg placeholder-blue-300 rounded-xl border border-blue-800/50 focus:outline-none focus:border-blue-600"
                                     />
                                 </div>
-
-                                <button className="w-full h-12 bg-blue-700 text-white font-semibold rounded-xl hover:bg-blue-600 transition-all duration-300 hover:scale-105">
-                                    Apply
+                                <button
+                                    onClick={handleSubmit}
+                                    disabled={communityFormLoading}
+                                    className="w-full h-12 bg-blue-700 text-white font-semibold rounded-xl hover:bg-blue-600 transition-all duration-300 hover:scale-105"
+                                >
+                                    {communityFormLoading ? (
+                                        <div className="flex items-center justify-center">
+                                            <div className="h-5 w-5 border-4 border-gray-200 border-t-transparent rounded-full animate-spin"></div>
+                                        </div>
+                                    ) : (
+                                        "Apply"
+                                    )}
                                 </button>
+
                             </div>
                         </div>
                     )}

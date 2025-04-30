@@ -47,7 +47,6 @@ func (app *application) routes() http.Handler {
 	router.HandleFunc("GET /v1/communities/joined", app.requireActivatedUser(app.getJoinedCommunitiesHandler))
 	router.HandleFunc("DELETE /v1/communities/{handle}", app.requireActivatedUser(app.deleteCommunityHandler))
 	router.HandleFunc("PATCH /v1/communities/{handle}", app.requireActivatedUser(app.updateCommunityHandler))
-	router.HandleFunc("DELETE /v1/community/{handle}", app.requireActivatedUser(app.deleteCommunityHandler))
 	router.HandleFunc("GET /v1/community/{handle}/channels", app.requireActivatedUser(app.getChannels))
 	router.HandleFunc("GET /v1/communities/search", app.requireActivatedUser(app.searchCommunityHandler))
 	router.HandleFunc("GET /v1/community/{handle}/permissions", app.requireActivatedUser(app.getUserPermissions))
