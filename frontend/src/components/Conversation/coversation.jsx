@@ -11,8 +11,7 @@ const Conversation = (props) => {
 
     useEffect(() => {
         let username = JSON.parse(localStorage.getItem("user")).username;
-        console.log(props.members);
-        props.members.filter((item) => console.log(item.username));
+        // props.members.filter((item) => console.log(item.username));
         let friendItem = props.members.filter(
             (item) => item.username !== username,
         );

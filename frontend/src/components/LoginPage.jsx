@@ -63,11 +63,11 @@ const LoginPage = () => {
                 (response) => onSuccess(response),
                 null,
             );
-            setLoading(false);
         } catch (err) {
             validationError(err.errors);
             return;
         }
+        setLoading(false);
     };
 
     useEffect(() => {

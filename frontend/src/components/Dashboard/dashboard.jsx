@@ -128,7 +128,6 @@ const Dashboard = ({ setLoginFunc }) => {
                 false,
                 (response) => {
                     setConversation(response.conversations)
-                    console.log(response.conversations)
 
                     // response.conversations.forEach(async (conv) => {
                     //     try {
@@ -491,10 +490,12 @@ const Dashboard = ({ setLoginFunc }) => {
                                                 <div
                                                     className="search-item"
                                                     key={index}
-                                                    onClick={() =>
+                                                    onClick={() => {
                                                         handleCreateConv(
                                                             item.username,
                                                         )
+                                                        setSearchedData("");
+                                                    }
                                                     }
                                                 >
                                                     <img

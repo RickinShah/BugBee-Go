@@ -67,6 +67,7 @@ const Chats = (props) => {
                 "include",
                 false,
                 (response) => {
+                    setChats([]);
                     const messagesWithDisplayProps = response.messages.map(
                         (msg) => ({
                             ...msg,
@@ -119,7 +120,6 @@ const Chats = (props) => {
                 true,
                 (response) => {
                     socket.emit("sendMessage", props.selectedId, response.message);
-                    console.log(response.message)
                     setImageFile(null);
                     setImagePreview(null);
                     setContent("");
