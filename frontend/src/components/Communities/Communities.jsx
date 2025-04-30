@@ -345,6 +345,8 @@ const Communities = () => {
                             response.channel,
                         ]);
 
+                    } else {
+                        setChannels(response.channel);
                     }
                 },
             );
