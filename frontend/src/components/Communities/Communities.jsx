@@ -43,6 +43,8 @@ const Communities = () => {
     const [selectedChannelId, setSelectedChannelId] = useState(null);
     const messagesEndRef = useRef(null);
     const [selectedChannel, setSelectedChannel] = useState({});
+    const [permissions, setPermissions] = useState([]);
+    const [userRoles, setUserRoles] = useState([])
 
     const formatMessageTime = (timestamp) => {
         const date = new Date(timestamp);
@@ -172,6 +174,8 @@ const Communities = () => {
         setSelectedCommunityId(community.community_id);
         fetchMembers(community.community_handle);
         fetchChannels(community.community_handle);
+        fetchPermissions(community);
+        fetchUserRoles(community);
         setSelectedChannelId(null); // Reset channel selection
         setMessages([]); // Clear messages
         setSearchQuery(""); // Clear search
@@ -264,6 +268,25 @@ const Communities = () => {
         }
     };
 
+    const fetchUserRoles = async (community) => {
+        try {
+            await apiCall(
+                `/v1/community/${community.community_handle}/user/roles`,
+                "GET",
+                null,
+                {},
+                "include",
+                false,
+                (response) => {
+                    setUserRoles(response.roles)
+                    console.log(response.roles);
+                }
+            )
+        } catch (err) {
+            validationError(err);
+        }
+    }
+
     const handleRoleSelection = (roleId) => {
         if (selectedRoles.includes(roleId)) {
             setSelectedRoles(selectedRoles.filter((id) => id !== roleId));
@@ -313,7 +336,7 @@ const Communities = () => {
                 false,
                 (response) => {
                     ChannelToggleFunction();
-                    if (prevChannels) {
+                    if (channels) {
                         setChannels((prevChannels) => [
                             ...prevChannels,
                             response.channel,
@@ -354,6 +377,24 @@ const Communities = () => {
             },
         );
     };
+
+    const fetchPermissions = async (community) => {
+        try {
+            await apiCall(
+                `/v1/community/${community.community_handle}/permissions`,
+                "GET",
+                null,
+                {},
+                "include",
+                false,
+                (response) => {
+                    setPermissions(response.permissions);
+                }
+            )
+        } catch (err) {
+            validationError(err);
+        }
+    }
 
     useEffect(() => {
         fetchJoinedCommunities();
@@ -508,12 +549,21 @@ const Communities = () => {
                             } md:translate-x-0 shadow-md md:shadow-lg`}
                     >
                         <div className="h-16 md:h-20 bg-blue-950/30 flex items-center justify-between px-4 border-b border-blue-800/50">
-                            <button
-                                className="w-full text-white font-semibold text-lg md:text-xl hover:text-blue-200 transition-colors duration-200 text-left"
-                                onClick={goToCommunitySetting}
-                            >
-                                {currentCommunity.name}
-                            </button>
+                            {permissions && permissions.includes("community:edit") && (
+                                <button
+                                    className="w-full text-white font-semibold text-lg md:text-xl hover:text-blue-200 transition-colors duration-200 text-left"
+                                    onClick={goToCommunitySetting}
+                                >
+                                    {currentCommunity.name}
+                                </button>
+                            )}
+                            {(!permissions || !permissions.includes("community:edit")) && (
+                                <p
+                                    className="w-full text-white font-semibold text-lg md:text-xl transition-colors duration-200 text-left"
+                                >
+                                    {currentCommunity.name}
+                                </p>
+                            )}
                             <button
                                 onClick={() => setToggleChannels(false)}
                                 className="md:hidden"
@@ -531,40 +581,45 @@ const Communities = () => {
                                 <span className="font-semibold text-base md:text-lg">
                                     Channels
                                 </span>
-                                <button
-                                    onClick={() => {
-                                        ChannelToggleFunction();
-                                        fetchRoles(
-                                            currentCommunity.community_handle,
-                                        );
-                                    }}
-                                    className="hover:scale-110 transition-transform duration-200 p-2 rounded-full hover:bg-blue-800/30"
-                                >
-                                    <img
-                                        src={addButton}
-                                        alt="add"
-                                        className="w-6 h-6 invert"
-                                    />
-                                </button>
+                                {permissions && permissions.includes("channel:create") && (
+                                    <button
+                                        onClick={() => {
+                                            ChannelToggleFunction();
+                                            fetchRoles(
+                                                currentCommunity.community_handle,
+                                            );
+                                        }}
+                                        className="hover:scale-110 transition-transform duration-200 p-2 rounded-full hover:bg-blue-800/30"
+                                    >
+                                        <img
+                                            src={addButton}
+                                            alt="add"
+                                            className="w-6 h-6 invert"
+                                        />
+                                    </button>
+                                )}
                             </div>
                             <div className="flex flex-col items-center">
-                                {channels?.map((channel) => (
-                                    <button
-                                        key={channel.channel_id}
-                                        onClick={() =>
-                                            handleChannelClick(
-                                                channel,
-                                            )
-                                        }
-                                        className={`w-full text-left p-2 rounded-lg ${selectedChannelId ===
-                                            channel.channel_id
-                                            ? "bg-blue-700 text-white"
-                                            : "text-gray-300 hover:bg-blue-800/30"
-                                            }`}
-                                    >
-                                        # {channel.name}
-                                    </button>
-                                ))}
+                                {channels?.map((channel) => {
+                                    const hasAccess = channel.roles.some(role => userRoles.includes(role));
+
+                                    return (
+                                        <button
+                                            key={channel.channel_id}
+                                            disabled={!hasAccess}
+                                            onClick={() => hasAccess && handleChannelClick(channel)}
+                                            className={`w-full text-left p-2 rounded-lg transition 
+          ${selectedChannelId === channel.channel_id && hasAccess
+                                                    ? "bg-blue-700 text-white"
+                                                    : hasAccess
+                                                        ? "text-gray-300 hover:bg-blue-800/30"
+                                                        : "text-gray-500 cursor-not-allowed opacity-50"
+                                                }`}
+                                        >
+                                            # {channel.name}
+                                        </button>
+                                    );
+                                })}
                             </div>
                         </div>
                     </div>

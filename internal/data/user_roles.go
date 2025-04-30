@@ -3,6 +3,7 @@ package data
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"time"
 
 	"github.com/go-redis/redis/v8"
@@ -55,4 +56,44 @@ func (m UserRoleModel) InsertTx(tx *sql.Tx, userRole UserRole) error {
 		return err
 	}
 	return nil
+}
+
+func (m UserRoleModel) GetByUser(userID int64, communityID int64) ([]string, error) {
+	query := `
+		SELECT r.name
+		FROM user_roles ur
+		JOIN community_roles r ON ur.role_id = r.role_pid
+		WHERE ur.user_id = $1 AND ur.community_id = $2
+	`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	args := []any{userID, communityID}
+
+	rows, err := m.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, ErrRecordNotFound
+		default:
+			return nil, err
+		}
+	}
+
+	var roles []string
+
+	for rows.Next() {
+		var role string
+		if err := rows.Scan(&role); err != nil {
+			return nil, err
+		}
+		roles = append(roles, role)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return roles, nil
 }

@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS channels (
 
 CREATE TABLE IF NOT EXISTS channel_roles (
     channel_id bigint REFERENCES channels ON DELETE CASCADE,
-    role_id bigint REFERENCES community_roles,
+    role_id bigint REFERENCES community_roles ON DELETE CASCADE,
     PRIMARY KEY(channel_id, role_id)
 );
 

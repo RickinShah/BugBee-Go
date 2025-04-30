@@ -101,7 +101,8 @@ func (app *application) createCommunityHandler(w http.ResponseWriter, r *http.Re
 
 		community.ProfilePath = &path
 
-		err = data.SaveFile(input.File, path)
+		err = data.UploadFile("bugbee", input.File, path, "image/jpeg")
+		// err = data.SaveFile(input.File, path)
 		if err != nil {
 			app.serverErrorResponse(w, r, err)
 			return
@@ -138,12 +139,6 @@ func (app *application) createCommunityHandler(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	permissionIDs, err := app.models.Permissions.GetAll()
-	if err != nil {
-		app.serverErrorResponse(w, r, err)
-		return
-	}
-
 	app.logger.PrintInfo(strconv.FormatInt(community.ID, 10), nil)
 	communityRole := data.CommunityRole{
 		CommunityID: community.ID,
@@ -156,9 +151,24 @@ func (app *application) createCommunityHandler(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	err = app.models.RolePermissions.Insert(tx, communityRole.ID, permissionIDs)
+	communityRoleUser := data.CommunityRole{
+		CommunityID: community.ID,
+		Name:        "user",
+	}
+
+	err = app.models.CommunityRoles.Insert(tx, &communityRoleUser)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	if err = app.models.Permissions.InsertAllTx(tx, communityRole.ID); err != nil {
+		switch {
+		case errors.Is(err, data.ErrEditConflict):
+			app.editConflictResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
 		return
 	}
 
@@ -291,7 +301,8 @@ func (app *application) updateCommunityHandler(w http.ResponseWriter, r *http.Re
 
 		community.ProfilePath = &path
 
-		err = data.SaveFile(input.File, path)
+		err = data.UploadFile("bugbee", input.File, path, "image/jpeg")
+		// err = data.SaveFile(input.File, path)
 		if err != nil {
 			app.serverErrorResponse(w, r, err)
 			return

@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import Cropper from "react-cropper";
 import { useNavigate } from "react-router-dom";
 import { validationError } from "../../utils/errors";
-import { apiCall, getMediaPath } from "../../utils/api";
+import { apiCall, getDefaultProfilePath, getMediaPath } from "../../utils/api";
 import { useEffect } from "react";
 import { useParams } from "react-router-dom";
 import closeButton from "../../assets/close.png";
@@ -20,6 +20,7 @@ const CommunitySetting = () => {
         name: "",
         handle: "",
     });
+    const [removedProfile, setRemovedProfile] = useState(false);
 
     // State for navigation toggles
     const [toggleOverview, setToggleOverview] = useState(true);
@@ -63,7 +64,7 @@ const CommunitySetting = () => {
 
     const fetchCommunity = async () => {
         try {
-            apiCall(
+            await apiCall(
                 `/v1/communities/${communityHandle}`,
                 "GET",
                 null,
@@ -72,6 +73,11 @@ const CommunitySetting = () => {
                 false,
                 (response) => {
                     setCommunity(response.community);
+                    setFormData(() => ({
+                        handle: response.community.community_handle,
+                        name: response.community.name,
+                    }));
+                    setProfilePath(response.community.profile_path)
                 },
             );
         } catch (err) {
@@ -81,10 +87,6 @@ const CommunitySetting = () => {
 
     useEffect(() => {
         fetchCommunity();
-        setFormData(() => ({
-            handle: community.community_handle,
-            name: community.name,
-        }));
     }, []);
 
     // Fetch roles from API
@@ -204,7 +206,7 @@ const CommunitySetting = () => {
     const [croppedImage, setCroppedImage] = useState(null);
     const [showCropper, setShowCropper] = useState(false);
     const [imageBlob, setImageBlob] = useState(null);
-    const [profilePath] = useState();
+    const [profilePath, setProfilePath] = useState();
     const cropperRef = useRef(null);
 
     useEffect(() => {
@@ -368,7 +370,23 @@ const CommunitySetting = () => {
                                                 Change
                                             </span>
                                         </div>
+                                        {profilePath !== getDefaultProfilePath() && (
+                                            <button
+                                                type="button"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setProfilePath(getDefaultProfilePath());
+                                                    setRemovedProfile(true);
+                                                }}
+                                                className="absolute top-5 right-5 hover:bg-white hover:bg-opacity-10 text-white text-xs font-semibold px-2 py-1 rounded-xl 
+      opacity-100 md:opacity-0 md:group-hover:opacity-90 transition-opacity duration-300"
+                                            >
+                                                x
+                                            </button>
+                                        )}
+
                                     </div>
+
                                 )}
 
                             <input

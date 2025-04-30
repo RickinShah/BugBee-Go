@@ -50,6 +50,8 @@ func (app *application) routes() http.Handler {
 	router.HandleFunc("DELETE /v1/community/{handle}", app.requireActivatedUser(app.deleteCommunityHandler))
 	router.HandleFunc("GET /v1/community/{handle}/channels", app.requireActivatedUser(app.getChannels))
 	router.HandleFunc("GET /v1/communities/search", app.requireActivatedUser(app.searchCommunityHandler))
+	router.HandleFunc("GET /v1/community/{handle}/permissions", app.requireActivatedUser(app.getUserPermissions))
+	router.HandleFunc("GET /v1/community/{handle}/user/roles", app.requireActivatedUser(app.getUserRoles))
 
 	// Permissions
 	// router.HandleFunc("POST /v1/permissions", app.insertPermissionHandler)

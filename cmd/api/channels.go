@@ -51,6 +51,14 @@ func (app *application) createChannel(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	roles, err := app.models.Channels.GetRoles(channel.ID)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	channel.Roles = &roles
+
 	err = app.writeJson(w, http.StatusOK, envelope{"channel": channel}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
@@ -89,6 +97,20 @@ func (app *application) getChannels(w http.ResponseWriter, r *http.Request) {
 			app.serverErrorResponse(w, r, err)
 		}
 		return
+	}
+
+	for _, channel := range channels {
+		roles, err := app.models.Channels.GetRoles(channel.ID)
+		if err != nil {
+			switch {
+			case errors.Is(err, data.ErrRecordNotFound):
+				app.notFoundResponse(w, r)
+			default:
+				app.serverErrorResponse(w, r, err)
+			}
+			return
+		}
+		channel.Roles = &roles
 	}
 
 	if err := app.writeJson(w, http.StatusOK, envelope{"channels": channels}, nil); err != nil {

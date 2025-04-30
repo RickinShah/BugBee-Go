@@ -97,6 +97,32 @@ func (app *application) joinCommunityHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
+	communityRole := data.CommunityRole{
+		CommunityID: community.ID,
+		Name:        "user",
+	}
+
+	if err := app.models.CommunityRoles.GetByCommunityAndName(&communityRole); err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			app.notFoundResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	userRole := data.UserRole{
+		UserID:      user.ID,
+		CommunityID: communityRole.CommunityID,
+		RoleID:      communityRole.ID,
+	}
+
+	if err = app.models.UserRoles.Insert(userRole); err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
 	go app.models.Communities.CacheJoinedCommunities(user.ID, community.Handle)
 	if err := tx.Commit(); err != nil {
 		app.serverErrorResponse(w, r, err)

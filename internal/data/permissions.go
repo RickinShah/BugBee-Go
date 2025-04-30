@@ -41,6 +41,46 @@ func (m PermissionModel) AddPermission(code string) error {
 	return nil
 }
 
+func (m PermissionModel) GetPermissionsByUser(userID int64, communityID int64) (Permissions, error) {
+	query := `
+		SELECT DISTINCT p.code
+		FROM user_roles ur
+		JOIN role_permissions rp ON ur.role_id = rp.role_id
+		JOIN permissions p ON rp.permission_id = p.permission_pid
+		WHERE ur.user_id = $1 AND ur.community_id = $2;
+	`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	rows, err := m.DB.QueryContext(ctx, query, userID, communityID)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, ErrRecordNotFound
+		default:
+			return nil, err
+		}
+	}
+
+	var codes Permissions
+
+	for rows.Next() {
+		var code string
+		if err := rows.Scan(&code); err != nil {
+			return nil, err
+		}
+
+		codes = append(codes, code)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return codes, nil
+}
+
 func (m PermissionModel) GetIDByCode(codes []string) ([]int, error) {
 	query := `
 		SELECT permission_pid FROM permissions
@@ -92,4 +132,31 @@ func (m PermissionModel) GetAll() ([]int, error) {
 		return nil, err
 	}
 	return permissionIDs, nil
+}
+
+func (m PermissionModel) InsertAllTx(tx *sql.Tx, roleID int64) error {
+	query := `
+		INSERT INTO role_permissions(role_id, permission_id)
+		SELECT $1, permission_pid FROM permissions
+		ON CONFLICT DO NOTHING
+	`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	result, err := tx.ExecContext(ctx, query, roleID)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected <= 1 {
+		return ErrEditConflict
+	}
+
+	return nil
 }

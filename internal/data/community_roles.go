@@ -3,6 +3,7 @@ package data
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"time"
 
 	"github.com/RickinShah/BugBee/internal/validator"
@@ -68,4 +69,26 @@ func (m CommunityRoleModel) Get(communityID int64) ([]*CommunityRole, error) {
 		return nil, err
 	}
 	return communityRoles, err
+}
+
+func (m CommunityRoleModel) GetByCommunityAndName(communityRole *CommunityRole) error {
+	query := `
+		SELECT role_pid
+		FROM community_roles
+		WHERE community_id = $1 AND name = $2
+	`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	if err := m.DB.QueryRowContext(ctx, query, communityRole.CommunityID, communityRole.Name).Scan(&communityRole.ID); err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return ErrRecordNotFound
+		default:
+			return err
+		}
+	}
+
+	return nil
 }
