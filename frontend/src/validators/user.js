@@ -26,21 +26,21 @@ export const validateBio = yup
     .max(150, "Bio should not be more than 150 characters")
     .optional();
 
-// export const validateEmail = yup
-//     .string()
-//     .matches(
-//         "^[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$",
-//         "Enter a valid Email",
-//     )
-//     .required("Email must be provided");
-
 export const validateEmail = yup
     .string()
     .matches(
-        /^[a-zA-Z0-9._%+-]+@([a-zA-Z0-9-]+\.)*indusuni\.ac\.in$/,
-        "Email must be an indusuni.ac.in address",
+        "^[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$",
+        "Enter a valid Email",
     )
     .required("Email must be provided");
+
+// export const validateEmail = yup
+//     .string()
+//     .matches(
+//         /^[a-zA-Z0-9._%+-]+@([a-zA-Z0-9-]+\.)*indusuni\.ac\.in$/,
+//         "Email must be an indusuni.ac.in address",
+//     )
+//     .required("Email must be provided");
 
 export const validatePassword = yup
     .string()
